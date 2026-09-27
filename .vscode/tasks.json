@@ -1,0 +1,64 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Test Current Problem (Both Java & Python)",
+      "type": "shell",
+      "command": "./run.sh test ${fileDirname}",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Test Current Problem (Java Only)",
+      "type": "shell",
+      "command": "./run.sh test ${fileDirname} --lang java",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Test Current Problem (Python Only)",
+      "type": "shell",
+      "command": "./run.sh test ${fileDirname} --lang python",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "View Master Sheet Progress",
+      "type": "shell",
+      "command": "python3 tools/tracker.py summary",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "List All DSA Problems",
+      "type": "shell",
+      "command": "./run.sh list",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

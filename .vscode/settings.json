@@ -1,0 +1,14 @@
+{
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/dsa",
+    "${workspaceFolder}/dsa/utils"
+  ],
+  "java.project.sourcePaths": [
+    "dsa"
+  ],
+  "files.exclude": {
+    "**/.git": true,
+    "**/.build": true,
+    "**/__pycache__": true
+  }
+}
