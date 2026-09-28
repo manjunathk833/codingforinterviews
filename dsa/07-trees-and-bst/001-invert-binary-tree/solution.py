@@ -4,12 +4,8 @@ from utils.dsa_helpers import TreeNode
 
 class Solution:
     def invertTree(self, root: Optional[TreeNode]) -> Optional[TreeNode]:
-        """Inverts a binary tree recursively."""
-        if not root:
-            return None
-
-        root.left, root.right = self.invertTree(root.right), self.invertTree(root.left)
-        return root
+        # TODO: Implement your solution here
+        return None
 
 
 if __name__ == "__main__":

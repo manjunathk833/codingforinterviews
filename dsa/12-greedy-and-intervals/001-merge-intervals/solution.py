@@ -3,21 +3,8 @@ from typing import List
 
 class Solution:
     def merge(self, intervals: List[List[int]]) -> List[List[int]]:
-        """Merges overlapping intervals in O(N log N) time."""
-        if not intervals:
-            return []
-
-        intervals.sort(key=lambda x: x[0])
-        merged = [intervals[0]]
-
-        for start, end in intervals[1:]:
-            prev_start, prev_end = merged[-1]
-            if start <= prev_end:
-                merged[-1][1] = max(prev_end, end)
-            else:
-                merged.append([start, end])
-
-        return merged
+        # TODO: Implement your solution here
+        return []
 
 
 if __name__ == "__main__":

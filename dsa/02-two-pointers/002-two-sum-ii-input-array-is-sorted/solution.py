@@ -3,18 +3,7 @@ from typing import List
 
 class Solution:
     def twoSum(self, numbers: List[int], target: int) -> List[int]:
-        """Finds two numbers in sorted array that sum to target using O(1) space."""
-        left, right = 0, len(numbers) - 1
-
-        while left < right:
-            cur_sum = numbers[left] + numbers[right]
-            if cur_sum == target:
-                return [left + 1, right + 1]
-            elif cur_sum < target:
-                left += 1
-            else:
-                right -= 1
-
+        # TODO: Implement your solution here
         return []
 
 

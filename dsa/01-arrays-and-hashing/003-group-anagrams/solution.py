@@ -8,18 +8,8 @@ from typing import List
 
 class Solution:
     def groupAnagrams(self, strs: List[str]) -> List[List[str]]:
-        """Groups anagrams together.
-
-        Time Complexity: O(M * N) using 26-count tuple keys
-        Space Complexity: O(M * N)
-        """
-        ans = defaultdict(list)
-        for s in strs:
-            count = [0] * 26
-            for c in s:
-                count[ord(c) - ord('a')] += 1
-            ans[tuple(count)].append(s)
-        return list(ans.values())
+        # TODO: Implement your solution here
+        return []
 
 
 if __name__ == "__main__":

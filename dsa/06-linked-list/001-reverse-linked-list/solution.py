@@ -4,17 +4,8 @@ from utils.dsa_helpers import ListNode
 
 class Solution:
     def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
-        """Reverses a singly linked list in O(N) time and O(1) space."""
-        prev = None
-        curr = head
-
-        while curr:
-            next_temp = curr.next
-            curr.next = prev
-            prev = curr
-            curr = next_temp
-
-        return prev
+        # TODO: Implement your solution here
+        return None
 
 
 if __name__ == "__main__":

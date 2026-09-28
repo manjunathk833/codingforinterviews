@@ -1,14 +1,7 @@
 class Solution:
     def climbStairs(self, n: int) -> int:
-        """Calculates distinct ways to climb stairs in O(N) time and O(1) space."""
-        if n <= 2:
-            return n
-
-        one, two = 1, 2
-        for _ in range(3, n + 1):
-            one, two = two, one + two
-
-        return two
+        # TODO: Implement your solution here
+        return 0
 
 
 if __name__ == "__main__":

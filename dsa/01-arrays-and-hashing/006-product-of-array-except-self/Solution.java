@@ -3,23 +3,8 @@ import java.util.Arrays;
 public class Solution {
 
     public int[] productExceptSelf(int[] nums) {
-        int n = nums.length;
-        int[] res = new int[n];
-
-        // Prefix pass
-        res[0] = 1;
-        for (int i = 1; i < n; i++) {
-            res[i] = res[i - 1] * nums[i - 1];
-        }
-
-        // Suffix pass with O(1) space variable
-        int postfix = 1;
-        for (int i = n - 1; i >= 0; i--) {
-            res[i] *= postfix;
-            postfix *= nums[i];
-        }
-
-        return res;
+        // TODO: Implement your solution here
+        return new int[] {};
     }
 
     public static void main(String[] args) {
