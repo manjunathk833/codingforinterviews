@@ -26,21 +26,22 @@ RESET = "\033[0m"
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DSA_ROOT = REPO_ROOT / "dsa"
+CHALLENGES_ROOT = REPO_ROOT / "frameworks" / "design-challenges"
 BIN_DIR = REPO_ROOT / ".build"
 
 
 def find_all_problems():
-    """Discover all problem directories inside dsa/ (excluding utils and hidden folders)."""
+    """Discover all problem directories inside dsa/ and frameworks/design-challenges/."""
     problems = []
-    if not DSA_ROOT.exists():
-        return problems
+    scan_roots = [r for r in (DSA_ROOT, CHALLENGES_ROOT) if r.exists()]
 
-    for root, dirs, files in os.walk(DSA_ROOT):
-        # Exclude utils and hidden directories
-        if "utils" in root or "/." in root:
-            continue
-        if "Solution.java" in files or "solution.py" in files or "README.md" in files:
-            problems.append(Path(root))
+    for scan_root in scan_roots:
+        for root, dirs, files in os.walk(scan_root):
+            # Exclude utils and hidden directories
+            if "utils" in root or "/." in root:
+                continue
+            if "Solution.java" in files or "solution.py" in files or "README.md" in files:
+                problems.append(Path(root))
 
     problems.sort()
     return problems
@@ -218,13 +219,13 @@ def cmd_list():
         print(f"{YELLOW}No problems found in dsa/.{RESET}")
         return
 
-    print(f"\n{BOLD}{'Problem':<45} {'Java':<12} {'Python':<12}{RESET}")
-    print("-" * 72)
+    print(f"\n{BOLD}{'Problem / Challenge':<55} {'Java':<12} {'Python':<12}{RESET}")
+    print("-" * 82)
     for p in problems:
-        rel = str(p.relative_to(DSA_ROOT))
+        rel = str(p.relative_to(REPO_ROOT))
         has_java = f"{GREEN}Yes{RESET}" if (p / "Solution.java").exists() else f"{DIM}No{RESET}"
         has_py = f"{GREEN}Yes{RESET}" if (p / "solution.py").exists() else f"{DIM}No{RESET}"
-        print(f"{rel:<45} {has_java:<20} {has_py:<20}")
+        print(f"{rel:<55} {has_java:<20} {has_py:<20}")
     print(f"\nTotal: {len(problems)} problems discovered.")
 
 
