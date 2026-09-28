@@ -10,8 +10,26 @@ bin/
 target/
 *.log
 .DS_Store
+*.swp
+*.swo
+
+# Test & Coverage Reports
+allure-results/
+allure-report/
+test-output/
+.pytest_cache/
+.coverage
+htmlcov/
 
 # Virtual environments
 .venv/
 venv/
 ENV/
+env/
+
+# IDE & Editor files
+.idea/
+*.iml
+.project
+.classpath
+.settings/

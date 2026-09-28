@@ -1,14 +1,23 @@
 {
   "python.analysis.extraPaths": [
     "${workspaceFolder}/dsa",
-    "${workspaceFolder}/dsa/utils"
+    "${workspaceFolder}/dsa/utils",
+    "${workspaceFolder}/frameworks/api-automation/pytest-requests-python",
+    "${workspaceFolder}/frameworks/ui-automation/playwright-python"
   ],
   "java.project.sourcePaths": [
-    "dsa"
+    "dsa",
+    "frameworks/api-automation/restassured-java/src",
+    "frameworks/ui-automation/playwright-java/src",
+    "frameworks/ui-automation/selenium-java/src"
   ],
   "files.exclude": {
     "**/.git": true,
     "**/.build": true,
-    "**/__pycache__": true
-  }
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/target": true
+  },
+  "editor.tabSize": 4,
+  "editor.formatOnSave": true
 }
