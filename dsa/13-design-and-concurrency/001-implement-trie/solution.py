@@ -1,26 +1,36 @@
 class TrieNode:
     def __init__(self):
-        # TODO: Define node members if needed
-        pass
+        self.children = {}
+        self.is_end_of_word = False
 
 
 class Solution:
     class Trie:
         def __init__(self):
-            # TODO: Initialize your data structure here
-            pass
+            self.root = TrieNode()
 
         def insert(self, word: str) -> None:
-            # TODO: Implement insert
-            pass
+            curr = self.root
+            for c in word:
+                if c not in curr.children:
+                    curr.children[c] = TrieNode()
+                curr = curr.children[c]
+            curr.is_end_of_word = True
 
         def search(self, word: str) -> bool:
-            # TODO: Implement search
-            return False
+            node = self._find_node(word)
+            return node is not None and node.is_end_of_word
 
         def startsWith(self, prefix: str) -> bool:
-            # TODO: Implement startsWith
-            return False
+            return self._find_node(prefix) is not None
+
+        def _find_node(self, prefix: str):
+            curr = self.root
+            for c in prefix:
+                if c not in curr.children:
+                    return None
+                curr = curr.children[c]
+            return curr
 
 
 if __name__ == "__main__":

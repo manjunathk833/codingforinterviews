@@ -1,26 +1,46 @@
 public class Solution {
 
     static class TrieNode {
-        // TODO: Define node members if needed
+        TrieNode[] children = new TrieNode[26];
+        boolean isEndOfWord = false;
     }
 
     public static class Trie {
+        private final TrieNode root;
+
         public Trie() {
-            // TODO: Initialize your data structure here
+            root = new TrieNode();
         }
 
         public void insert(String word) {
-            // TODO: Implement insert
+            TrieNode curr = root;
+            for (char c : word.toCharArray()) {
+                int idx = c - 'a';
+                if (curr.children[idx] == null) {
+                    curr.children[idx] = new TrieNode();
+                }
+                curr = curr.children[idx];
+            }
+            curr.isEndOfWord = true;
         }
 
         public boolean search(String word) {
-            // TODO: Implement search
-            return false;
+            TrieNode node = findNode(word);
+            return node != null && node.isEndOfWord;
         }
 
         public boolean startsWith(String prefix) {
-            // TODO: Implement startsWith
-            return false;
+            return findNode(prefix) != null;
+        }
+
+        private TrieNode findNode(String str) {
+            TrieNode curr = root;
+            for (char c : str.toCharArray()) {
+                int idx = c - 'a';
+                if (curr.children[idx] == null) return null;
+                curr = curr.children[idx];
+            }
+            return curr;
         }
     }
 

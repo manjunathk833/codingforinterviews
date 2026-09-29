@@ -18,7 +18,16 @@ public class Solution {
      */
     public int[] twoSum(int[] nums, int target) {
         // TODO: Implement your solution here
-        return new int[] {};
+        Map<Integer, Integer> complement= new HashMap<>();
+        for(int i = 0; i < nums.length ; i++){
+            if (complement.containsKey(target - nums[i])){
+                return new int[] {(complement.get(target-nums[i])), i};
+            }
+            else {
+                complement.put(nums[i], i);
+            }
+        }
+        throw new IllegalArgumentException("no two sum solution found for given imput");
     }
 
     public static void main(String[] args) {
