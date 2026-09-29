@@ -18,6 +18,8 @@ public class Solution {
      */
     public int[] twoSum(int[] nums, int target) {
         // TODO: Implement your solution here
+        if (nums == null || nums.length < 2) 
+            throw new IllegalArgumentException("invalid input");
         Map<Integer, Integer> complement= new HashMap<>();
         for(int i = 0; i < nums.length ; i++){
             if (complement.containsKey(target - nums[i])){
