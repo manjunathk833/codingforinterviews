@@ -41,6 +41,36 @@
       "problemMatcher": []
     },
     {
+      "label": "Test All Solved Problems",
+      "type": "shell",
+      "command": "./run.sh test-all",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Python API Automation Suite",
+      "type": "shell",
+      "command": "python3 frameworks/api-automation/pytest-requests-python/test_api.py",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Python Playwright UI Suite",
+      "type": "shell",
+      "command": "python3 frameworks/ui-automation/playwright-python/test_e2e_journey.py",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "View Master Sheet Progress",
       "type": "shell",
       "command": "python3 tools/tracker.py summary",

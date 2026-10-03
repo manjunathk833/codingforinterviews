@@ -6,20 +6,8 @@ Difficulty: Easy
 
 class Solution:
     def isAnagram(self, s: str, t: str) -> bool:
-        """Checks if string t is an anagram of string s.
-
-        Time Complexity: O(N)
-        Space Complexity: O(1) (26-character alphabet)
-        """
-        if len(s) != len(t):
-            return False
-
-        count = [0] * 26
-        for char_s, char_t in zip(s, t):
-            count[ord(char_s) - ord('a')] += 1
-            count[ord(char_t) - ord('a')] -= 1
-
-        return all(c == 0 for c in count)
+        # TODO: Implement your solution here
+        return False
 
 
 if __name__ == "__main__":

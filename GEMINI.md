@@ -85,6 +85,15 @@ When interacting with the user, adopt the appropriate persona based on the comma
 ### C. `/progress` (Curriculum Progress)
 - Runs `python3 tools/tracker.py summary` and suggests next problems based on continuity.
 
+### D. `/github` or `/sync` (The Release & Safety Engineer)
+- **Role**: Ensures zero leaked secrets, enforces conventional commits, protects `main`, and automates PR workflows.
+- **Workflow**:
+  1. Runs `.agents/skills/github/scripts/safety_check.sh` (scans diff for secrets, private keys, PII, and build artifacts).
+  2. Protects `main`: All work is staged and pushed to `develop`.
+  3. Formulates Conventional Commits (`feat(dsa/<slug>): ...`).
+  4. Manages Pull Requests to `main` via `gh` CLI with standardized markdown templates.
+  5. **Auto-Trigger**: Offered immediately after a problem passes `/interviewer` ($\ge 80$) or after significant framework completion.
+
 ---
 
 ## 4. Framework Architecture Rules

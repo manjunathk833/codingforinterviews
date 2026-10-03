@@ -11,7 +11,7 @@ To view overall progress metrics, run `python3 tools/tracker.py summary` or type
 
 | # | Title | Pattern | Difficulty | Java | Python | Score | Status |
 | :-: | :--- | :--- | :---: | :-: | :-: | :-: | :--- |
-| 1 | [Two Sum](https://leetcode.com/problems/two-sum/) | Arrays & Hashing | Easy | [ ] | [ ] | - | Not Started |
+| 1 | [Two Sum](https://leetcode.com/problems/two-sum/) | Arrays & Hashing | Easy | [x] | [x] | 93/100 | Passed |
 | 2 | [Contains Duplicate](https://leetcode.com/problems/contains-duplicate/) | Arrays & Hashing | Easy | [ ] | [ ] | - | Not Started |
 | 3 | [Valid Anagram](https://leetcode.com/problems/valid-anagram/) | Arrays & Hashing | Easy | [ ] | [ ] | - | Not Started |
 | 4 | [Group Anagrams](https://leetcode.com/problems/group-anagrams/) | Arrays & Hashing | Medium | [ ] | [ ] | - | Not Started |

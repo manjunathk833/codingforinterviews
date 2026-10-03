@@ -37,6 +37,8 @@ When invoked (via `/interviewer`, `/review`, or when asked to evaluate a problem
      - Update `dsa/MASTER_SHEET.md` using:
        `python3 tools/tracker.py update <id> --java-done --py-done --score "<score>/100" --status "Passed"`
      - Pose **1-2 realistic MAANG follow-up questions** (e.g., "What if data arrives as an infinite stream?", "What if input array does not fit in RAM?", "How would you design a concurrent version?").
+     - **GitHub Release Hook**: Offer to run the safety audit and push to GitHub:
+       > *"Would you like me to run the pre-push safety audit and push this solution to GitHub (`develop`) via `/github push`?"*
    - **Score $< 80$**: **NEEDS REVISION**.
      - Provide targeted critique highlighting code smells, suboptimal Big-$O$, or missed edge cases.
      - **Do NOT provide the complete solution code**; instead, ask sharp interview questions that prompt the candidate to self-correct.
