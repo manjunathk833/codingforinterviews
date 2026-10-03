@@ -1,4 +1,4 @@
-package test;
+package tests;
 
 import core.PlaywrightDriverFactory;
 import pages.LoginPage;

@@ -7,9 +7,16 @@
   ],
   "java.project.sourcePaths": [
     "dsa",
-    "frameworks/api-automation/restassured-java/src",
-    "frameworks/ui-automation/playwright-java/src",
-    "frameworks/ui-automation/selenium-java/src"
+    "frameworks/api-automation/restassured-java/src/main/java",
+    "frameworks/api-automation/restassured-java/src/test/java",
+    "frameworks/ui-automation/playwright-java/src/main/java",
+    "frameworks/ui-automation/playwright-java/src/test/java",
+    "frameworks/ui-automation/selenium-java/src/main/java",
+    "frameworks/design-challenges/01-custom-retry-analyzer",
+    "frameworks/design-challenges/02-json-payload-diff-engine",
+    "frameworks/design-challenges/03-rate-limited-test-client",
+    "frameworks/design-challenges/04-test-data-builder",
+    "frameworks/design-challenges/05-microservice-mocking"
   ],
   "files.exclude": {
     "**/.git": true,

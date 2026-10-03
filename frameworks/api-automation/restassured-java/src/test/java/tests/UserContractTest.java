@@ -11,14 +11,14 @@ public class UserContractTest {
     public void testUserCreationContract() {
         UserDto newUser = UserDto.builder()
                 .id(101L)
-                .name("Manjunath H K")
-                .email("manjunathhk833@gmail.com")
+                .name("Candidate Engineer")
+                .email("candidate@example.com")
                 .role("SENIOR_SDET")
                 .active(true)
                 .build();
 
         assert newUser.getId() == 101L : "User ID incorrect";
-        assert newUser.getName().equals("Manjunath H K") : "User name incorrect";
+        assert newUser.getName().equals("Candidate Engineer") : "User name incorrect";
         assert newUser.getRole().equals("SENIOR_SDET") : "Role incorrect";
         assert newUser.getActive() : "Active flag incorrect";
 
