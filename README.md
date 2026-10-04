@@ -52,6 +52,7 @@ Switch personas directly in the chat panel using first-class slash commands:
 | **`/hint`** (or `/mentor`) | **Socratic Coding Coach** | Provides **4-tier progressive hints** (Mental Model $\to$ Pattern $\to$ Invariants $\to$ Scaffolding) without spoiling code. |
 | **`/progress`** | **Curriculum Advisor** | Displays completion stats across difficulty and patterns, and recommends the next logical questions. |
 | **`/github`** (or `/sync`) | **Release & Safety Engineer** | Executes pre-push security audits (secrets, private keys, PII), enforces conventional commits, protects `main`, and automates PR creation. |
+| **`/mock-interview`** (or `/interview-sim`) | **Interview Simulator & Conceptual Coach** | Simulates end-to-end Senior/Lead SDET interviews, generates market questions, grades submitted answers, and generates deep conceptual mastery guides. |
 
 ---
 
