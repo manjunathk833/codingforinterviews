@@ -13,8 +13,19 @@ public class Solution {
      * @return true if t is an anagram of s, false otherwise
      */
     public boolean isAnagram(String s, String t) {
-        // TODO: Implement your solution here
-        return false;
+        int[] count = new int[26];
+        if(s.length() != t.length())
+            return false;
+        for(int i = 0; i <s.length(); i++){
+            count[s.charAt(i) - 'a']++;
+            count[t.charAt(i) - 'a']--;
+        }
+        for(int i = 0; i < count.length; i++){
+            if (count[i] != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static void main(String[] args) {

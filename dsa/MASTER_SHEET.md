@@ -13,7 +13,7 @@ To view overall progress metrics, run `python3 tools/tracker.py summary` or type
 | :-: | :--- | :--- | :---: | :-: | :-: | :-: | :--- |
 | 1 | [Two Sum](https://leetcode.com/problems/two-sum/) | Arrays & Hashing | Easy | [x] | [x] | 93/100 | Passed |
 | 2 | [Contains Duplicate](https://leetcode.com/problems/contains-duplicate/) | Arrays & Hashing | Easy | [ ] | [ ] | - | Not Started |
-| 3 | [Valid Anagram](https://leetcode.com/problems/valid-anagram/) | Arrays & Hashing | Easy | [ ] | [ ] | - | Not Started |
+| 3 | [Valid Anagram](https://leetcode.com/problems/valid-anagram/) | Arrays & Hashing | Easy | [x] | [x] | 95/100 | Passed |
 | 4 | [Group Anagrams](https://leetcode.com/problems/group-anagrams/) | Arrays & Hashing | Medium | [ ] | [ ] | - | Not Started |
 | 5 | [Top K Frequent Elements](https://leetcode.com/problems/top-k-frequent-elements/) | Arrays & Hashing | Medium | [ ] | [ ] | - | Not Started |
 | 6 | [Product of Array Except Self](https://leetcode.com/problems/product-of-array-except-self/) | Arrays & Hashing | Medium | [ ] | [ ] | - | Not Started |
