@@ -54,7 +54,13 @@ def resolve_problem(target: str) -> Path:
 
     # Search by partial name or slug
     all_problems = find_all_problems()
-    matched = [p for p in all_problems if target.lower() in p.name.lower() or target.lower() in str(p).lower()]
+    normalized_target = target.lower().strip().replace(" ", "-").replace("_", "-")
+    matched = [
+        p for p in all_problems 
+        if target.lower() in p.name.lower() 
+        or normalized_target in p.name.lower() 
+        or target.lower() in str(p).lower()
+    ]
 
     if len(matched) == 1:
         return matched[0]
@@ -228,6 +234,62 @@ def cmd_list():
     print(f"\nTotal: {len(problems)} problems discovered.")
 
 
+def find_completed_problems():
+    """Discover all problems marked as completed in dsa/MASTER_SHEET.md."""
+    import re
+    master_sheet = DSA_ROOT / "MASTER_SHEET.md"
+    if not master_sheet.exists():
+        return []
+
+    content = master_sheet.read_text(encoding="utf-8")
+    row_pattern = re.compile(
+        r"^\|\s*\d+\s*\|\s*\[([^\]]+)\]\(([^)]+)\)\s*\|[^|]+\|[^|]+\|\s*\[([ xX])\]\s*\|\s*\[([ xX])\]"
+    )
+    all_problems = find_all_problems()
+    completed = []
+    for line in content.splitlines():
+        m = row_pattern.match(line)
+        if m:
+            _, url, java_chk, py_chk = m.groups()
+            java_done = java_chk.lower() == "x"
+            py_done = py_chk.lower() == "x"
+            if java_done or py_done:
+                slug = url.strip("/").split("/")[-1].lower()
+                matched = [p for p in all_problems if slug in p.name.lower()]
+                if matched and matched[0] not in completed:
+                    completed.append(matched[0])
+    return completed
+
+
+def cmd_test_completed(lang: str):
+    """Run tests across all completed problems in MASTER_SHEET.md."""
+    problems = find_completed_problems()
+    if not problems:
+        print(f"{YELLOW}No completed problems marked in dsa/MASTER_SHEET.md.{RESET}")
+        return
+
+    passed = 0
+    failed = 0
+    skipped = 0
+
+    print(f"\n{BOLD}Running test suite across {len(problems)} completed problems...{RESET}")
+    for p in problems:
+        res = run_test(p, lang)
+        for r in res.values():
+            if r["status"] == "PASSED":
+                passed += 1
+            elif r["status"] == "SKIPPED":
+                skipped += 1
+            else:
+                failed += 1
+
+    print("\n" + "=" * 50)
+    print(f"{BOLD}Summary:{RESET} {GREEN}{passed} Passed{RESET} | {RED}{failed} Failed{RESET} | {YELLOW}{skipped} Skipped{RESET}")
+    print("=" * 50)
+    if failed > 0:
+        sys.exit(1)
+
+
 def cmd_test_all(lang: str):
     """Run tests across all problems."""
     problems = find_all_problems()
@@ -249,6 +311,8 @@ def cmd_test_all(lang: str):
     print("\n" + "=" * 50)
     print(f"{BOLD}Summary:{RESET} {GREEN}{passed} Passed{RESET} | {RED}{failed} Failed{RESET} | {YELLOW}{skipped} Skipped{RESET}")
     print("=" * 50)
+    if failed > 0:
+        sys.exit(1)
 
 
 def main():
@@ -260,6 +324,9 @@ def main():
     test_parser.add_argument("--lang", choices=["java", "python", "all"], default="all", help="Target language")
 
     subparsers.add_parser("list", help="List all problems")
+
+    test_completed_parser = subparsers.add_parser("test-completed", help="Test all completed problems from MASTER_SHEET.md")
+    test_completed_parser.add_argument("--lang", choices=["java", "python", "all"], default="all", help="Target language")
 
     test_all_parser = subparsers.add_parser("test-all", help="Test all problems")
     test_all_parser.add_argument("--lang", choices=["java", "python", "all"], default="all", help="Target language")
@@ -274,6 +341,8 @@ def main():
         # Exit with non-zero if any test failed
         has_failure = any(r["status"] not in ("PASSED", "SKIPPED") for r in res.values())
         sys.exit(1 if has_failure else 0)
+    elif args.command == "test-completed":
+        cmd_test_completed(args.lang)
     elif args.command == "test-all":
         cmd_test_all(args.lang)
 
