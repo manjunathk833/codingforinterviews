@@ -1,0 +1,112 @@
+name: CI - Full Test & Security Suite
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security-audit:
+    name: 🛡️ Pre-Push & Secret Safety Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Make Scripts Executable
+        run: |
+          chmod +x .agents/skills/github/scripts/safety_check.sh
+          chmod +x run.sh
+
+      - name: Run Safety Check
+        run: |
+          ./.agents/skills/github/scripts/safety_check.sh
+
+  dsa-tests:
+    name: 🧩 DSA Solutions Verification
+    needs: security-audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Make Launchers Executable
+        run: |
+          chmod +x run.sh
+          chmod +x tools/runner.py
+          chmod +x tools/tracker.py
+
+      - name: Verify Master Sheet Progress Tracker
+        run: |
+          python3 tools/tracker.py summary
+
+      - name: Run All Completed DSA Solutions (Java & Python)
+        run: |
+          ./run.sh test-completed
+
+  framework-design-challenges:
+    name: 🏗️ Framework & Design Challenges Test
+    needs: security-audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Test Python Design Challenges
+        run: |
+          for f in frameworks/design-challenges/*/solution.py; do
+            echo "Testing $f..."
+            python3 "$f"
+          done
+
+      - name: Compile & Run Java Design Challenges
+        run: |
+          mkdir -p .build/ci-java
+          for f in frameworks/design-challenges/*/Solution.java; do
+            dir=$(dirname "$f")
+            name=$(basename "$dir")
+            echo "Compiling & executing $name ($f)..."
+            mkdir -p ".build/ci-java/$name"
+            javac -d ".build/ci-java/$name" "$f"
+            java -cp ".build/ci-java/$name" Solution
+          done
+
+      - name: Verify Python Framework Syntax Integrity
+        run: |
+          python3 -m py_compile $(find frameworks/ -name "*.py")

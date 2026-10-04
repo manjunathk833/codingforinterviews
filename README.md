@@ -1,5 +1,11 @@
 # 🚀 MAANG Coding & Automation Interview Preparation Hub
 
+[![CI - Full Test & Security Suite](https://github.com/manjunathk833/codingforinterviews/actions/workflows/ci.yml/badge.svg)](https://github.com/manjunathk833/codingforinterviews/actions)
+![Java](https://img.shields.io/badge/Java-17%2B-orange?logo=openjdk)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python)
+![Branch](https://img.shields.io/badge/Active%20Branch-develop-brightgreen?logo=git)
+![PRs](https://img.shields.io/badge/PRs-welcome-success)
+
 A production-grade daily practice repository engineered for **Senior SDET / QA Architect / SWE-Infra** candidates preparing for MAANG-tier technical interviews (Google, Meta, Amazon, Apple, Netflix).
 
 ---
@@ -12,12 +18,13 @@ A production-grade daily practice repository engineered for **Senior SDET / QA A
 | **[DSA Curriculum & Pattern Guide](docs/DSA_CURRICULUM_GUIDE.md)** | In-depth breakdown of the 13 core algorithmic patterns, Big-$O$ trade-offs, and mental models. |
 | **[Frameworks & System Design Guide](docs/FRAMEWORKS_GUIDE.md)** | Architecture patterns for REST Assured, Pytest, Playwright, Selenium, and live coding challenges. |
 | **[Interview Playbook (45-Min Protocol)](docs/INTERVIEW_PLAYBOOK.md)** | Timeline, out-loud communication, edge-case audit checklists, and handling follow-ups. |
+| **[Contributing & Git Safety](CONTRIBUTING.md)** | Branching model (`develop` -> `main`), Conventional Commits, pre-push safety audit, and CI/CD. |
 
 ---
 
 ## ⚡ Quick Start
 
-### 1. Test Any Problem (Native Dual Java 17 & Python 3.9)
+### 1. Test Any Problem (Native Dual Java 17 & Python 3.9+)
 ```bash
 # Test a problem across both Java and Python
 ./run.sh test 001-two-sum
@@ -31,7 +38,10 @@ A production-grade daily practice repository engineered for **Senior SDET / QA A
 # List all discovered problems
 ./run.sh list
 
-# Run test suite across all implemented problems
+# Run test suite across all completed problems (CI verified)
+./run.sh test-completed
+
+# Run test suite across all problems
 ./run.sh test-all
 ```
 
@@ -52,6 +62,7 @@ Switch personas directly in the chat panel using first-class slash commands:
 | **`/hint`** (or `/mentor`) | **Socratic Coding Coach** | Provides **4-tier progressive hints** (Mental Model $\to$ Pattern $\to$ Invariants $\to$ Scaffolding) without spoiling code. |
 | **`/progress`** | **Curriculum Advisor** | Displays completion stats across difficulty and patterns, and recommends the next logical questions. |
 | **`/github`** (or `/sync`) | **Release & Safety Engineer** | Executes pre-push security audits (secrets, private keys, PII), enforces conventional commits, protects `main`, and automates PR creation. |
+| **`/mock-interview`** (or `/interview-sim`) | **Interview Simulator & Conceptual Coach** | Simulates end-to-end Senior/Lead SDET interviews, generates market questions, grades submitted answers, and generates deep conceptual mastery guides. |
 
 ---
 

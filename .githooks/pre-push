@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Git pre-push hook: Runs the Antigravity Pre-Push Safety Audit
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+AUDIT_SCRIPT="$REPO_ROOT/.agents/skills/github/scripts/safety_check.sh"
+
+echo "🛡️  Executing Git pre-push hook..."
+
+if [ -f "$AUDIT_SCRIPT" ]; then
+    bash "$AUDIT_SCRIPT"
+    RESULT=$?
+    if [ $RESULT -ne 0 ]; then
+        echo "❌ Pre-push safety audit FAILED! Aborting push."
+        exit 1
+    fi
+else
+    echo "⚠️  Safety audit script not found at $AUDIT_SCRIPT. Skipping."
+fi
+
+exit 0

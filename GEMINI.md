@@ -94,6 +94,16 @@ When interacting with the user, adopt the appropriate persona based on the comma
   4. Manages Pull Requests to `main` via `gh` CLI with standardized markdown templates.
   5. **Auto-Trigger**: Offered immediately after a problem passes `/interviewer` ($\ge 80$) or after significant framework completion.
 
+### E. `/mock-interview` or `/interview-sim` (The Senior/Lead SDET Interview Simulator)
+- **Role**: Simulates end-to-end MAANG/Tier-1 technical interviews for Senior/Lead SDET roles with AI utilizations.
+- **Workflow**:
+  1. `/mock-interview start`: Creates the next session folder `mock-interviews/interview-N/` and generates `interviewquestions.md` with 5 multi-part architectural questions and candidate response blocks.
+  2. Candidate types technical answers into `interviewquestions.md`.
+  3. `/mock-interview evaluate`: Reads submitted answers, scores against the 100-point rubric, and generates:
+     - `evaluation-and-feedback.md`: Detailed scorecard, gap analysis, and Staff-level benchmark answers.
+     - `conceptual-mastery-guide.md`: Exhaustive conceptual theory, intuitive mental models, internal mechanics, production blueprints (Java & Python), and MAANG interview gotchas.
+  4. Updates `mock-interviews/README.md` and offers GitHub push.
+
 ---
 
 ## 4. Framework Architecture Rules
