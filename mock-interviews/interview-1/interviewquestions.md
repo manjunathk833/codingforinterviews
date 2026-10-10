@@ -19,7 +19,9 @@ The team experiences severe test flakiness and data collisions in staging during
 3. **Data Teardown & Idempotency:** How do you guarantee zero state leakage across test suites if CI containers are abruptly terminated or test assertions fail midway through a multi-step booking saga?
 
 #### ✍️ Candidate Answer:
-<!-- Type your answer below this line -->
+1. isolaiton : enable tests to have their own data that don't collide with or share other data - not sure how to do it. We could probably have different global variable instance for each thread - might be a little expensive code wise but pay off might be worth it
+2. asyncronicity : above method works for asyncronicty since were running parallel threads - not sure about kafka
+3. resetting can be done by setting global vars to null/zero as required
 
 
 ---
@@ -35,7 +37,9 @@ Your organization is migrating a legacy UI test suite (10,000+ tests written in 
 
 #### ✍️ Candidate Answer:
 <!-- Type your answer below this line -->
-
+1, i'm not sure about this i need thorough conceptual understanding
+2. need refresher
+3. not sure
 
 ---
 
@@ -58,7 +62,8 @@ Simultaneously, the VP of Engineering wants your QE team to incorporate Generati
 
 #### ✍️ Candidate Answer:
 <!-- Type your answer below this line -->
-
+1. not sure haven't done this
+2. not sure
 
 ---
 
@@ -78,7 +83,9 @@ Manual debugging requires searching through millions of unstructured log lines a
 
 #### ✍️ Candidate Answer:
 <!-- Type your answer below this line -->
-
+1. not sure 
+2. not sure 
+3. not sure
 
 ---
 
@@ -98,3 +105,6 @@ The Chief Technology Officer (CTO) tasks you with overhauling the quality engine
 
 #### ✍️ Candidate Answer:
 <!-- Type your answer below this line -->
+1. automate everything. optimize by combining tests wherever possible, parallelize
+2. not sure
+3. not sure

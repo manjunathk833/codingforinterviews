@@ -4,15 +4,34 @@ Welcome to the **Automation Framework & SDET System Design Roadmap**, specifical
 
 ---
 
+## ✈️ Benchmark Application Under Test (AUT)
+
+All frameworks test the built-in **AeroCart Airline Booking & Merchant Platform** ([`apps/aerocart/server.py`](../apps/aerocart/server.py)):
+- **Single Page App (UI):** Flight search, seat selection grid, JWT login modal, dynamic checkout.
+- **Microservice REST API:** Flights, orders saga (asynchronous state transitions), chaos latency (504 timeout), rate limiting (429).
+- **AI Concierge Endpoint:** RAG policy assistant with grounded, hallucinated, and irrelevant evaluation modes.
+- **Run Standalone:** `python3 apps/aerocart/server.py 8000`
+
+---
+
 ## 🏗️ Framework Modules & Architectures
 
-| Module | Stack | Architecture Patterns | Core Capabilities | Status |
+| Module | Stack | Architecture Patterns | Target System | Status |
 | :--- | :--- | :--- | :--- | :---: |
-| **1. REST Assured API Suite** | Java 17, REST Assured, TestNG, Jackson | Builder Pattern, Request/Response Specs, Custom Filters, POJOs | Bearer Auth, JSON Schema validation, centralized logging, Allure integration | `Ready` |
-| **2. Pytest API Automation** | Python 3.9+, Requests, Pytest, Pydantic | Session pooling, Custom Pytest Fixtures, Schema Contract validation | Dynamic payloads, auth caching, parallel execution with `pytest-xdist` | `Ready` |
-| **3. Playwright UI Suite (Python)** | Python, Playwright, Pytest | Page Object Model (POM), Auto-waiting, Network intercepting | Headless/Headed, multi-context browser isolation, visual snapshots | `Ready` |
-| **4. Playwright UI Suite (Java)** | Java 17, Playwright Java, TestNG | Thread-safe Playwright thread, Fluent Page Objects | Resilient locators, network request mocking, video & trace capturing | `Ready` |
-| **5. Selenium Enterprise Suite** | Java 17, Selenium 4, TestNG | `ThreadLocal<WebDriver>`, Explicit Wait Decorators, Factory Pattern | Cross-browser grid, retry listeners, shadow-DOM / iframe handling | `Ready` |
+| **1. REST Assured API Suite** | Java 17, REST Assured, TestNG, Jackson | Builder Pattern, Request/Response Specs, Custom Filters, POJOs | AeroCart REST APIs | `Ready` |
+| **2. Pytest API Automation** | Python 3.9+, Requests, Pytest, Pydantic | Session pooling, Custom Pytest Fixtures, Schema Contract validation | AeroCart REST APIs | `Ready` |
+| **3. Playwright UI Suite (Python)** | Python, Playwright, Pytest | Page Object Model (POM), Auto-waiting, Network intercepting | AeroCart UI SPA | `Ready` |
+| **4. Playwright UI Suite (Java)** | Java 17, Playwright Java, TestNG | Thread-safe Playwright thread, Fluent Page Objects | AeroCart UI SPA | `Ready` |
+| **5. Selenium Enterprise Suite** | Java 17, Selenium 4, TestNG | `ThreadLocal<WebDriver>`, Explicit Wait Decorators, Factory Pattern | Cross-browser grid | `Ready` |
+| **6. SDET System Design Katas** | Python 3.9+ & Java 17 | Dynamic Tenant Key Partitioning, Kafka Asynchronous Poller | Distributed Microservices | `In Progress` |
+
+---
+
+## 🎯 SDET System Design & Architecture Katas
+
+| Kata # | Problem Title | Architecture Core | Challenge Link | Status |
+| :-: | :--- | :--- | :--- | :---: |
+| **KATA-01** | [Distributed Concurrency & Tenant Isolation](./sdet-system-design/01-distributed-concurrency-isolation/) | 32 parallel threads, race condition mitigation, dynamic tenant UUID keys | [README](./sdet-system-design/01-distributed-concurrency-isolation/README.md) | `In Progress` |
 
 ---
 
