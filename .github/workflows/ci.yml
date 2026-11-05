@@ -78,7 +78,7 @@ jobs:
           mkdir -p .build/ci-java/01-concurrency
           javac -d .build/ci-java/01-concurrency frameworks/sdet-system-design/01-distributed-concurrency-isolation/Solution.java
           java -ea -cp .build/ci-java/01-concurrency Solution
-          python3 -m py_compile $(find frameworks/ apps/ tools/ hub/ -name "*.py")
+          python3 -m py_compile $(find frameworks/ core-cs/ system-design/ ai-engineering/ apps/ tools/ hub/ -name "*.py")
 
       - name: "🌐 Stage 4/4: Learning Hub 10-Suite CI & Live HTTP Smoke Test"
         run: |

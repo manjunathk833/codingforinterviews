@@ -35,12 +35,11 @@ class TestHubAndArchitectureCI(unittest.TestCase):
     """End-to-end verification of Phase 1 Learning Hub, AeroCart AUT, and CLI Tooling."""
 
     def setUp(self):
-        # Backup existing db.json if present so tests leave clean state
+        # Backup existing db.json if present and start each test with a fresh default DB
         self.db_path = state_manager.DB_PATH
         self.db_backup = None
         if self.db_path.exists():
             self.db_backup = self.db_path.read_text(encoding="utf-8")
-        elif self.db_path.exists():
             self.db_path.unlink()
         aerocart_server.dispatch_request("POST", "/api/v1/admin/reset")
 
@@ -74,10 +73,17 @@ class TestHubAndArchitectureCI(unittest.TestCase):
         """Verify Concept Feed cards, quiz completion (+50 XP), idempotency, and bookmark toggle."""
         feed_initial = state_manager.get_feed_payload()
         cards = feed_initial["cards"]
-        self.assertGreaterEqual(len(cards), 6, "Expected at least 6 micro-learning concept cards")
+        self.assertGreaterEqual(len(cards), 10, "Expected at least 10 micro-learning concept cards (Phase 1 + Phase 2)")
 
         categories = {c["category"] for c in cards}
-        for expected_cat in ("DSA Invariants", "OS Internals", "Computer Networks", "System Design", "AI & RAG"):
+        for expected_cat in (
+            "DSA Invariants",
+            "OS Internals",
+            "Computer Networks",
+            "Database Internals",
+            "System Design",
+            "AI & RAG",
+        ):
             self.assertIn(expected_cat, categories)
 
         target_card = cards[0]
@@ -109,6 +115,9 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             "arch-playwright-vs-selenium",
             "arch-concurrency-isolation",
             "arch-endpoint-cloud-sync",
+            "cs-os-leak-detector",
+            "cs-tcp-tls-handshake",
+            "ai-rag-triad-gate",
         }
         self.assertTrue(expected_ids.issubset(ids))
 
@@ -130,11 +139,14 @@ class TestHubAndArchitectureCI(unittest.TestCase):
         self.assertFalse(va_trace["steps"][-1]["isAnagram"])
 
     def test_04_architecture_simulator_traces(self):
-        """Verify step-by-step trace generation for all 3 Systems Architecture visualizers."""
+        """Verify step-by-step trace generation for all 6 Systems Architecture, Core CS & AI visualizers."""
         for arch_id in (
             "arch-playwright-vs-selenium",
             "arch-concurrency-isolation",
             "arch-endpoint-cloud-sync",
+            "cs-os-leak-detector",
+            "cs-tcp-tls-handshake",
+            "ai-rag-triad-gate",
         ):
             trace = visualizer_engine.generate_trace(arch_id)
             self.assertEqual(trace["type"], "architecture-compare")
@@ -182,7 +194,7 @@ class TestHubAndArchitectureCI(unittest.TestCase):
 
         viz_list_res = hub_server.dispatch_request("GET", "/api/visualizers")
         self.assertEqual(viz_list_res["status_code"], 200)
-        self.assertEqual(len(viz_list_res["data"]["visualizers"]), 6)
+        self.assertEqual(len(viz_list_res["data"]["visualizers"]), 9)
 
         viz_post_res = hub_server.dispatch_request(
             "POST",
@@ -270,6 +282,69 @@ class TestHubAndArchitectureCI(unittest.TestCase):
         ):
             proc = subprocess.run(cmd, cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=10)
             self.assertEqual(proc.returncode, 0, f"Command {cmd} failed: {proc.stderr}")
+
+    def test_11_phase2_core_cs_system_design_and_ai_labs(self):
+        """Verify all 6 Curriculum Pillars and all 7 Phase 2 dual-language labs (Java 17 & Python 3)."""
+        dash = state_manager.get_dashboard_payload()
+        pillar_ids = {p["id"] for p in dash["pillars"]}
+        self.assertEqual(
+            pillar_ids,
+            {"dsa", "core-cs", "system-design", "ai-engineering", "frameworks", "mock-interviews"}
+        )
+
+        lab_slugs = {l["folderSlug"] for l in dash["architectureLabs"]}
+        phase2_slugs = [
+            "01-memory-and-handle-leak-detector",
+            "01-tcp-tls-and-proxy-inspector",
+            "01-wal-and-isolation-anomalies",
+            "01-endpoint-to-cloud-sync-and-jitter",
+            "02-consistent-hashing-and-grid-sharding",
+            "01-rag-triad-evaluator",
+            "02-self-healing-locators-and-ast",
+        ]
+        for slug in phase2_slugs:
+            self.assertIn(slug, lab_slugs, f"Missing Phase 2 lab {slug} in dashboard architectureLabs")
+            res = hub_server.execute_test_target(slug, "all")
+            self.assertEqual(res["status"], "PASSED", f"Phase 2 lab {slug} failed: {res}")
+            self.assertIn("PASS Java", res["output"])
+            self.assertIn("PASS Python", res["output"])
+
+    def test_12_phase3_telegram_bot_router_and_callbacks(self):
+        """Verify Phase 3 Telegram Bot command router, natural language program lookup, and inline quiz callbacks."""
+        from hub import telegram_bot
+
+        bot = telegram_bot.AntigravityTelegramBot(token="dummy_token", chat_id="12345")
+        # Mock _api_call so unit tests never make external network calls in CI
+        bot._api_call = lambda method, payload=None, timeout=15: {"ok": True, "result": {}}
+
+        # 1. /start menu
+        start_reply = bot.handle_command_text("/start")
+        self.assertIn("ANTIGRAVITY MOBILE LEARNING HUB", start_reply["text"])
+        self.assertIn("inline_keyboard", start_reply["reply_markup"])
+
+        # 2. Natural-language program request: "give me a program on group anagrams"
+        prog_reply = bot.handle_command_text("give me a program on group anagrams")
+        self.assertIn("003-group-anagrams", prog_reply["text"])
+        self.assertIn("class Solution", prog_reply["text"])
+
+        # 3. Switch program language callback to Java
+        java_cb = bot.handle_callback_query("cb_1", "prog_lang:003-group-anagrams:java")
+        self.assertIn("public class Solution", java_cb["text"])
+
+        # 4. Concept card & inline quiz callback (+50 XP sync)
+        card = state_manager.CONCEPT_FEED_CARDS[0]
+        correct_idx = card["quiz"]["correctIndex"]
+        quiz_cb = bot.handle_callback_query("cb_2", f"quiz_ans:{card['id']}:{correct_idx}")
+        self.assertIn("CORRECT", quiz_cb["text"])
+
+        # 5. Remote test execution via Telegram "/test 01-memory-and-handle-leak-detector"
+        test_reply = bot.handle_command_text("/test 01-memory-and-handle-leak-detector")
+        self.assertIn("PASSED", test_reply["text"])
+
+        # 6. Verify /api/telegram/status endpoint on Hub server
+        tg_status = hub_server.dispatch_request("GET", "/api/telegram/status")
+        self.assertEqual(tg_status["status_code"], 200)
+        self.assertIn("configured", tg_status["data"])
 
 
 if __name__ == "__main__":

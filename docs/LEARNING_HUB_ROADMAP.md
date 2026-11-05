@@ -50,7 +50,7 @@ flowchart TD
 
 Each phase must be built, verified with automated tests, and validated hands-on before advancing to the next phase.
 
-### Phase 1: Local Server, State Engine & Interactive Web Visualizer (`hub/`) — **[ACTIVE]**
+### Phase 1: Local Server, State Engine & Interactive Web Visualizer (`hub/`) — **[COMPLETED]**
 1. **`hub/state_manager.py`**:
    - Bi-directional state reader/writer syncing `dsa/MASTER_SHEET.md`, `PRACTICE_CYCLE.md`, `frameworks/MASTER_FRAMEWORKS.md`, `mock-interviews/README.md`, and `hub/db.json` (streaks, XP, completed concept cards, quiz history, SRS queue).
 2. **`hub/visualizer_engine.py`**:
@@ -71,7 +71,7 @@ Each phase must be built, verified with automated tests, and validated hands-on 
 
 ---
 
-### Phase 2: Core CS (`core-cs/`), System Design (`system-design/`), and AI Engineering (`ai-engineering/`) Expansion — **[NEXT]**
+### Phase 2: Core CS (`core-cs/`), System Design (`system-design/`), and AI Engineering (`ai-engineering/`) Expansion — **[COMPLETED]**
 1. **Scaffold `core-cs/`**:
    - `operating-systems/`: Processes vs. Threads, Virtual Memory & Page Faults, Memory/Handle Leak Profiling (macOS Instruments / Windows PerfMon), File Descriptors, Daemons, USB/Device Kernel Hooks.
    - `computer-networks/`: OSI & TCP/IP Stack, TCP 3-Way Handshake & Congestion Control, TLS 1.3 Handshake, DNS Resolution, HTTP/1.1 vs. HTTP/2 vs. HTTP/3 (QUIC), WebSockets, Forward/Reverse Proxies & SASE Inspection.
@@ -85,7 +85,7 @@ Each phase must be built, verified with automated tests, and validated hands-on 
 
 ---
 
-### Phase 3: Telegram Bot & Mobile Micro-Learning Bridge (`hub/telegram_bot.py`) — **[PLANNED]**
+### Phase 3: Telegram Bot & Mobile Micro-Learning Bridge (`hub/telegram_bot.py`) — **[COMPLETED]**
 1. **Telegram Bot Worker**:
    - Daily scheduled concept card & inline quiz push.
    - On-demand commands: `/daily`, `/quiz`, `/program <topic>`, `/progress`, `/cycle`, `/note <text>`.

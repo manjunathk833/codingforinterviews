@@ -27,20 +27,29 @@ RESET = "\033[0m"
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DSA_ROOT = REPO_ROOT / "dsa"
 BIN_DIR = REPO_ROOT / ".build"
+SEARCH_ROOTS = [
+    REPO_ROOT / "dsa",
+    REPO_ROOT / "core-cs",
+    REPO_ROOT / "system-design",
+    REPO_ROOT / "ai-engineering",
+    REPO_ROOT / "frameworks" / "design-challenges",
+    REPO_ROOT / "frameworks" / "sdet-system-design",
+]
 
 
-def find_all_problems():
-    """Discover all problem directories inside dsa/ (excluding utils and hidden folders)."""
+def find_all_problems(dsa_only: bool = False):
+    """Discover all runnable problem/lab directories across curriculum pillars."""
     problems = []
-    if not DSA_ROOT.exists():
-        return problems
+    roots = [DSA_ROOT] if dsa_only else SEARCH_ROOTS
 
-    for root, dirs, files in os.walk(DSA_ROOT):
-        # Exclude utils and hidden directories
-        if "utils" in root or "/." in root:
+    for search_root in roots:
+        if not search_root.exists():
             continue
-        if "Solution.java" in files or "solution.py" in files or "README.md" in files:
-            problems.append(Path(root))
+        for root, dirs, files in os.walk(search_root):
+            if "utils" in root or "/." in root or "__pycache__" in root:
+                continue
+            if "Solution.java" in files or "solution.py" in files:
+                problems.append(Path(root))
 
     problems.sort()
     return problems
@@ -227,11 +236,11 @@ def cmd_list():
     print(f"\n{BOLD}{'Problem':<45} {'Java':<12} {'Python':<12}{RESET}")
     print("-" * 72)
     for p in problems:
-        rel = str(p.relative_to(DSA_ROOT))
+        rel = str(p.relative_to(REPO_ROOT))
         has_java = f"{GREEN}Yes{RESET}" if (p / "Solution.java").exists() else f"{DIM}No{RESET}"
         has_py = f"{GREEN}Yes{RESET}" if (p / "solution.py").exists() else f"{DIM}No{RESET}"
-        print(f"{rel:<45} {has_java:<20} {has_py:<20}")
-    print(f"\nTotal: {len(problems)} problems discovered.")
+        print(f"{rel:<55} {has_java:<20} {has_py:<20}")
+    print(f"\nTotal: {len(problems)} problems/labs discovered.")
 
 
 def find_completed_problems():
@@ -245,7 +254,7 @@ def find_completed_problems():
     row_pattern = re.compile(
         r"^\|\s*\d+\s*\|\s*\[([^\]]+)\]\(([^)]+)\)\s*\|[^|]+\|[^|]+\|\s*\[([ xX])\]\s*\|\s*\[([ xX])\]"
     )
-    all_problems = find_all_problems()
+    all_problems = find_all_problems(dsa_only=True)
     completed = []
     for line in content.splitlines():
         m = row_pattern.match(line)
@@ -361,6 +370,11 @@ def main():
     hub_parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
     hub_parser.add_argument("--port", type=int, default=8090, help="Bind port (default: 8090)")
 
+    tg_parser = subparsers.add_parser("telegram", help="Manage the Antigravity Telegram Bot & Mobile Learning Bridge")
+    tg_parser.add_argument("tg_action", nargs="?", default="status", choices=["status", "push", "poll", "poll-once"], help="Telegram action")
+    tg_parser.add_argument("--mode", default="card", choices=["card", "progress", "welcome"], help="Push mode")
+    tg_parser.add_argument("--topic", default="", help="Optional topic keyword")
+
     subparsers.add_parser("ci", help="Run the full local CI verification suite (Safety, DSA, Frameworks, AeroCart & Hub)")
 
     args = parser.parse_args()
@@ -369,6 +383,12 @@ def main():
         cmd_list()
     elif args.command == "ci":
         cmd_ci()
+    elif args.command == "telegram":
+        tg_script = REPO_ROOT / "hub" / "telegram_bot.py"
+        cmd = [sys.executable, str(tg_script), args.tg_action]
+        if args.tg_action == "push":
+            cmd.extend(["--mode", args.mode, "--topic", args.topic])
+        subprocess.run(cmd)
     elif args.command == "hub":
         hub_script = REPO_ROOT / "hub" / "server.py"
         cmd = [sys.executable, str(hub_script), "--host", args.host, "--port", str(args.port)]
