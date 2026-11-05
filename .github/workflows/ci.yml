@@ -1,28 +1,40 @@
-name: CI - Full Test, Architecture & Security Suite
+name: CI - Unified Quality & Security Gate
 
 on:
   push:
     branches:
       - main
-      - develop
+    paths-ignore:
+      - "docs/**"
+      - "mock-interviews/**"
   pull_request:
     branches:
       - main
       - develop
+    paths-ignore:
+      - "docs/**"
+      - "mock-interviews/**"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  security-audit:
-    name: 🛡️ Pre-Push & Secret Safety Audit
+  quality-gate:
+    name: ⚡ Unified CI Gate (Safety, DSA, Frameworks & Learning Hub)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -31,75 +43,27 @@ jobs:
         run: |
           chmod +x .agents/skills/github/scripts/safety_check.sh
           chmod +x run.sh
-
-      - name: Run Safety Check
-        run: |
-          ./.agents/skills/github/scripts/safety_check.sh
-
-  dsa-tests:
-    name: 🧩 DSA Solutions & Curriculum Tracker
-    needs: security-audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Make Launchers Executable
-        run: |
-          chmod +x run.sh
           chmod +x tools/runner.py
           chmod +x tools/tracker.py
           chmod +x tools/cycle.py
 
-      - name: Verify Master Sheet & Practice Cycle Trackers
+      - name: "🛡️ Stage 1/4: Pre-Push & Secret Safety Audit"
+        run: |
+          ./.agents/skills/github/scripts/safety_check.sh
+
+      - name: "🧩 Stage 2/4: DSA Solutions & Curriculum Trackers"
         run: |
           python3 tools/tracker.py summary
           python3 tools/cycle.py status
           python3 tools/cycle.py next
-
-      - name: Run All Completed DSA Solutions (Java & Python)
-        run: |
           ./run.sh test-completed
 
-  framework-and-aerocart-tests:
-    name: 🏗️ Frameworks, AeroCart AUT & System Design Katas
-    needs: security-audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Test Python Design Challenges
+      - name: "🏗️ Stage 3/4: Frameworks, AeroCart AUT & System Design Katas"
         run: |
           for f in frameworks/design-challenges/*/solution.py; do
             echo "Testing $f..."
             python3 "$f"
           done
-
-      - name: Compile & Run Java Design Challenges
-        run: |
           mkdir -p .build/ci-java
           for f in frameworks/design-challenges/*/Solution.java; do
             dir=$(dirname "$f")
@@ -109,44 +73,16 @@ jobs:
             javac -d ".build/ci-java/$name" "$f"
             java -ea -cp ".build/ci-java/$name" Solution
           done
-
-      - name: Verify SDET System Design Concurrency Kata (Python & Java)
-        run: |
           python3 frameworks/sdet-system-design/01-distributed-concurrency-isolation/naive_baseline.py
           python3 frameworks/sdet-system-design/01-distributed-concurrency-isolation/reference_solution.py
           mkdir -p .build/ci-java/01-concurrency
           javac -d .build/ci-java/01-concurrency frameworks/sdet-system-design/01-distributed-concurrency-isolation/Solution.java
           java -ea -cp .build/ci-java/01-concurrency Solution
-
-      - name: Verify Python Syntax Integrity Across Repo
-        run: |
           python3 -m py_compile $(find frameworks/ apps/ tools/ hub/ -name "*.py")
 
-  learning-hub-ci:
-    name: 🌐 Learning Hub Server, Visualizer Engine & API Suite
-    needs: security-audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Run 10-Suite Learning Hub & AeroCart Integration Tests
+      - name: "🌐 Stage 4/4: Learning Hub 10-Suite CI & Live HTTP Smoke Test"
         run: |
           python3 hub/tests/test_hub_phase1.py
-
-      - name: Live HTTP Server Smoke Test on Port 8090
-        run: |
           python3 hub/server.py --port 8090 &
           HUB_PID=$!
           sleep 1
