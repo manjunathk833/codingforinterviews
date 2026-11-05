@@ -18,6 +18,8 @@ id_ed25519
 *resume*
 *.pdf
 todos.md
+playground.md
+hub/db.json
 
 # ------------------------------------------------------------------------------
 # 2. Build Artifacts & Binaries

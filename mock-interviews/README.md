@@ -35,7 +35,7 @@ The agent will analyze your responses and generate **two comprehensive documents
 
 | # | Session Focus | Target Level | Questions | Score | Status | Date |
 | :-: | :--- | :--- | :-: | :-: | :---: | :---: |
-| **01** | High-Throughput Microservice QE & Agentic AI Testing | Senior / Lead SDET | 5 Topics | - | `In Progress` | 2026-10-04 |
+| **01** | High-Throughput Microservice QE & Agentic AI Testing | Senior / Lead SDET | 5 Topics | 19/100 | Evaluated | 2026-10-04 |
 
 ---
 
