@@ -17,7 +17,7 @@ from socketserver import ThreadingMixIn
 from urllib.parse import urlparse, parse_qs
 import threading
 
-PORT = int(os.environ.get("AEROCART_PORT", 8000))
+PORT = int(os.environ.get("AEROCART_PORT", 8085))
 
 # ------------------------------------------------------------------------------
 # In-Memory Distributed State Store (Thread-Safe)
@@ -385,9 +385,11 @@ class AeroCartHandler(BaseHTTPRequestHandler):
 
             # Retrieve matching policy chunk
             matched_chunk = POLICY_CHUNKS[0]
-            if "bag" in query or "weight" in query:
+            if "cancel" in query or "24" in query or "refund" in query:
+                matched_chunk = POLICY_CHUNKS[0]
+            elif "bag" in query or "weight" in query:
                 matched_chunk = POLICY_CHUNKS[1]
-            elif "delay" in query or "compensation" in query or "eu" in query or "hour" in query:
+            elif "delay" in query or "compensation" in query or "eu" in query:
                 matched_chunk = POLICY_CHUNKS[2]
 
             if mode == "hallucinated":
@@ -433,6 +435,59 @@ class AeroCartHandler(BaseHTTPRequestHandler):
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
+
+
+def dispatch_request(method: str, path: str, body: dict = None, headers: dict = None, client_ip: str = "127.0.0.1") -> dict:
+    """In-process HTTP request dispatcher for AeroCartHandler (zero-socket fallback & fast unit tests)."""
+    import io
+
+    raw_body = json.dumps(body).encode("utf-8") if body is not None else b""
+    req_Headers = {"Content-Length": str(len(raw_body)), "Content-Type": "application/json"}
+    if headers:
+        req_Headers.update(headers)
+
+    handler = AeroCartHandler.__new__(AeroCartHandler)
+    handler.path = path
+    handler.command = method.upper()
+    handler.headers = req_Headers
+    handler.client_address = (client_ip, 0)
+    handler.rfile = io.BytesIO(raw_body)
+    handler.wfile = io.BytesIO()
+    handler._resp_status = 200
+    handler._resp_headers = {}
+
+    def _send_response(code, message=None):
+        handler._resp_status = code
+
+    def _send_header(k, v):
+        handler._resp_headers[k] = v
+
+    def _end_headers():
+        pass
+
+    handler.send_response = _send_response
+    handler.send_header = _send_header
+    handler.end_headers = _end_headers
+
+    if handler.command == "GET":
+        handler.do_GET()
+    elif handler.command == "POST":
+        handler.do_POST()
+    elif handler.command == "OPTIONS":
+        handler.do_OPTIONS()
+
+    out_bytes = handler.wfile.getvalue()
+    out_text = out_bytes.decode("utf-8", errors="replace")
+    try:
+        parsed_data = json.loads(out_text) if out_text else {}
+    except Exception:
+        parsed_data = {"raw": out_text}
+
+    return {
+        "status_code": handler._resp_status,
+        "data": parsed_data,
+        "headers": handler._resp_headers
+    }
 
 
 def run_server(port=PORT):

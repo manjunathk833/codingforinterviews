@@ -18,18 +18,25 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from apps.aerocart.server import ThreadedHTTPServer, AeroCartHandler
+from apps.aerocart.server import ThreadedHTTPServer, AeroCartHandler, dispatch_request
 
 TEST_PORT = 8992
 BASE_URL = f"http://127.0.0.1:{TEST_PORT}"
+IN_PROCESS_MODE = False
 
 
 def start_test_server():
-    server = ThreadedHTTPServer(("127.0.0.1", TEST_PORT), AeroCartHandler)
-    t = threading.Thread(target=server.serve_forever, daemon=True)
-    t.start()
-    time.sleep(0.15)
-    return server
+    global IN_PROCESS_MODE
+    dispatch_request("POST", "/api/v1/admin/reset")
+    try:
+        server = ThreadedHTTPServer(("127.0.0.1", TEST_PORT), AeroCartHandler)
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start()
+        time.sleep(0.15)
+        return server
+    except PermissionError:
+        IN_PROCESS_MODE = True
+        return None
 
 
 def run_isolated_worker(worker_id: int) -> dict:
@@ -42,12 +49,29 @@ def run_isolated_worker(worker_id: int) -> dict:
     # 1. Ephemeral Tenant Context
     tenant_key = f"tenant_worker_{worker_id}_{uuid.uuid4().hex[:6]}"
     email = f"lead_sdet_{worker_id}_{uuid.uuid4().hex[:4]}@tenantvault.io"
-
-    payload = json.dumps({
+    body_dict = {
         "flightNumber": "AI-202",
         "seat": "1A",  # All 32 workers book Seat 1A simultaneously!
         "passengerEmail": email
-    }).encode("utf-8")
+    }
+
+    if IN_PROCESS_MODE:
+        res = dispatch_request(
+            "POST",
+            "/api/v1/orders",
+            body=body_dict,
+            headers={"X-Test-Tenant-ID": tenant_key}
+        )
+        data = res["data"]
+        return {
+            "worker_id": worker_id,
+            "status": res["status_code"],
+            "tenant_id": tenant_key,
+            "order_id": data.get("orderId"),
+            "isolation_mode": data.get("isolationMode")
+        }
+
+    payload = json.dumps(body_dict).encode("utf-8")
 
     # 2. Context Injection via Header
     req = urllib.request.Request(
@@ -103,7 +127,8 @@ def main():
     print("🏆 SUCCESS: 32 Parallel Workers passed with 0 collisions and zero state leaks!")
     print("=" * 70)
 
-    server.shutdown()
+    if server is not None:
+        server.shutdown()
 
 
 if __name__ == "__main__":

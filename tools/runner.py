@@ -315,6 +315,28 @@ def cmd_test_all(lang: str):
         sys.exit(1)
 
 
+def cmd_ci():
+    """Execute the full local CI suite mirroring .github/workflows/ci.yml."""
+    steps = [
+        ("🛡️ Stage 1/4: Pre-Push & Secret Safety Audit", [str(REPO_ROOT / ".agents/skills/github/scripts/safety_check.sh")]),
+        ("🧩 Stage 2/4: Completed DSA Solutions (Java 17 & Python 3)", [sys.executable, str(REPO_ROOT / "tools/runner.py"), "test-completed"]),
+        ("🏗️ Stage 3/4: SDET System Design & Concurrency Katas", [sys.executable, str(REPO_ROOT / "frameworks/sdet-system-design/01-distributed-concurrency-isolation/reference_solution.py")]),
+        ("🌐 Stage 4/4: Learning Hub, Visualizer & AeroCart 10-Suite CI", [sys.executable, str(REPO_ROOT / "hub/tests/test_hub_phase1.py")]),
+    ]
+    print(f"\n{BOLD}{CYAN}======================================================================{RESET}")
+    print(f"{BOLD}{CYAN}   🚀 EXECUTING FULL LOCAL CI VERIFICATION PIPELINE (4 STAGES){RESET}")
+    print(f"{BOLD}{CYAN}======================================================================{RESET}")
+    for label, cmd in steps:
+        print(f"\n{BOLD}{YELLOW}▶ {label}{RESET}")
+        res = subprocess.run(cmd, cwd=str(REPO_ROOT))
+        if res.returncode != 0:
+            print(f"\n{RED}{BOLD}✗ CI FAILED at stage: {label}{RESET}")
+            sys.exit(res.returncode)
+    print(f"\n{BOLD}{GREEN}======================================================================{RESET}")
+    print(f"{BOLD}{GREEN}   ✅ ALL 4 CI STAGES PASSED SUCCESSFULLY! READY FOR RELEASE.{RESET}")
+    print(f"{BOLD}{GREEN}======================================================================{RESET}\n")
+
+
 def main():
     parser = argparse.ArgumentParser(description="DSA Problem Test Runner and Compiler")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -331,10 +353,32 @@ def main():
     test_all_parser = subparsers.add_parser("test-all", help="Test all problems")
     test_all_parser.add_argument("--lang", choices=["java", "python", "all"], default="all", help="Target language")
 
+    cycle_parser = subparsers.add_parser("cycle", help="Inspect or advance active practice cycle")
+    cycle_parser.add_argument("subaction", nargs="?", default="status", choices=["status", "next", "advance", "init"], help="Cycle subaction")
+    cycle_parser.add_argument("--stage", type=int, default=None, help="Stage number to advance")
+
+    hub_parser = subparsers.add_parser("hub", help="Launch the MAANG Learning Hub & Step-by-Step Visualizer Web UI")
+    hub_parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
+    hub_parser.add_argument("--port", type=int, default=8090, help="Bind port (default: 8090)")
+
+    subparsers.add_parser("ci", help="Run the full local CI verification suite (Safety, DSA, Frameworks, AeroCart & Hub)")
+
     args = parser.parse_args()
 
     if args.command == "list":
         cmd_list()
+    elif args.command == "ci":
+        cmd_ci()
+    elif args.command == "hub":
+        hub_script = REPO_ROOT / "hub" / "server.py"
+        cmd = [sys.executable, str(hub_script), "--host", args.host, "--port", str(args.port)]
+        subprocess.run(cmd)
+    elif args.command == "cycle":
+        cycle_script = REPO_ROOT / "tools" / "cycle.py"
+        cmd = [sys.executable, str(cycle_script), args.subaction]
+        if args.stage is not None:
+            cmd.extend(["--stage", str(args.stage)])
+        subprocess.run(cmd)
     elif args.command == "test":
         target_dir = resolve_problem(args.target)
         res = run_test(target_dir, args.lang)

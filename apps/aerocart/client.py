@@ -11,11 +11,15 @@ import time
 from typing import Dict, Any, Optional
 
 class AeroCartClient:
-    def __init__(self, base_url: str = "http://127.0.0.1:8000", in_process: bool = False):
+    def __init__(self, base_url: str = "http://127.0.0.1:8085", in_process: bool = False):
         self.base_url = base_url.rstrip("/")
         self.in_process = in_process
 
     def _http_request(self, method: str, endpoint: str, data: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+        if self.in_process:
+            from apps.aerocart.server import dispatch_request
+            return dispatch_request(method, endpoint, body=data, headers=headers)
+
         url = f"{self.base_url}{endpoint}"
         req_headers = {"Content-Type": "application/json"}
         if headers:
@@ -39,6 +43,11 @@ class AeroCartClient:
                 "data": json.loads(err_body) if err_body else {},
                 "headers": dict(e.headers)
             }
+        except urllib.error.URLError as e:
+            if isinstance(getattr(e, "reason", None), PermissionError):
+                from apps.aerocart.server import dispatch_request
+                return dispatch_request(method, endpoint, body=data, headers=headers)
+            raise
 
     def login(self, email: str = "lead@sdet.org", password: str = "pass") -> Dict[str, Any]:
         return self._http_request("POST", "/api/v1/auth/login", {"email": email, "password": password})

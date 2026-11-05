@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Antigravity Learning Hub & Visualizer</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --bg-panel: #111827;
+      --bg-card: #1e293b;
+      --bg-hover: #334155;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-dark: #0284c7;
+      --accent: #a855f7;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --code-bg: #090d16;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5; }
+    
+    /* Top Navbar */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(17, 24, 39, 0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 1.75rem;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+    }
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .brand-logo {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;
+    }
+    .brand h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
+    .brand p { font-size: 0.75rem; color: var(--text-muted); }
+
+    .nav-tabs { display: flex; gap: 0.5rem; background: var(--bg); padding: 0.3rem; border-radius: 0.6rem; border: 1px solid var(--border); }
+    .nav-tab {
+      background: transparent; color: var(--text-muted); border: none;
+      padding: 0.5rem 1rem; border-radius: 0.45rem; font-size: 0.88rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active { background: var(--bg-card); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+    .stats-bar { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .stat-pill {
+      background: var(--bg-card); border: 1px solid var(--border);
+      padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 0.82rem; font-weight: 600;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .stat-pill span.val { color: var(--primary); font-weight: 700; }
+
+    /* Layout Container */
+    .main-container { max-width: 1320px; margin: 0 auto; padding: 1.5rem; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Cards & Grids */
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
+    .panel {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 0.85rem; padding: 1.35rem; margin-bottom: 1.5rem;
+    }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem; }
+    .panel-title { font-size: 1.05rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+
+    /* Buttons & Badges */
+    .btn {
+      background: var(--primary-dark); color: white; border: none;
+      padding: 0.5rem 0.95rem; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 0.4rem;
+    }
+    .btn:hover { background: var(--primary); color: #090d16; }
+    .btn-secondary { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--bg-hover); color: white; }
+    .btn-sm { padding: 0.32rem 0.65rem; font-size: 0.78rem; }
+
+    .badge {
+      padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+      display: inline-block;
+    }
+    .badge-easy { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+    .badge-medium { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .badge-hard { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+    .badge-info { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+    .badge-purple { background: rgba(168, 85, 247, 0.18); color: #c084fc; }
+
+    /* Casual Feed Stream */
+    .feed-layout { display: grid; grid-template-columns: 240px 1fr; gap: 1.5rem; align-items: start; }
+    @media (max-width: 860px) { .feed-layout { grid-template-columns: 1fr; } }
+    .category-list { display: flex; flex-direction: column; gap: 0.4rem; }
+    .cat-btn {
+      text-align: left; background: transparent; color: var(--text-muted); border: 1px solid transparent;
+      padding: 0.6rem 0.85rem; border-radius: 0.5rem; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    }
+    .cat-btn:hover { background: var(--bg-card); color: var(--text); }
+    .cat-btn.active { background: rgba(56, 189, 248, 0.12); color: var(--primary); border-color: rgba(56, 189, 248, 0.3); }
+
+    .feed-card {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 0.9rem; padding: 1.5rem; margin-bottom: 1.35rem;
+      transition: border-color 0.2s;
+    }
+    .feed-card:hover { border-color: #475569; }
+    .feed-card.completed { border-left: 4px solid var(--success); }
+    .feed-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+    .feed-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.85rem; color: #f1f5f9; }
+    .concept-box {
+      background: var(--bg-card); border-left: 3px solid var(--primary);
+      padding: 0.9rem 1rem; border-radius: 0.45rem; margin-bottom: 0.9rem; font-size: 0.92rem;
+    }
+    .mechanics-box {
+      background: var(--code-bg); border: 1px solid var(--border);
+      padding: 0.9rem 1rem; border-radius: 0.5rem; margin-bottom: 0.9rem;
+      font-family: "JetBrains Mono", "Fira Code", monospace; font-size: 0.83rem; white-space: pre-wrap; color: #cbd5e1;
+    }
+    .gotcha-box {
+      background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 0.8rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.88rem; color: #fde68a;
+    }
+    .quiz-section {
+      background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border);
+      padding: 1rem; border-radius: 0.65rem; margin-top: 1rem;
+    }
+    .quiz-q { font-weight: 600; font-size: 0.92rem; margin-bottom: 0.75rem; color: var(--primary); }
+    .quiz-opt {
+      display: block; width: 100%; text-align: left;
+      background: var(--bg-card); color: var(--text); border: 1px solid var(--border);
+      padding: 0.6rem 0.85rem; border-radius: 0.45rem; margin-bottom: 0.5rem;
+      font-size: 0.86rem; cursor: pointer; transition: all 0.15s;
+    }
+    .quiz-opt:hover { border-color: var(--primary); background: var(--bg-hover); }
+    .quiz-opt.correct { background: rgba(34, 197, 94, 0.2); border-color: var(--success); color: #86efac; }
+    .quiz-opt.wrong { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: #fca5a5; }
+    .quiz-exp { margin-top: 0.65rem; font-size: 0.85rem; color: #cbd5e1; padding: 0.65rem; border-radius: 0.4rem; background: var(--bg-card); display: none; }
+
+    /* Visualizer Studio */
+    .viz-controls {
+      display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+      background: var(--bg-card); padding: 0.85rem 1rem; border-radius: 0.65rem; margin-bottom: 1rem;
+      border: 1px solid var(--border);
+    }
+    .viz-step-banner {
+      background: linear-gradient(90deg, rgba(56, 189, 248, 0.12), rgba(168, 85, 247, 0.12));
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 1rem 1.25rem; border-radius: 0.65rem; margin-bottom: 1.25rem;
+    }
+    .viz-step-title { font-size: 1.05rem; font-weight: 700; color: var(--primary); margin-bottom: 0.3rem; }
+    .viz-step-narration { font-size: 0.92rem; color: #e2e8f0; }
+    .viz-code-pill {
+      margin-top: 0.6rem; background: var(--code-bg); padding: 0.45rem 0.75rem;
+      border-radius: 0.4rem; font-family: monospace; font-size: 0.84rem; color: #38bdf8; border: 1px solid var(--border);
+    }
+
+    /* Array & Bucket Visual Elements */
+    .viz-canvas {
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: 0.75rem; padding: 1.5rem; min-height: 320px;
+    }
+    .array-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.5rem; align-items: center; }
+    .array-cell {
+      min-width: 68px; padding: 0.65rem 0.85rem; border-radius: 0.55rem;
+      background: var(--bg-card); border: 2px solid var(--border);
+      text-align: center; transition: all 0.25s;
+    }
+    .array-cell .idx { font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.15rem; }
+    .array-cell .val { font-size: 1rem; font-weight: 700; font-family: monospace; }
+    .array-cell.active { border-color: var(--primary); background: rgba(56, 189, 248, 0.18); transform: translateY(-4px); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25); }
+    .array-cell.matched { border-color: var(--success); background: rgba(34, 197, 94, 0.22); transform: scale(1.06); }
+
+    .alphabet-grid {
+      display: grid; grid-template-columns: repeat(13, 1fr); gap: 0.35rem; margin-bottom: 1.5rem;
+    }
+    @media (max-width: 768px) { .alphabet-grid { grid-template-columns: repeat(7, 1fr); } }
+    .alpha-box {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 0.4rem; padding: 0.35rem; text-align: center; font-family: monospace;
+    }
+    .alpha-box .ch { font-size: 0.75rem; color: var(--text-muted); }
+    .alpha-box .cnt { font-size: 0.92rem; font-weight: 700; }
+    .alpha-box.lit { background: rgba(56, 189, 248, 0.22); border-color: var(--primary); color: #fff; }
+    .alpha-box.neg { background: rgba(239, 68, 68, 0.22); border-color: var(--danger); }
+
+    .bucket-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.85rem; }
+    .bucket-card {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 0.6rem; padding: 0.85rem;
+    }
+    .bucket-card.highlight { border-color: var(--success); box-shadow: 0 0 12px rgba(34, 197, 94, 0.25); }
+    .bucket-key { font-family: monospace; font-size: 0.8rem; color: var(--primary); margin-bottom: 0.5rem; font-weight: 700; }
+    .bucket-items { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .bucket-item { background: var(--bg-card); padding: 0.25rem 0.6rem; border-radius: 0.35rem; font-family: monospace; font-size: 0.85rem; border: 1px solid var(--border); }
+
+    /* Table & Inputs */
+    input[type="text"], select {
+      background: var(--bg); color: var(--text); border: 1px solid var(--border);
+      padding: 0.5rem 0.75rem; border-radius: 0.45rem; font-size: 0.88rem;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 0.7rem 0.85rem; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* Terminal Output Modal / Drawer */
+    .terminal-box {
+      background: #05080f; border: 1px solid var(--border); border-radius: 0.6rem;
+      padding: 1rem; font-family: "JetBrains Mono", monospace; font-size: 0.82rem;
+      color: #a7f3d0; white-space: pre-wrap; max-height: 320px; overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">⚡</div>
+      <div>
+        <h1>Antigravity Learning Hub</h1>
+        <p>MAANG DSA • Enterprise SDET Architecture • Visual Concept Stream</p>
+      </div>
+    </div>
+
+    <div class="nav-tabs" role="tablist">
+      <button class="nav-tab active" onclick="switchTab('feed')" id="tab-btn-feed">📱 Casual Concept Feed</button>
+      <button class="nav-tab" onclick="switchTab('visualizer')" id="tab-btn-visualizer">🔬 Visualizer Studio</button>
+      <button class="nav-tab" onclick="switchTab('dashboard')" id="tab-btn-dashboard">🎯 Command Center & Runner</button>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-pill" title="Architecture Readiness Score">🏛️ Readiness: <span class="val" id="hdr-readiness">--/1000</span></div>
+      <div class="stat-pill" title="Mastery XP">✨ XP: <span class="val" id="hdr-xp">--</span></div>
+      <div class="stat-pill" title="Daily Streak">🔥 <span class="val" id="hdr-streak">--d</span></div>
+    </div>
+  </header>
+
+  <div class="main-container">
+
+    <!-- ===================================================================== -->
+    <!-- TAB 1: CASUAL CONCEPT FEED (Frictionless Micro-Learning)              -->
+    <!-- ===================================================================== -->
+    <section id="pane-feed" class="tab-pane active">
+      <div class="panel" style="background: linear-gradient(90deg, rgba(2,132,199,0.15), rgba(168,85,247,0.12));">
+        <div class="panel-header" style="margin-bottom:0;">
+          <div>
+            <h2 style="font-size:1.15rem; margin-bottom:0.25rem;">☕ Daily Bite-Sized Engineering Stream</h2>
+            <p style="font-size:0.86rem; color:var(--text-muted);">
+              Scroll casually like a social feed. Read a 60-second mental model, tap the quick quiz (+50 XP), or launch its live step-by-step visualizer.
+            </p>
+          </div>
+          <span class="badge badge-info" id="feed-progress-badge">0 / 6 Cards Mastered</span>
+        </div>
+      </div>
+
+      <div class="feed-layout">
+        <aside class="panel" style="padding: 1rem;">
+          <div style="font-size:0.78rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom:0.6rem;">Filter Topic</div>
+          <div class="category-list" id="feed-categories"></div>
+        </aside>
+
+        <div id="feed-stream-container"></div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 2: UNIVERSAL STEP-BY-STEP VISUALIZER STUDIO                       -->
+    <!-- ===================================================================== -->
+    <section id="pane-visualizer" class="tab-pane">
+      <div class="panel">
+        <div class="panel-header">
+          <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            <label for="viz-selector" style="font-weight:700; font-size:0.92rem;">Select Visualizer:</label>
+            <select id="viz-selector" onchange="onVisualizerSelectChange()" style="min-width:340px; font-weight:600;"></select>
+            <span class="badge badge-purple" id="viz-complexity-badge">O(M · N)</span>
+          </div>
+          <div id="viz-custom-input-bar" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <input type="text" id="viz-custom-input" placeholder="e.g. eat,tea,tan,ate,nat,bat" style="width:260px;" />
+            <button class="btn btn-sm" onclick="loadCurrentVisualizer(true)">🔄 Trace Custom Input</button>
+          </div>
+        </div>
+
+        <!-- Playback Bar -->
+        <div class="viz-controls">
+          <button class="btn btn-secondary btn-sm" onclick="vizStepFirst()">⏮ First</button>
+          <button class="btn btn-secondary btn-sm" onclick="vizStepPrev()">◀ Prev</button>
+          <button class="btn btn-sm" id="viz-play-btn" onclick="vizTogglePlay()">▶ Play</button>
+          <button class="btn btn-secondary btn-sm" onclick="vizStepNext()">Next ▶</button>
+          <button class="btn btn-secondary btn-sm" onclick="vizStepLast()">Last ⏭</button>
+          
+          <input type="range" id="viz-slider" min="0" max="1" value="0" oninput="vizJumpTo(this.value)" style="flex:1; min-width:140px; cursor:pointer;" />
+          <span id="viz-step-counter" style="font-family:monospace; font-size:0.85rem; font-weight:700; min-width:90px; text-align:right;">Step 1 / 1</span>
+        </div>
+
+        <!-- Step Narration Banner -->
+        <div class="viz-step-banner">
+          <div class="viz-step-title" id="viz-step-title">Loading trace...</div>
+          <div class="viz-step-narration" id="viz-step-narration"></div>
+          <div class="viz-code-pill" id="viz-step-code"></div>
+        </div>
+
+        <!-- Dynamic Visual Stage -->
+        <div class="viz-canvas" id="viz-canvas"></div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 3: COMMAND CENTER, PRACTICE CYCLE HUD & LIVE TEST RUNNER          -->
+    <!-- ===================================================================== -->
+    <section id="pane-dashboard" class="tab-pane">
+      <div class="grid-3">
+        <div class="panel" style="margin-bottom:0;">
+          <div class="panel-title">🔄 Active 4-Stage Practice Cycle</div>
+          <p id="cycle-title-text" style="font-size:0.84rem; color:var(--primary); margin:0.4rem 0 0.85rem 0; font-weight:600;"></p>
+          <div id="cycle-stages-list"></div>
+        </div>
+
+        <div class="panel" style="margin-bottom:0;">
+          <div class="panel-title">📊 DSA Dual-Stack Readiness</div>
+          <div style="margin-top:0.75rem; font-size:2rem; font-weight:800; color:var(--primary);" id="dsa-solved-big">0 / 128</div>
+          <p style="font-size:0.83rem; color:var(--text-muted); margin-bottom:1rem;">Problems verified in both Java 17 & Python 3</p>
+          <div id="pattern-bars-summary" style="max-height:170px; overflow-y:auto; padding-right:0.4rem;"></div>
+        </div>
+
+        <div class="panel" style="margin-bottom:0;">
+          <div class="panel-title">🧪 Live Test Runner Console</div>
+          <p style="font-size:0.82rem; color:var(--text-muted); margin:0.35rem 0 0.75rem 0;">
+            Click <b>"▶ Test"</b> on any scaffolded problem below or run a target directly:
+          </p>
+          <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
+            <input type="text" id="runner-target-input" value="003-group-anagrams" style="flex:1;" />
+            <button class="btn btn-sm" onclick="runTestFromUI()">▶ Run Java+Py</button>
+          </div>
+          <div class="terminal-box" id="runner-terminal-output">Ready. Click "▶ Run Java+Py" to compile and execute assertions.</div>
+        </div>
+      </div>
+
+      <!-- Problem Explorer Table -->
+      <div class="panel" style="margin-top:1.5rem;">
+        <div class="panel-header">
+          <div class="panel-title">📚 Curriculum Problem Explorer</div>
+          <div style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap;">
+            <label style="font-size:0.83rem; color:var(--text-muted);">
+              <input type="checkbox" id="filter-scaffolded-only" checked onchange="renderProblemsTable()" /> Show Local Runnable Problems First
+            </label>
+            <input type="text" id="problem-search-input" placeholder="Search problem or pattern..." oninput="renderProblemsTable()" />
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Problem</th>
+                <th>Pattern</th>
+                <th>Difficulty</th>
+                <th>Java</th>
+                <th>Python</th>
+                <th>Score</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="problems-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // Global State
+    let dashboardData = null;
+    let feedData = { cards: [], categories: [] };
+    let activeCategory = "All";
+    let visualizersList = [];
+    let currentTrace = null;
+    let currentStepIdx = 0;
+    let playInterval = null;
+
+    async function initHub() {
+      await Promise.all([
+        fetchDashboard(),
+        fetchFeed(),
+        fetchVisualizers()
+      ]);
+      loadCurrentVisualizer(false);
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll(".tab-pane").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".nav-tab").forEach(el => el.classList.remove("active"));
+      document.getElementById("pane-" + tabName).classList.add("active");
+      document.getElementById("tab-btn-" + tabName).classList.add("active");
+    }
+
+    async function fetchDashboard() {
+      const res = await fetch("/api/dashboard");
+      dashboardData = await res.json();
+      
+      document.getElementById("hdr-readiness").textContent = dashboardData.readinessScore + " / 1000";
+      document.getElementById("hdr-xp").textContent = dashboardData.userStats.xp;
+      document.getElementById("hdr-streak").textContent = dashboardData.userStats.streakDays + "d";
+
+      // Render Practice Cycle
+      document.getElementById("cycle-title-text").textContent = dashboardData.practiceCycle.cycleName;
+      const stagesEl = document.getElementById("cycle-stages-list");
+      stagesEl.innerHTML = dashboardData.practiceCycle.stages.map(s => {
+        const badgeCls = s.status.includes("Pass") ? "badge-easy" : (s.status.includes("Progress") ? "badge-info" : "badge-medium");
+        return `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:0.45rem 0; border-bottom:1px solid var(--border); font-size:0.84rem;">
+            <div><b>Stage ${s.stage}:</b> ${s.focus} <div style="font-size:0.75rem; color:var(--text-muted); font-family:monospace;">${s.target}</div></div>
+            <span class="badge ${badgeCls}">${s.status}</span>
+          </div>
+        `;
+      }).join("");
+
+      // Render DSA Overview
+      const dsa = dashboardData.dsa;
+      document.getElementById("dsa-solved-big").textContent = `${dsa.bothDone} / ${dsa.total} (${dsa.localScaffolded} Local Ready)`;
+      const patEl = document.getElementById("pattern-bars-summary");
+      patEl.innerHTML = Object.entries(dsa.byPattern).map(([pat, counts]) => {
+        const pct = Math.round((counts.done / counts.total) * 100);
+        return `
+          <div style="margin-bottom:0.55rem; font-size:0.8rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.15rem;">
+              <span>${pat}</span>
+              <span style="color:var(--text-muted);">${counts.done}/${counts.total}</span>
+            </div>
+            <div style="height:6px; background:var(--bg); border-radius:99px; overflow:hidden;">
+              <div style="height:100%; width:${Math.max(pct, counts.done > 0 ? 8 : 0)}%; background:var(--primary);"></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      renderProblemsTable();
+    }
+
+    function renderProblemsTable() {
+      if (!dashboardData) return;
+      const tbody = document.getElementById("problems-table-body");
+      const search = (document.getElementById("problem-search-input").value || "").toLowerCase();
+      const localFirst = document.getElementById("filter-scaffolded-only").checked;
+
+      let list = [...dashboardData.dsa.problems];
+      if (search) {
+        list = list.filter(p => p.title.toLowerCase().includes(search) || p.pattern.toLowerCase().includes(search));
+      }
+      if (localFirst) {
+        list.sort((a, b) => (b.hasLocalFiles - a.hasLocalFiles) || (a.id - b.id));
+      }
+
+      tbody.innerHTML = list.slice(0, 40).map(p => {
+        const diffCls = p.difficulty === "Easy" ? "badge-easy" : (p.difficulty === "Medium" ? "badge-medium" : "badge-hard");
+        const jIcon = p.javaDone ? "✅" : (p.hasLocalFiles ? "📝" : "⬜");
+        const pyIcon = p.pyDone ? "✅" : (p.hasLocalFiles ? "📝" : "⬜");
+        const runBtn = p.hasLocalFiles
+          ? `<button class="btn btn-secondary btn-sm" onclick="quickRunProblem('${p.folderSlug}')">▶ Test</button>`
+          : `<span style="font-size:0.75rem; color:var(--text-muted);">Planned</span>`;
+        const vizBtn = p.visualizerId
+          ? `<button class="btn btn-sm" onclick="openInVisualizer('${p.visualizerId}')">🔬 Visualize</button>`
+          : "";
+        return `
+          <tr>
+            <td>${p.id}</td>
+            <td><b>${p.title}</b> ${p.hasLocalFiles ? `<div style="font-size:0.73rem; color:var(--primary); font-family:monospace;">${p.localPath}</div>` : ""}</td>
+            <td>${p.pattern}</td>
+            <td><span class="badge ${diffCls}">${p.difficulty}</span></td>
+            <td>${jIcon}</td>
+            <td>${pyIcon}</td>
+            <td>${p.score}</td>
+            <td style="display:flex; gap:0.4rem;">${runBtn} ${vizBtn}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function quickRunProblem(folderSlug) {
+      document.getElementById("runner-target-input").value = folderSlug;
+      await runTestFromUI();
+    }
+
+    async function runTestFromUI() {
+      const target = document.getElementById("runner-target-input").value.trim();
+      const term = document.getElementById("runner-terminal-output");
+      term.style.color = "#38bdf8";
+      term.textContent = `⏳ Compiling & executing './run.sh test ${target}' (Java 17 & Python 3)...`;
+
+      const res = await fetch("/api/run-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target, lang: "all" })
+      });
+      const data = await res.json();
+      term.style.color = data.status === "PASSED" ? "#4ade80" : "#f87171";
+      term.textContent = `[Status: ${data.status} | Duration: ${data.durationMs}ms]\n\n` + data.output;
+    }
+
+    // -------------------------------------------------------------------------
+    // Casual Concept Feed Logic
+    // -------------------------------------------------------------------------
+    async function fetchFeed() {
+      const res = await fetch("/api/feed");
+      feedData = await res.json();
+      renderFeedCategories();
+      renderFeedStream();
+    }
+
+    function renderFeedCategories() {
+      const el = document.getElementById("feed-categories");
+      el.innerHTML = feedData.categories.map(cat => `
+        <button class="cat-btn ${cat === activeCategory ? 'active' : ''}" onclick="selectCategory('${cat}')">
+          ${cat}
+        </button>
+      `).join("");
+    }
+
+    function selectCategory(cat) {
+      activeCategory = cat;
+      renderFeedCategories();
+      renderFeedStream();
+    }
+
+    function renderFeedStream() {
+      const completedCount = feedData.cards.filter(c => c.completed).length;
+      document.getElementById("feed-progress-badge").textContent = `${completedCount} / ${feedData.cards.length} Cards Mastered`;
+
+      const filtered = activeCategory === "All"
+        ? feedData.cards
+        : feedData.cards.filter(c => c.category === activeCategory);
+
+      const container = document.getElementById("feed-stream-container");
+      container.innerHTML = filtered.map(c => {
+        const answered = c.quizAnswered;
+        const optsHtml = c.quiz.options.map((opt, idx) => {
+          let cls = "quiz-opt";
+          if (answered) {
+            if (idx === c.quiz.correctIndex) cls += " correct";
+            else if (idx === answered.selected) cls += " wrong";
+          }
+          return `<button class="${cls}" onclick="answerQuiz('${c.id}', ${idx})">${String.fromCharCode(65 + idx)}. ${opt}</button>`;
+        }).join("");
+
+        return `
+          <article class="feed-card ${c.completed ? 'completed' : ''}">
+            <div class="feed-meta">
+              <div style="display:flex; gap:0.5rem; align-items:center;">
+                <span class="badge badge-info">${c.category}</span>
+                <span class="badge badge-purple">⏱️ ${c.readTime}</span>
+                ${c.completed ? '<span class="badge badge-easy">✓ Mastered (+50 XP)</span>' : ''}
+              </div>
+              ${c.visualizerId ? `<button class="btn btn-sm" onclick="openInVisualizer('${c.visualizerId}')">🔬 Interactive Visualizer</button>` : ''}
+            </div>
+
+            <h3 class="feed-title">${c.title}</h3>
+
+            <div class="concept-box">
+              <b>💡 The Mental Model:</b><br/>${c.mentalModel}
+            </div>
+
+            <div class="mechanics-box"><b>⚙️ Under-the-Hood Mechanics:</b>\n${c.mechanics}\n\n<b>📐 Blueprint:</b>\n${c.diagram}</div>
+
+            <div class="gotcha-box">
+              <b>⚠️ MAANG Interview Gotcha:</b> ${c.gotcha}
+            </div>
+
+            <div class="quiz-section">
+              <div class="quiz-q">🧠 30-Second Mastery Check: ${c.quiz.question}</div>
+              ${optsHtml}
+              <div class="quiz-exp" id="exp-${c.id}" style="display:${answered ? 'block' : 'none'};">
+                <b>Explanation:</b> ${c.quiz.explanation}
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    async function answerQuiz(cardId, optionIndex) {
+      await fetch("/api/feed/interact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId, action: "quiz", selectedOption: optionIndex })
+      });
+      await fetchFeed();
+      await fetchDashboard();
+    }
+
+    function openInVisualizer(vizId) {
+      switchTab("visualizer");
+      const sel = document.getElementById("viz-selector");
+      sel.value = vizId;
+      onVisualizerSelectChange();
+    }
+
+    // -------------------------------------------------------------------------
+    // Universal Step-by-Step Visualizer Studio Logic
+    // -------------------------------------------------------------------------
+    async function fetchVisualizers() {
+      const res = await fetch("/api/visualizers");
+      const data = await res.json();
+      visualizersList = data.visualizers;
+      const sel = document.getElementById("viz-selector");
+      sel.innerHTML = visualizersList.map(v => `<option value="${v.id}">${v.title}</option>`).join("");
+    }
+
+    function onVisualizerSelectChange() {
+      const vizId = document.getElementById("viz-selector").value;
+      const meta = visualizersList.find(v => v.id === vizId);
+      if (meta) {
+        document.getElementById("viz-complexity-badge").textContent = `Time: ${meta.complexity.time} | Space: ${meta.complexity.space}`;
+        const inputEl = document.getElementById("viz-custom-input");
+        if (vizId === "dsa-group-anagrams") inputEl.value = "eat,tea,tan,ate,nat,bat";
+        else if (vizId === "dsa-two-sum") inputEl.value = "2,11,7,15 | 9";
+        else if (vizId === "dsa-valid-anagram") inputEl.value = "anagram | nagaram";
+        else inputEl.value = "Default Simulation";
+      }
+      loadCurrentVisualizer(false);
+    }
+
+    async function loadCurrentVisualizer(useCustom) {
+      vizStopPlay();
+      const vizId = document.getElementById("viz-selector").value || "dsa-group-anagrams";
+      let customInput = null;
+
+      if (useCustom) {
+        const raw = document.getElementById("viz-custom-input").value.trim();
+        if (vizId === "dsa-group-anagrams") {
+          customInput = { strs: raw.split(",").map(s => s.trim()).filter(Boolean) };
+        } else if (vizId === "dsa-two-sum") {
+          const parts = raw.split("|");
+          customInput = { nums: parts[0] || "2,7,11,15", target: parseInt(parts[1] || "9", 10) };
+        } else if (vizId === "dsa-valid-anagram") {
+          const parts = raw.split("|");
+          customInput = { s: (parts[0] || "anagram").trim(), t: (parts[1] || "nagaram").trim() };
+        }
+      }
+
+      const res = await fetch("/api/visualize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visualizerId: vizId, customInput })
+      });
+      currentTrace = await res.json();
+      currentStepIdx = 0;
+      const slider = document.getElementById("viz-slider");
+      slider.max = Math.max(0, currentTrace.steps.length - 1);
+      slider.value = 0;
+      renderVisualizerStep();
+    }
+
+    function renderVisualizerStep() {
+      if (!currentTrace || !currentTrace.steps.length) return;
+      const step = currentTrace.steps[currentStepIdx];
+      document.getElementById("viz-slider").value = currentStepIdx;
+      document.getElementById("viz-step-counter").textContent = `Step ${currentStepIdx + 1} / ${currentTrace.steps.length}`;
+      document.getElementById("viz-step-title").textContent = step.title;
+      document.getElementById("viz-step-narration").textContent = step.narration;
+      document.getElementById("viz-step-code").textContent = step.codeLine || "";
+
+      const canvas = document.getElementById("viz-canvas");
+      const t = currentTrace.type;
+
+      if (t === "dsa-group-anagrams") {
+        // 1. Input Words Array
+        const wordsHtml = step.words.map((w, idx) => {
+          const cls = idx === step.currentWordIndex ? "array-cell active" : (idx < step.currentWordIndex ? "array-cell matched" : "array-cell");
+          return `<div class="${cls}"><span class="idx">strs[${idx}]</span><span class="val">"${w}"</span></div>`;
+        }).join("");
+
+        // 2. 26-Slot Alphabet Frequency Bar
+        let alphaHtml = "";
+        for (let i = 0; i < 26; i++) {
+          const ch = String.fromCharCode(97 + i);
+          const cnt = step.activeLetters[ch] || 0;
+          alphaHtml += `<div class="alpha-box ${cnt > 0 ? 'lit' : ''}"><div class="ch">'${ch}'</div><div class="cnt">${cnt}</div></div>`;
+        }
+
+        // 3. Hash Map Buckets
+        const bucketEntries = Object.entries(step.buckets || {});
+        const bucketsHtml = bucketEntries.length === 0
+          ? `<div style="color:var(--text-muted); font-size:0.88rem;">Hash buckets empty — step forward to populate!</div>`
+          : bucketEntries.map(([k, list]) => `
+              <div class="bucket-card ${step.highlightedBucket === k ? 'highlight' : ''}">
+                <div class="bucket-key">🔑 Key: ${k}</div>
+                <div class="bucket-items">${list.map(item => `<span class="bucket-item">"${item}"</span>`).join("")}</div>
+              </div>
+            `).join("");
+
+        canvas.innerHTML = `
+          <div style="font-size:0.8rem; color:var(--text-muted); font-weight:700; margin-bottom:0.4rem;">1. INPUT ARRAY (strs)</div>
+          <div class="array-row">${wordsHtml}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); font-weight:700; margin-bottom:0.4rem;">2. 26-LETTER FREQUENCY VECTOR (count[0..25])</div>
+          <div class="alphabet-grid">${alphaHtml}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); font-weight:700; margin-bottom:0.4rem;">3. HASH TABLE BUCKETS (anagram_map)</div>
+          <div class="bucket-grid">${bucketsHtml}</div>
+        `;
+      } else if (t === "dsa-two-sum") {
+        const numsHtml = step.nums.map((n, idx) => {
+          let cls = "array-cell";
+          if (step.matchedIndices && step.matchedIndices.includes(idx)) cls += " matched";
+          else if (idx === step.currentIndex) cls += " active";
+          return `<div class="${cls}"><span class="idx">idx ${idx}</span><span class="val">${n}</span></div>`;
+        }).join("");
+
+        const seenEntries = Object.entries(step.seen || {});
+        const seenHtml = seenEntries.length === 0
+          ? `<div style="color:var(--text-muted); font-size:0.88rem;">seen = {} (empty)</div>`
+          : seenEntries.map(([val, idx]) => `
+              <div class="bucket-card">
+                <div class="bucket-key">Value: ${val} ➔ Index: ${idx}</div>
+              </div>
+            `).join("");
+
+        canvas.innerHTML = `
+          <div style="font-size:0.8rem; color:var(--text-muted); font-weight:700; margin-bottom:0.4rem;">1. INPUT ARRAY (Target = ${step.target} | Current Complement Needed = ${step.complement !== null ? step.complement : 'N/A'})</div>
+          <div class="array-row">${numsHtml}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); font-weight:700; margin-bottom:0.4rem;">2. HASH MAP (seen: value ➔ index)</div>
+          <div class="bucket-grid">${seenHtml}</div>
+        `;
+      } else if (t === "dsa-valid-anagram") {
+        const sHtml = step.s.split("").map((ch, idx) => `<div class="array-cell ${idx === step.pointer ? 'active' : ''}"><span class="idx">s[${idx}]</span><span class="val">${ch}</span></div>`).join("");
+        const tHtml = step.t.split("").map((ch, idx) => `<div class="array-cell ${idx === step.pointer ? 'active' : ''}"><span class="idx">t[${idx}]</span><span class="val">${ch}</span></div>`).join("");
+        const countsHtml = Object.entries(step.counts || {}).map(([ch, val]) => `
+          <div class="alpha-box ${val > 0 ? 'lit' : (val < 0 ? 'neg' : '')}">
+            <div class="ch">'${ch}'</div>
+            <div class="cnt">${val > 0 ? '+' + val : val}</div>
+          </div>
+        `).join("");
+
+        canvas.innerHTML = `
+          <div style="font-size:0.8rem; color:var(--text-muted); font-weight:700; margin-bottom:0.4rem;">STRING s (+1 per char)</div>
+          <div class="array-row">${sHtml}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); font-weight:700; margin-bottom:0.4rem;">STRING t (-1 per char)</div>
+          <div class="array-row">${tHtml}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); font-weight:700; margin-bottom:0.4rem;">NET FREQUENCY BALANCE (Target: All 0)</div>
+          <div class="alphabet-grid">${countsHtml || '<span style="color:var(--text-muted);">No characters scanned yet</span>'}</div>
+        `;
+      } else {
+        // Architecture Side-by-Side Simulator
+        const leftRows = Object.entries(step.leftMetrics || {}).map(([k, v]) => `<div style="display:flex; justify-content:space-between; padding:0.45rem 0; border-bottom:1px solid var(--border);"><span>${k}</span><b style="color:#f87171;">${v}</b></div>`).join("");
+        const rightRows = Object.entries(step.rightMetrics || {}).map(([k, v]) => `<div style="display:flex; justify-content:space-between; padding:0.45rem 0; border-bottom:1px solid var(--border);"><span>${k}</span><b style="color:#4ade80;">${v}</b></div>`).join("");
+
+        canvas.innerHTML = `
+          <div class="grid-2" style="margin-bottom:0;">
+            <div class="panel" style="margin-bottom:0; border-color:rgba(239,68,68,0.4);">
+              <div class="panel-title" style="color:#f87171; margin-bottom:0.75rem;">⚠️ ${step.leftTitle}</div>
+              ${leftRows}
+            </div>
+            <div class="panel" style="margin-bottom:0; border-color:rgba(34,197,94,0.4);">
+              <div class="panel-title" style="color:#4ade80; margin-bottom:0.75rem;">🚀 ${step.rightTitle}</div>
+              ${rightRows}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function vizStepFirst() { vizStopPlay(); currentStepIdx = 0; renderVisualizerStep(); }
+    function vizStepLast() { vizStopPlay(); if (currentTrace) currentStepIdx = currentTrace.steps.length - 1; renderVisualizerStep(); }
+    function vizStepPrev() { vizStopPlay(); if (currentStepIdx > 0) currentStepIdx--; renderVisualizerStep(); }
+    function vizStepNext() { vizStopPlay(); if (currentTrace && currentStepIdx < currentTrace.steps.length - 1) currentStepIdx++; renderVisualizerStep(); }
+    function vizJumpTo(val) { vizStopPlay(); currentStepIdx = parseInt(val, 10); renderVisualizerStep(); }
+
+    function vizTogglePlay() {
+      if (playInterval) {
+        vizStopPlay();
+        return;
+      }
+      document.getElementById("viz-play-btn").textContent = "⏸ Pause";
+      playInterval = setInterval(() => {
+        if (!currentTrace || currentStepIdx >= currentTrace.steps.length - 1) {
+          vizStopPlay();
+          return;
+        }
+        currentStepIdx++;
+        renderVisualizerStep();
+      }, 1100);
+    }
+
+    function vizStopPlay() {
+      if (playInterval) {
+        clearInterval(playInterval);
+        playInterval = null;
+      }
+      const btn = document.getElementById("viz-play-btn");
+      if (btn) btn.textContent = "▶ Play";
+    }
+
+    window.addEventListener("DOMContentLoaded", initHub);
+  </script>
+</body>
+</html>
+

@@ -19,27 +19,44 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from apps.aerocart.server import ThreadedHTTPServer, AeroCartHandler
+from apps.aerocart.server import ThreadedHTTPServer, AeroCartHandler, dispatch_request
 
 TEST_PORT = 8991
 BASE_URL = f"http://127.0.0.1:{TEST_PORT}"
+IN_PROCESS_MODE = False
 
 
 def start_test_server():
-    server = ThreadedHTTPServer(("127.0.0.1", TEST_PORT), AeroCartHandler)
-    t = threading.Thread(target=server.serve_forever, daemon=True)
-    t.start()
-    time.sleep(0.15)
-    return server
+    global IN_PROCESS_MODE
+    dispatch_request("POST", "/api/v1/admin/reset")
+    try:
+        server = ThreadedHTTPServer(("127.0.0.1", TEST_PORT), AeroCartHandler)
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start()
+        time.sleep(0.15)
+        return server
+    except PermissionError:
+        IN_PROCESS_MODE = True
+        return None
 
 
 def naive_worker_booking(worker_id: int) -> dict:
     """Worker books Seat 1A on AI-202 WITHOUT tenant isolation (naive global shared mode)."""
-    payload = json.dumps({
+    body_dict = {
         "flightNumber": "AI-202",
         "seat": "1A",
         "passengerEmail": f"worker_{worker_id}@sharedpool.org"
-    }).encode("utf-8")
+    }
+    if IN_PROCESS_MODE:
+        res = dispatch_request("POST", "/api/v1/orders", body=body_dict)
+        return {
+            "worker_id": worker_id,
+            "status": res["status_code"],
+            "data": res["data"],
+            "error": res["data"].get("message") if res["status_code"] != 201 else None
+        }
+
+    payload = json.dumps(body_dict).encode("utf-8")
 
     # NO X-Test-Tenant-ID header injected
     req = urllib.request.Request(
@@ -91,7 +108,9 @@ def main():
     print("   Next step: Implement Dynamic Tenant Isolation in solution.py!")
     print("=" * 70)
 
-    server.shutdown()
+    if server is not None:
+        server.shutdown()
+    assert len(passed) == 1 and len(failed) == 31, f"Expected 1 pass and 31 conflicts, got {len(passed)} / {len(failed)}"
 
 
 if __name__ == "__main__":

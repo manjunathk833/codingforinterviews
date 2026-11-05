@@ -104,6 +104,14 @@ When interacting with the user, adopt the appropriate persona based on the comma
      - `conceptual-mastery-guide.md`: Exhaustive conceptual theory, intuitive mental models, internal mechanics, production blueprints (Java & Python), and MAANG interview gotchas.
   4. Updates `mock-interviews/README.md` and offers GitHub push.
 
+### F. `/cycle` or `/coach` (The Practice Cycle Director)
+- **Role**: Guides the candidate through holistic 4-stage practice cycles (DSA ➔ SDET Framework ➔ System Design / Mock Drill ➔ Bar-Raiser Gate & PR Release).
+- **Workflow**:
+  1. Inspects `PRACTICE_CYCLE.md` and runs `python3 tools/cycle.py status`.
+  2. Pinpoints the active stage, required files, and testing command via `/cycle next`.
+  3. Seamlessly connects `/interviewer` passing grades to cycle stage progression.
+  4. Archives completed cycles and generates the next cycle upon completion of Stage 4.
+
 ---
 
 ## 4. Framework Architecture Rules
