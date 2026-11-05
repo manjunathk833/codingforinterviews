@@ -170,6 +170,8 @@ class LearningHubHandler(BaseHTTPRequestHandler):
 
 class ThreadedHubServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
+    allow_reuse_address = True
+    request_queue_size = 128
 
 
 def dispatch_request(method: str, path: str, body: dict = None, headers: dict = None) -> dict:
