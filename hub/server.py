@@ -127,6 +127,16 @@ class LearningHubHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"visualizers": visualizer_engine.list_visualizers()})
             return
 
+        if path == "/api/telegram/status":
+            from hub import telegram_bot
+            bot = telegram_bot.AntigravityTelegramBot()
+            db = state_manager.load_db()
+            self._send_json(200, {
+                "configured": bot.is_configured(),
+                "inbox": db.get("telegramInbox", [])[:15]
+            })
+            return
+
         self._send_json(404, {"error": "NotFound", "path": path})
 
     def do_POST(self):
@@ -158,6 +168,25 @@ class LearningHubHandler(BaseHTTPRequestHandler):
             target = payload.get("target", "001-two-sum")
             lang = payload.get("lang", "all")
             res = execute_test_target(target, lang)
+            self._send_json(200, res)
+            return
+
+        if path == "/api/telegram/push":
+            from hub import telegram_bot
+            mode = payload.get("mode", "card")
+            topic = payload.get("topic", "")
+            bot = telegram_bot.AntigravityTelegramBot()
+            if not bot.is_configured():
+                self._send_json(400, {"ok": False, "error": "Telegram credentials not configured in .env"})
+                return
+            if mode == "welcome":
+                msg_data = bot.handle_command_text("/start")
+                res = bot.send_message(msg_data["text"], reply_markup=msg_data.get("reply_markup"))
+            elif mode == "progress":
+                text, markup = telegram_bot.format_progress_message()
+                res = bot.send_message(text, reply_markup=markup)
+            else:
+                res = telegram_bot.send_daily_digest(topic)
             self._send_json(200, res)
             return
 
@@ -228,10 +257,20 @@ def dispatch_request(method: str, path: str, body: dict = None, headers: dict = 
 
 
 def run_hub_server(port: int = DEFAULT_PORT, host: str = "127.0.0.1"):
+    import threading
+    from hub import telegram_bot
+
+    bot = telegram_bot.AntigravityTelegramBot()
+    if bot.is_configured():
+        t_bot = threading.Thread(target=bot.run_polling_loop, daemon=True)
+        t_bot.start()
+
     server = ThreadedHubServer((host, port), LearningHubHandler)
     print("=" * 68)
     print(f"🚀 ANTIGRAVITY LEARNING HUB & VISUALIZER RUNNING")
     print(f"🌐 Open in Browser: http://{host}:{port}")
+    if bot.is_configured():
+        print("✈️  Telegram Bot Mobile Bridge: ACTIVE (Long-Polling in Background)")
     print("=" * 68)
     try:
         server.serve_forever()

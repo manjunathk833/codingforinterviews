@@ -71,6 +71,33 @@ def list_visualizers() -> List[Dict[str, Any]]:
             "complexity": {"time": "Exponential Backoff + Jitter", "space": "Bounded SQLite WAL Queue"},
             "defaultInput": {"endpoints": 10000},
             "description": "Step through how a local macOS/Windows security agent buffers events during a network drop and prevents a backend DDoS upon reconnection."
+        },
+        {
+            "id": "cs-os-leak-detector",
+            "type": "architecture",
+            "title": "Core CS (OS): GC Sawtooth vs. True Post-GC RSS & File Descriptor Leaks",
+            "category": "Operating Systems Internals",
+            "complexity": {"time": "24h Soak Linear Regression", "space": "Post-GC Floor vs ulimit -n"},
+            "defaultInput": {"max_fd_limit": 1024},
+            "description": "Compare a healthy JVM/Python GC sawtooth wave against a true post-GC heap leak and an OS file-descriptor exhaustion crash (EMFILE)."
+        },
+        {
+            "id": "cs-tcp-tls-handshake",
+            "type": "architecture",
+            "title": "Core CS (Networks): TLS 1.2 + HTTP/1.1 vs. TLS 1.3 + HTTP/2 & SYN Backlogs",
+            "category": "Computer Networks & Protocols",
+            "complexity": {"time": "4 RTT per req vs 1 RTT Multiplexed", "space": "listen(128) SYN Queue"},
+            "defaultInput": {"rtt_ms": 50, "requests": 10},
+            "description": "Step through packet roundtrips for TCP 3-way handshake, TLS 1.2 vs 1.3 key exchange, and why Linux listen(5) drops 32-worker bursts."
+        },
+        {
+            "id": "ai-rag-triad-gate",
+            "type": "architecture",
+            "title": "AI Engineering: RAG Triad Claim-Entailment vs. Negation Hallucination Trap",
+            "category": "AI & LLM Quality Engineering",
+            "complexity": {"time": "Context Recall + Faithfulness", "space": "Polarity & Entailment Gate"},
+            "defaultInput": {"threshold": 0.80},
+            "description": "See why naive 96% cosine similarity passes a contradictory 'CANNOT cancel' hallucination, and how the RAG Triad Faithfulness gate blocks it."
         }
     ]
 
@@ -424,6 +451,120 @@ def trace_architecture(viz_id: str) -> Dict[str, Any]:
             }
         ]
         return {"visualizerId": viz_id, "type": "architecture-compare", "title": "Distributed Concurrency & Tenant Isolation", "steps": steps}
+
+    if viz_id == "cs-os-leak-detector":
+        steps = [
+            {
+                "stepIndex": 0,
+                "title": "1. The GC Sawtooth Illusion (Why Raw RSS Graphs Mislead Engineers)",
+                "narration": "Between t=0m and t=30m, RSS climbs from 48 MB to 138 MB. A naive alert flags a memory leak! In reality, once Full GC runs at t=60m, RSS drops right back to the 48.5 MB live-object floor.",
+                "codeLine": "gc_points = [s for s in snapshots if s['gc_triggered']] # Filter post-GC floor!",
+                "leftTitle": "Naive Raw RSS Check (False Alarm)",
+                "rightTitle": "Post-GC Baseline Floor Analysis",
+                "leftMetrics": {"t=0m -> t=30m": "48 MB -> 138 MB", "Naive Verdict": "FALSE POSITIVE LEAK", "Ignored Factor": "Uncollected Young/Old Gen"},
+                "rightMetrics": {"t=0m (GC) -> t=120m (GC)": "48.0 MB -> 49.0 MB", "Post-GC Slope": "+0.5 MB/hr (<= 5.0 threshold)", "True Verdict": "HEALTHY SAWTOOTH"},
+                "activePhase": "sawtooth"
+            },
+            {
+                "stepIndex": 1,
+                "title": "2. Detecting a True Post-GC Heap Leak (Unbounded Cache / Listener Retention)",
+                "narration": "When an endpoint daemon registers event listeners or caches telemetry batches without eviction, even after Full GC runs, the floor climbs from 50 MB -> 86 MB -> 122 MB (+36 MB/hr slope).",
+                "codeLine": "slope_mb_per_hr = (last_gc['rss_mb'] - first_gc['rss_mb']) / delta_hours # 36.0 MB/hr > 5.0",
+                "leftTitle": "Healthy Daemon Post-GC Floor",
+                "rightTitle": "Leaking Daemon Post-GC Floor",
+                "leftMetrics": {"GC #1 / #2 / #3": "48 MB / 48.5 MB / 49 MB", "Slope": "0.5 MB/hr", "24h Projection": "~60 MB (Stable)"},
+                "rightMetrics": {"GC #1 / #2 / #3": "50 MB / 86 MB / 122 MB", "Slope": "36.0 MB/hr (LEAK!)", "24h Projection": "914 MB -> OOM Kill"},
+                "activePhase": "heap_leak"
+            },
+            {
+                "stepIndex": 2,
+                "title": "3. Silent File-Descriptor / Handle Exhaustion (`EMFILE: Too many open files`)",
+                "narration": "Each leaked socket or file handle consumes almost zero RAM (RSS stays flat at 50 MB), but increments the OS kernel handle table (`lsof -p <pid>`). At 890/1024 handles (86.9% of `ulimit -n`), the daemon is minutes away from crashing on every `socket()` syscall!",
+                "codeLine": "fd_leak = (peak_fds / max_fd_limit >= 0.80) or monotonic_fd_growth",
+                "leftTitle": "RAM Profiler Only (Misses Bug!)",
+                "rightTitle": "OS Handle + Post-GC Dual Profiler",
+                "leftMetrics": {"RSS Memory": "50.4 MB (Flat)", "RAM Verdict": "Looks Healthy", "Production Outcome": "Crashes with Errno 24 EMFILE"},
+                "rightMetrics": {"Open FDs": "80 -> 340 -> 890 / 1024", "FD Utilization": "86.9% (>= 80% Gate)", "Verdict": "FD_LEAK CAUGHT IN CI"},
+                "activePhase": "fd_leak"
+            }
+        ]
+        return {"visualizerId": viz_id, "type": "architecture-compare", "title": "OS Internals: Post-GC Heap & File-Descriptor Leak Detection", "steps": steps}
+
+    if viz_id == "cs-tcp-tls-handshake":
+        steps = [
+            {
+                "stepIndex": 0,
+                "title": "1. Cold Connection Tax: TCP 3-Way Handshake + TLS 1.2 vs. TLS 1.3",
+                "narration": "At 50ms RTT, TLS 1.2 requires 1 RTT for TCP (`SYN`/`SYN-ACK`/`ACK`) + 2 RTTs for TLS key exchange + 1 RTT for HTTP = 200ms per unpooled request. TLS 1.3 embeds key shares in `ClientHello`, cutting TLS to 1 RTT!",
+                "codeLine": "TLS 1.2 Cold = 4 * RTT (200ms) | TLS 1.3 Cold = 3 * RTT (150ms)",
+                "leftTitle": "HTTP/1.1 (No Pool) + TLS 1.2",
+                "rightTitle": "HTTP/2 Multiplexed + TLS 1.3",
+                "leftMetrics": {"1st Request": "200ms (1 TCP + 2 TLS + 1 HTTP)", "10 Sequential Reqs": "2,000ms total", "Handshake Waste": "1,500ms (75% overhead)"},
+                "rightMetrics": {"1st Request": "150ms (1 TCP + 1 TLS + 1 HTTP)", "10 Pooled Reqs": "600ms total (70% Faster!)", "Handshake Waste": "100ms (Paid Once)"},
+                "activePhase": "handshake"
+            },
+            {
+                "stepIndex": 1,
+                "title": "2. The Linux Kernel `listen(backlog)` SYN Queue Overflow (`Errno 104`)",
+                "narration": "When 32 parallel CI workers burst-connect simultaneously to a server with `request_queue_size = 5` (`listen(5)`), Linux accepts 5 connections into the SYN/Accept queue and sends TCP `RST` (`ConnectionResetError`) to the other 27 workers!",
+                "codeLine": "class ThreadedHTTPServer(ThreadingMixIn, HTTPServer): request_queue_size = 128",
+                "leftTitle": "Default `listen(5)` under 32-Thread Burst",
+                "rightTitle": "Tuned `listen(128)` under 32-Thread Burst",
+                "leftMetrics": {"Accepted Connections": "5 / 32", "Dropped (TCP RST)": "27 / 32 (Errno 104)", "CI Stability": "Flaky / Broken on Linux"},
+                "rightMetrics": {"Accepted Connections": "32 / 32 (100%)", "Dropped (TCP RST)": "0 / 32", "CI Stability": "100% Deterministic"},
+                "activePhase": "backlog"
+            },
+            {
+                "stepIndex": 2,
+                "title": "3. SASE Forward Proxy mTLS Inspection (Endpoint -> Cloud SWG -> Origin)",
+                "narration": "In enterprise SASE architectures (e.g., Netskope), the local endpoint agent tunnels traffic over persistent mTLS HTTP/2 to the Cloud Proxy, which inspects DLP/threat policies in-memory before forwarding to the origin.",
+                "codeLine": "[Endpoint] ==mTLS 1.3 Tunnel==> [SASE Cloud Proxy (DLP/AV)] ==TLS 1.3==> [Origin API]",
+                "leftTitle": "Unpooled Per-Request MITM Proxy",
+                "rightTitle": "Persistent mTLS Tunnel + Session Reuse",
+                "leftMetrics": {"Dual Handshakes": "Every request re-handshakes", "Added Proxy Latency": "+180ms p99"},
+                "rightMetrics": {"Tunnel State": "Pre-warmed HTTP/2 mTLS", "Added Proxy Latency": "+6ms p99 (Wire-Speed)"},
+                "activePhase": "sase"
+            }
+        ]
+        return {"visualizerId": viz_id, "type": "architecture-compare", "title": "Computer Networks: TCP/TLS Handshakes, SYN Backlogs & SASE Proxies", "steps": steps}
+
+    if viz_id == "ai-rag-triad-gate":
+        steps = [
+            {
+                "stepIndex": 0,
+                "title": "1. Vector Retrieval: Measuring Context Recall (`doc_24h_rule`)",
+                "narration": "User asks: 'Can I cancel within 24 hours for a full refund?' The retriever fetches `doc_24h_rule`: 'Passengers may cancel within 24 hours of booking for a 100% full refund if purchased 7 days prior.' Both ground-truth facts are present -> Context Recall = 1.00.",
+                "codeLine": "context_recall = covered_ground_truth_facts / total_ground_truth_facts # 2/2 = 1.00",
+                "leftTitle": "Broken Keyword Retriever (Bug Caught Earlier)",
+                "rightTitle": "Tuned Policy Retriever (`doc_24h_rule`)",
+                "leftMetrics": {"Matched Chunk": "doc_eu261 (Matched word 'hour')", "Context Recall": "0.00 (Wrong Document!)"},
+                "rightMetrics": {"Matched Chunk": "doc_24h_rule (US DOT 24h Rule)", "Context Recall": "1.00 (100% Facts Retrieved)"},
+                "activePhase": "retrieval"
+            },
+            {
+                "stepIndex": 1,
+                "title": "2. The Negation Hallucination Trap (Why 96% Cosine Similarity Fails)",
+                "narration": "Suppose the LLM hallucinates: 'Passengers CANNOT cancel their reservation within 24 hours for a 100% full refund.' Because 12/13 words match the policy, naive embedding cosine similarity scores 0.96 and PASSES a contradictory legal policy!",
+                "codeLine": "contradictory_negation = bool(ans_negations - ctx_negations) # Detects 'cannot' polarity flip!",
+                "leftTitle": "Naive Cosine Similarity Gate (> 0.85)",
+                "rightTitle": "RAG Triad Faithfulness & Polarity Gate",
+                "leftMetrics": {"Generated Answer": "'Passengers CANNOT cancel...'", "Cosine Similarity": "0.96 (96% Overlap)", "Gate Outcome": "FALSE PASS (P0 Legal Bug Escapes!)"},
+                "rightMetrics": {"Generated Answer": "'Passengers CANNOT cancel...'", "Faithfulness Score": "0.19 (Polarity Inversion Penalty)", "Gate Outcome": "BLOCKED IN CI (Hallucination Caught)"},
+                "activePhase": "negation_trap"
+            },
+            {
+                "stepIndex": 2,
+                "title": "3. Full RAG Triad CI Gate (Recall >= 0.80, Faithfulness >= 0.80, Relevance >= 0.70)",
+                "narration": "Only when Context Recall (1.00), Claim Faithfulness (1.00), and Answer Relevance (1.00) all clear their thresholds does the CI pipeline approve the RAG prompt/model release.",
+                "codeLine": "passed_ci_gate = (context_recall >= 0.80 and faithfulness >= 0.80 and answer_relevance >= 0.70)",
+                "leftTitle": "Hallucinated / Irrelevant Outputs",
+                "rightTitle": "Grounded Policy Output",
+                "leftMetrics": {"Negated Faithfulness": "0.19 (FAIL)", "Pet Policy Relevance": "0.00 (FAIL)", "CI Status": "Release Blocked"},
+                "rightMetrics": {"Context Recall": "1.00 (PASS)", "Faithfulness & Relevance": "1.00 / 1.00 (PASS)", "CI Status": "Release Approved"},
+                "activePhase": "triad_pass"
+            }
+        ]
+        return {"visualizerId": viz_id, "type": "architecture-compare", "title": "AI Engineering: RAG Evaluation Triad & Negation Trap Gate", "steps": steps}
 
     # Default: arch-endpoint-cloud-sync
     steps = [

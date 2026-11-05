@@ -55,6 +55,7 @@ CONCEPT_FEED_CARDS: List[Dict[str, Any]] = [
             "both produce `\"111\"` and collide! Always prefix each count with `'#'`."
         ),
         "visualizerId": "dsa-group-anagrams",
+        "labSlug": "003-group-anagrams",
         "quiz": {
             "question": "Why can't we use a Python list `[1, 0, ...]` directly as a dictionary key?",
             "options": [
@@ -93,7 +94,8 @@ CONCEPT_FEED_CARDS: List[Dict[str, Any]] = [
             "When testing memory leaks in C#/Java/Python clients, a rising memory graph isn't always a leak—it "
             "could be uncollected garbage. Always trigger a full GC and measure the post-GC baseline floor across a 24h soak test!"
         ),
-        "visualizerId": "arch-endpoint-cloud-sync",
+        "visualizerId": "cs-os-leak-detector",
+        "labSlug": "01-memory-and-handle-leak-detector",
         "quiz": {
             "question": "During a 48-hour soak test of a macOS desktop client, RAM stays flat at 80MB, but the app crashes when opening network sockets. What is the most likely root cause?",
             "options": [
@@ -169,6 +171,7 @@ CONCEPT_FEED_CARDS: List[Dict[str, Any]] = [
             "pure exponential backoff makes all 10,000 retry together at t=2s, t=4s, and t=8s. Random jitter spreads the load."
         ),
         "visualizerId": "arch-endpoint-cloud-sync",
+        "labSlug": "01-endpoint-to-cloud-sync-and-jitter",
         "quiz": {
             "question": "Why is 'Exponential Backoff' alone insufficient when 50,000 endpoints recover from a network outage simultaneously?",
             "options": [
@@ -243,7 +246,8 @@ CONCEPT_FEED_CARDS: List[Dict[str, Any]] = [
             "If your test asserts `cosine_similarity(answer, ground_truth) > 0.85`, an LLM answer that says "
             "'You CANNOT get a refund within 24 hours' will have 96% embedding similarity to 'You CAN get a refund within 24 hours' and pass! Always test claim entailment (Faithfulness)."
         ),
-        "visualizerId": "dsa-valid-anagram",
+        "visualizerId": "ai-rag-triad-gate",
+        "labSlug": "01-rag-triad-evaluator",
         "quiz": {
             "question": "If a RAG bot retrieves the correct refund policy chunk, but invents a fake $50 bonus credit in its response, which metric drops?",
             "options": [
@@ -254,6 +258,161 @@ CONCEPT_FEED_CARDS: List[Dict[str, Any]] = [
             ],
             "correctIndex": 2,
             "explanation": "Faithfulness measures the ratio of claims in the generated answer that are supported by the retrieved context. Invented claims directly lower Faithfulness."
+        }
+    },
+    {
+        "id": "card-cs-tcp-tls-backlog",
+        "category": "Computer Networks",
+        "title": "TCP 3-Way Handshake, TLS 1.3 & The Linux listen(5) SYN Backlog Trap",
+        "readTime": "75 sec",
+        "difficulty": "Staff SDET",
+        "tags": ["TCP/IP", "TLS 1.3", "Linux Kernel", "HTTP/2"],
+        "mentalModel": (
+            "Think of a server's TCP `listen(backlog)` queue as a restaurant waiting room. If the waiting room only holds "
+            "5 people (`request_queue_size = 5`) and a tour bus of 32 parallel CI workers arrives at the exact same millisecond, "
+            "the bouncer (Linux kernel) slams the door in the face of 27 workers with `ConnectionResetError (TCP RST)`!"
+        ),
+        "mechanics": (
+            "• Cold TLS 1.2 Connection: 1 RTT (TCP SYN/SYN-ACK/ACK) + 2 RTTs (TLS 1.2) + 1 RTT (HTTP) = 4 RTTs.\n"
+            "• Cold TLS 1.3 Connection: Embeds key share in ClientHello -> 1 RTT TCP + 1 RTT TLS 1.3 = 2 RTTs before HTTP.\n"
+            "• HTTP/2 Keep-Alive Multiplexing: Pays handshake once and multiplexes concurrent streams over a single TCP socket.\n"
+            "• Linux SYN/Accept Backlog: Increasing `request_queue_size = 128` prevents burst `Errno 104` resets."
+        ),
+        "diagram": (
+            "TLS 1.2 (Unpooled): [SYN] -> [TLS RTT 1] -> [TLS RTT 2] -> [HTTP] (4x RTT every call!)\n"
+            "TLS 1.3 (HTTP/2):   [SYN] -> [TLS 1.3 1-RTT] ══► [Multiplexed Streams 1..N (1x RTT each)]"
+        ),
+        "gotcha": (
+            "macOS silently bumps small `listen(5)` backlogs up to 128 in the kernel, so a 32-thread burst passes on a MacBook "
+            "but crashes on Linux (`ubuntu-latest`) CI unless you explicitly set `request_queue_size = 128`!"
+        ),
+        "visualizerId": "cs-tcp-tls-handshake",
+        "labSlug": "01-tcp-tls-and-proxy-inspector",
+        "quiz": {
+            "question": "At 50ms network RTT, how much total time do 10 sequential requests take over pooled HTTP/2 + TLS 1.3 compared to unpooled HTTP/1.1 + TLS 1.2?",
+            "options": [
+                "600ms (pooled TLS 1.3) vs. 2,000ms (unpooled TLS 1.2)",
+                "2,000ms vs. 2,000ms (TLS version does not affect latency)",
+                "50ms vs. 500ms",
+                "1,500ms vs. 600ms"
+            ],
+            "correctIndex": 0,
+            "explanation": "Pooled TLS 1.3 pays 1 TCP RTT (50ms) + 1 TLS 1.3 RTT (50ms) once (100ms), plus 10 * 50ms requests = 600ms. Unpooled TLS 1.2 pays 4 RTTs (200ms) on all 10 requests = 2,000ms."
+        }
+    },
+    {
+        "id": "card-cs-db-wal-occ",
+        "category": "Database Internals",
+        "title": "SQLite WAL Ring-Buffers & Optimistic Concurrency Control (CAS)",
+        "readTime": "75 sec",
+        "difficulty": "Senior SDET",
+        "tags": ["SQLite WAL", "ACID Isolation", "OCC / CAS", "Storage"],
+        "mentalModel": (
+            "Instead of locking the entire filing cabinet every time someone edits a page (pessimistic lock), "
+            "Optimistic Concurrency Control stamps a version number `v=1` on the page. When you save, the DB checks: "
+            "'Is the page still `v=1`?' If another thread already bumped it to `v=2`, your stale write is rejected!"
+        ),
+        "mechanics": (
+            "• Write-Ahead Logging (`PRAGMA journal_mode=WAL`): Appends sequentially to a `-wal` file so readers never block writers.\n"
+            "• Bounded FIFO Ring-Buffer: Caps local offline endpoint storage at $K$ records, evicting oldest entries first.\n"
+            "• Compare-And-Swap (`CAS`): `UPDATE seats SET owner=?, version=v+1 WHERE id=? AND version=v` prevents Lost Updates."
+        ),
+        "diagram": (
+            "Thread A reads v=1 ──► CAS(expected_v=1) ──► SUCCESS (Row becomes v=2)\n"
+            "Thread B reads v=1 ──► CAS(expected_v=1) ──► REJECTED (Row is already v=2 -> No Lost Update!)"
+        ),
+        "gotcha": (
+            "Default SQLite rollback journals (`DELETE` mode) lock the entire database file during writes, causing `SQLITE_BUSY` "
+            "errors in multi-threaded endpoint agents. Always enable `WAL` mode for concurrent local read/write!"
+        ),
+        "visualizerId": "arch-endpoint-cloud-sync",
+        "labSlug": "01-wal-and-isolation-anomalies",
+        "quiz": {
+            "question": "Which database anomaly occurs when two transactions read the same row version simultaneously and the second commit silently overwrites the first commit?",
+            "options": [
+                "Phantom Read",
+                "Dirty Read",
+                "Lost Update",
+                "Index B-Tree Split"
+            ],
+            "correctIndex": 2,
+            "explanation": "A Lost Update happens when two concurrent transactions read the same initial state and both write back updates without checking if the underlying row version changed in between."
+        }
+    },
+    {
+        "id": "card-sd-consistent-hashing",
+        "category": "System Design",
+        "title": "Consistent Hashing Rings with Virtual Nodes (vnodes) vs. Modulo Sharding",
+        "readTime": "75 sec",
+        "difficulty": "Staff SDET",
+        "tags": ["Consistent Hashing", "Sharding", "Distributed Grids"],
+        "mentalModel": (
+            "If you shard keys across 4 servers using `hash(key) % 4` and 1 server crashes (`hash(key) % 3`), "
+            "75% of all keys suddenly point to the wrong server! Consistent Hashing arranges servers on a 360-degree "
+            "clock ring so when 1 server leaves, only its ~25% slice is handed to its clockwise neighbor."
+        ),
+        "mechanics": (
+            "• Hash Ring $[0, 2^{32}-1]$: Both nodes and keys are hashed onto a sorted circular ring (`TreeMap` in Java / `bisect` in Python).\n"
+            "• Virtual Nodes (`vnodes`): Each physical server gets 64+ virtual positions on the ring (`node1#v0..v63`) to eliminate hot-spots.\n"
+            "• Node Removal Invariant: Removing 1 of $N$ nodes only remaps $\\approx 1/N$ of keys; keys on healthy nodes never move!"
+        ),
+        "diagram": (
+            "Ring [0 .. 2^32-1]:  ──► (node1#v1) ──► [Key A] ──► (node4#v2 [CRASHED]) ──► (node2#v0 [Takes Key A!])"
+        ),
+        "gotcha": (
+            "Consistent hashing with only 1 position per physical node creates severe load skew (one node might own 60% of the circle). "
+            "Always assign at least 64–256 Virtual Nodes (`vnodes`) per physical server!"
+        ),
+        "visualizerId": "arch-concurrency-isolation",
+        "labSlug": "02-consistent-hashing-and-grid-sharding",
+        "quiz": {
+            "question": "In a 4-node Consistent Hashing ring, approximately what percentage of keys are remapped when 1 node crashes (compared to ~75% with `hash(k) % N`)?",
+            "options": [
+                "0% of keys",
+                "~25% (1/N) of keys",
+                "~50% of keys",
+                "100% of keys"
+            ],
+            "correctIndex": 1,
+            "explanation": "Only the keys that belonged to the crashed node (~1/N = 25%) move clockwise to the next healthy virtual node on the ring."
+        }
+    },
+    {
+        "id": "card-ai-self-healing-ast",
+        "category": "AI & RAG",
+        "title": "Self-Healing UI Locators: Multi-Signal DOM Scoring & Destructive Action Guards",
+        "readTime": "75 sec",
+        "difficulty": "Staff SDET",
+        "tags": ["Self-Healing", "AST Patching", "Playwright", "AI QE"],
+        "mentalModel": (
+            "When `#btn-book` breaks because a developer renamed it to `#confirm-booking-cta`, a naive fuzzy healer "
+            "might click `#btn-cancel-booking` because both buttons share the words 'Flight Booking'! A production healer "
+            "combines multi-signal DOM weights with a strict Destructive Action Guard."
+        ),
+        "mechanics": (
+            "• Multi-Signal Fingerprint: Score `role+tag` (0.25) + `aria-label` Jaccard (0.35) + `text` Jaccard (0.25) + `parent_form` (0.15).\n"
+            "• Destructive Polarity Guard: Reject any candidate containing `cancel`, `delete`, `remove`, or `revoke` if the baseline was non-destructive.\n"
+            "• Confidence Gate ($\\ge 0.75$): Auto-heal in memory and open a PR patching the test's AST with `page.getByRole()`."
+        ),
+        "diagram": (
+            "Broken `#btn-book` ──► Score Candidates ──► Reject `Cancel` (Destructive Guard) ──► Heal `Confirm` (0.91 >= 0.75)"
+        ),
+        "gotcha": (
+            "Never silently auto-heal broken locators forever in CI without emitting an AST patch or alert—otherwise "
+            "tests slowly drift from reality and mask real accessibility regressions!"
+        ),
+        "visualizerId": "arch-playwright-vs-selenium",
+        "labSlug": "02-self-healing-locators-and-ast",
+        "quiz": {
+            "question": "What is the biggest danger of using a naive string-similarity self-healing locator without a destructive-keyword guard?",
+            "options": [
+                "It increases CSS bundle size",
+                "It can auto-heal 'Confirm Flight Booking' onto 'Cancel Flight Booking' and mask a P0 bug",
+                "It disables WebSocket compression",
+                "It prevents Java compilation"
+            ],
+            "correctIndex": 1,
+            "explanation": "'Confirm Flight Booking' and 'Cancel Flight Booking' share 2 out of 3 words. Without a polarity/destructive action guard, fuzzy matching can click 'Cancel' or 'Delete'!"
         }
     }
 ]
@@ -412,17 +571,112 @@ def get_practice_cycle() -> Dict[str, Any]:
     }
 
 
+def get_architecture_and_cs_labs() -> List[Dict[str, Any]]:
+    """Discover all hands-on dual-language labs across core-cs/, system-design/, ai-engineering/, and frameworks/."""
+    viz_lookup = {
+        "01-memory-and-handle-leak-detector": "cs-os-leak-detector",
+        "01-tcp-tls-and-proxy-inspector": "cs-tcp-tls-handshake",
+        "01-wal-and-isolation-anomalies": "arch-endpoint-cloud-sync",
+        "01-endpoint-to-cloud-sync-and-jitter": "arch-endpoint-cloud-sync",
+        "02-consistent-hashing-and-grid-sharding": "arch-concurrency-isolation",
+        "01-rag-triad-evaluator": "ai-rag-triad-gate",
+        "02-self-healing-locators-and-ast": "arch-playwright-vs-selenium",
+        "01-distributed-concurrency-isolation": "arch-concurrency-isolation",
+    }
+
+    pillar_roots = [
+        ("Core CS", REPO_ROOT / "core-cs"),
+        ("System Design", REPO_ROOT / "system-design"),
+        ("AI Engineering", REPO_ROOT / "ai-engineering"),
+        ("SDET Frameworks", REPO_ROOT / "frameworks" / "design-challenges"),
+        ("SDET System Design", REPO_ROOT / "frameworks" / "sdet-system-design"),
+    ]
+
+    labs = []
+    for pillar_label, root_dir in pillar_roots:
+        if not root_dir.exists():
+            continue
+        for r, _, files in os.walk(root_dir):
+            if "/." in r or "__pycache__" in r:
+                continue
+            has_java = "Solution.java" in files
+            has_py = "solution.py" in files
+            if has_java or has_py:
+                p = Path(r)
+                folder_slug = p.name
+                labs.append({
+                    "pillar": pillar_label,
+                    "folderSlug": folder_slug,
+                    "title": folder_slug.replace("-", " ").title(),
+                    "localPath": str(p.relative_to(REPO_ROOT)),
+                    "hasJava": has_java,
+                    "hasPy": has_py,
+                    "bothDone": has_java and has_py,
+                    "visualizerId": viz_lookup.get(folder_slug),
+                })
+
+    labs.sort(key=lambda x: (x["pillar"], x["folderSlug"]))
+    return labs
+
+
 def get_dashboard_payload() -> Dict[str, Any]:
     """Return full unified dashboard payload for the Web UI."""
     db = load_db()
     dsa_data = get_dsa_overview()
     cycle_data = get_practice_cycle()
+    arch_labs = get_architecture_and_cs_labs()
+
+    pillars = [
+        {
+            "id": "dsa",
+            "title": "1. DSA Patterns",
+            "completed": dsa_data["bothDone"],
+            "total": dsa_data["total"],
+            "description": "128 Curated MAANG Problems (Java 17 & Python 3)"
+        },
+        {
+            "id": "core-cs",
+            "title": "2. Core CS Internals",
+            "completed": sum(1 for l in arch_labs if l["pillar"] == "Core CS" and l["bothDone"]),
+            "total": sum(1 for l in arch_labs if l["pillar"] == "Core CS"),
+            "description": "Operating Systems, Computer Networks & Database WAL/Isolation"
+        },
+        {
+            "id": "system-design",
+            "title": "3. System Design",
+            "completed": sum(1 for l in arch_labs if l["pillar"] == "System Design" and l["bothDone"]),
+            "total": sum(1 for l in arch_labs if l["pillar"] == "System Design"),
+            "description": "Endpoint-to-Cloud Sync, Full Jitter & Consistent Hashing Rings"
+        },
+        {
+            "id": "ai-engineering",
+            "title": "4. AI Engineering & QE",
+            "completed": sum(1 for l in arch_labs if l["pillar"] == "AI Engineering" and l["bothDone"]),
+            "total": sum(1 for l in arch_labs if l["pillar"] == "AI Engineering"),
+            "description": "RAG Triad Evaluator, Negation Traps & Self-Healing AST Locators"
+        },
+        {
+            "id": "frameworks",
+            "title": "5. SDET Frameworks & AUT",
+            "completed": sum(1 for l in arch_labs if "SDET" in l["pillar"] and l["bothDone"]),
+            "total": sum(1 for l in arch_labs if "SDET" in l["pillar"]),
+            "description": "AeroCart Microservice AUT, 32-Worker Concurrency & Design Katas"
+        },
+        {
+            "id": "mock-interviews",
+            "title": "6. Bar-Raiser Mock Sims",
+            "completed": 1,
+            "total": 5,
+            "description": "Staff/Lead SDET Architectural Evaluations & Mastery Guides"
+        }
+    ]
 
     # Calculate dynamic Readiness Score out of 1000
     base_score = 605
-    card_bonus = len(db.get("completedCards", [])) * 15
+    phase2_pillar_bonus = len(arch_labs) * 15  # +195 pts for Phase 2 runnable Core CS, System Design & AI labs
+    card_bonus = len(db.get("completedCards", [])) * 10
     dsa_bonus = dsa_data["bothDone"] * 10
-    readiness_score = min(1000, base_score + card_bonus + dsa_bonus)
+    readiness_score = min(1000, base_score + phase2_pillar_bonus + card_bonus + dsa_bonus)
 
     return {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
@@ -434,6 +688,8 @@ def get_dashboard_payload() -> Dict[str, Any]:
             "totalCardsCount": len(CONCEPT_FEED_CARDS),
             "srsQueue": db["srsQueue"]
         },
+        "pillars": pillars,
+        "architectureLabs": arch_labs,
         "practiceCycle": cycle_data,
         "dsa": dsa_data
     }
@@ -456,7 +712,15 @@ def get_feed_payload() -> Dict[str, Any]:
 
     return {
         "cards": cards,
-        "categories": ["All", "DSA Invariants", "OS Internals", "Computer Networks", "System Design", "AI & RAG"]
+        "categories": [
+            "All",
+            "DSA Invariants",
+            "OS Internals",
+            "Computer Networks",
+            "Database Internals",
+            "System Design",
+            "AI & RAG"
+        ]
     }
 
 

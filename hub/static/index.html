@@ -237,6 +237,7 @@
     </div>
 
     <div class="stats-bar">
+      <div class="stat-pill" title="Telegram Mobile Bridge">✈️ TG: <span class="val" id="hdr-tg-status">--</span></div>
       <div class="stat-pill" title="Architecture Readiness Score">🏛️ Readiness: <span class="val" id="hdr-readiness">--/1000</span></div>
       <div class="stat-pill" title="Mastery XP">✨ XP: <span class="val" id="hdr-xp">--</span></div>
       <div class="stat-pill" title="Daily Streak">🔥 <span class="val" id="hdr-streak">--d</span></div>
@@ -257,7 +258,10 @@
               Scroll casually like a social feed. Read a 60-second mental model, tap the quick quiz (+50 XP), or launch its live step-by-step visualizer.
             </p>
           </div>
-          <span class="badge badge-info" id="feed-progress-badge">0 / 6 Cards Mastered</span>
+          <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="pushToTelegram('card')" id="btn-tg-push-card">📲 Push Card to Telegram</button>
+            <span class="badge badge-info" id="feed-progress-badge">0 / 10 Cards Mastered</span>
+          </div>
         </div>
       </div>
 
@@ -343,6 +347,30 @@
         </div>
       </div>
 
+      <!-- 6 Curriculum Pillars & Architecture / Core CS Labs -->
+      <div class="panel" style="margin-top:1.5rem;">
+        <div class="panel-header">
+          <div class="panel-title">🏛️ 6 Curriculum Pillars & Hands-On Core CS / System Design / AI Labs</div>
+          <span class="badge badge-easy" id="arch-labs-count-badge">Phase 2 Active</span>
+        </div>
+        <div class="grid-3" id="pillars-summary-grid" style="margin-bottom:1.25rem;"></div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Pillar</th>
+                <th>Lab / Module</th>
+                <th>Path</th>
+                <th>Java 17</th>
+                <th>Python 3</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="arch-labs-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Problem Explorer Table -->
       <div class="panel" style="margin-top:1.5rem;">
         <div class="panel-header">
@@ -390,9 +418,36 @@
       await Promise.all([
         fetchDashboard(),
         fetchFeed(),
-        fetchVisualizers()
+        fetchVisualizers(),
+        fetchTelegramStatus()
       ]);
       loadCurrentVisualizer(false);
+    }
+
+    async function fetchTelegramStatus() {
+      try {
+        const res = await fetch("/api/telegram/status");
+        const data = await res.json();
+        const el = document.getElementById("hdr-tg-status");
+        if (el) el.textContent = data.configured ? "Connected" : "Setup .env";
+      } catch (e) {}
+    }
+
+    async function pushToTelegram(mode) {
+      const btn = document.getElementById("btn-tg-push-card");
+      if (btn) btn.textContent = "⏳ Sending to Phone...";
+      try {
+        const res = await fetch("/api/telegram/push", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode, topic: activeCategory === "All" ? "" : activeCategory })
+        });
+        const data = await res.json();
+        if (btn) btn.textContent = data.ok ? "✅ Sent to Phone!" : "⚠️ Check .env";
+      } catch (e) {
+        if (btn) btn.textContent = "⚠️ Error";
+      }
+      setTimeout(() => { if (btn) btn.textContent = "📲 Push Card to Telegram"; }, 2500);
     }
 
     function switchTab(tabName) {
@@ -442,7 +497,50 @@
         `;
       }).join("");
 
+      renderArchLabsAndPillars();
       renderProblemsTable();
+    }
+
+    function renderArchLabsAndPillars() {
+      if (!dashboardData) return;
+      const pillarsGrid = document.getElementById("pillars-summary-grid");
+      if (pillarsGrid && dashboardData.pillars) {
+        pillarsGrid.innerHTML = dashboardData.pillars.map(p => `
+          <div class="panel" style="margin-bottom:0; padding:0.9rem; background:var(--bg);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+              <b style="color:var(--primary); font-size:0.9rem;">${p.title}</b>
+              <span class="badge badge-easy">${p.completed} / ${p.total}</span>
+            </div>
+            <div style="font-size:0.78rem; color:var(--text-muted);">${p.description}</div>
+          </div>
+        `).join("");
+      }
+
+      const labsBody = document.getElementById("arch-labs-table-body");
+      const labs = dashboardData.architectureLabs || [];
+      const badge = document.getElementById("arch-labs-count-badge");
+      if (badge) badge.textContent = `${labs.length} Dual-Stack Labs Ready`;
+
+      if (labsBody) {
+        labsBody.innerHTML = labs.map(l => {
+          const vizBtn = l.visualizerId
+            ? `<button class="btn btn-sm" onclick="openInVisualizer('${l.visualizerId}')">🔬 Visualize</button>`
+            : "";
+          return `
+            <tr>
+              <td><span class="badge badge-info">${l.pillar}</span></td>
+              <td><b>${l.title}</b></td>
+              <td style="font-family:monospace; font-size:0.78rem; color:var(--text-muted);">${l.localPath}</td>
+              <td>${l.hasJava ? "✅" : "⬜"}</td>
+              <td>${l.hasPy ? "✅" : "⬜"}</td>
+              <td style="display:flex; gap:0.4rem;">
+                <button class="btn btn-secondary btn-sm" onclick="quickRunProblem('${l.folderSlug}')">▶ Test Java+Py</button>
+                ${vizBtn}
+              </td>
+            </tr>
+          `;
+        }).join("");
+      }
     }
 
     function renderProblemsTable() {
@@ -558,7 +656,10 @@
                 <span class="badge badge-purple">⏱️ ${c.readTime}</span>
                 ${c.completed ? '<span class="badge badge-easy">✓ Mastered (+50 XP)</span>' : ''}
               </div>
-              ${c.visualizerId ? `<button class="btn btn-sm" onclick="openInVisualizer('${c.visualizerId}')">🔬 Interactive Visualizer</button>` : ''}
+              <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                ${c.labSlug ? `<button class="btn btn-secondary btn-sm" onclick="switchTab('dashboard'); quickRunProblem('${c.labSlug}')">▶ Run Lab</button>` : ''}
+                ${c.visualizerId ? `<button class="btn btn-sm" onclick="openInVisualizer('${c.visualizerId}')">🔬 Interactive Visualizer</button>` : ''}
+              </div>
             </div>
 
             <h3 class="feed-title">${c.title}</h3>
