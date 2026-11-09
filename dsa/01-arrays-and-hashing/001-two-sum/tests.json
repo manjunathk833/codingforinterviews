@@ -1,0 +1,74 @@
+{
+  "slug": "001-two-sum",
+  "title": "001. Two Sum",
+  "chapter": "Ch 01: Arrays & Hashing",
+  "difficulty": "Easy",
+  "methodName": "twoSum",
+  "compareMode": "sorted_int_array",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(N)",
+  "visualizerId": "dsa-two-sum",
+  "prompt": "Given an array of integers `nums` and an integer `target`, return the indices of the two numbers such that they add up to `target`. You may assume that each input has exactly one solution, and you may not use the same element twice.",
+  "invariant": "need = target - nums[i]  →  lookup in seen HashMap in O(1)",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "Mental Model & Intuition",
+      "content": "Instead of checking every pair `(i, j)` in `O(N^2)` time, imagine each number `x` walking into a room and asking: 'Has my complement `target - x` already checked in at the front desk?'"
+    },
+    {
+      "tier": 2,
+      "title": "Pattern Identification",
+      "content": "Use a single-pass Hash Map (`seen = {}` in Python, `HashMap<Integer, Integer>` in Java) mapping each number's value to its array index."
+    },
+    {
+      "tier": 3,
+      "title": "Algorithmic Invariant",
+      "content": "Before inserting `nums[i]` into `seen`, check if `target - nums[i]` is already in `seen`. Checking before inserting guarantees you never use the same element at index `i` twice."
+    },
+    {
+      "tier": 4,
+      "title": "Edge Cases & Scaffolding",
+      "content": "Watch out for duplicate values (e.g. `nums = [3, 3], target = 6`) and negative integers (`nums = [-1, -2, -3, -4, -5], target = -8`)."
+    }
+  ],
+  "cases": [
+    {
+      "id": "case-1",
+      "label": "Case 1",
+      "input": {
+        "nums": [2, 7, 11, 15],
+        "target": 9
+      },
+      "expected": [0, 1]
+    },
+    {
+      "id": "case-2",
+      "label": "Case 2",
+      "input": {
+        "nums": [3, 2, 4],
+        "target": 6
+      },
+      "expected": [1, 2]
+    },
+    {
+      "id": "case-3",
+      "label": "Case 3",
+      "input": {
+        "nums": [3, 3],
+        "target": 6
+      },
+      "expected": [0, 1]
+    },
+    {
+      "id": "case-4",
+      "label": "Case 4",
+      "input": {
+        "nums": [-1, -2, -3, -4, -5],
+        "target": -8
+      },
+      "expected": [2, 4]
+    }
+  ]
+}
+

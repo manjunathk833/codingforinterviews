@@ -1,0 +1,56 @@
+{
+  "slug": "005-top-k-frequent-elements",
+  "title": "005. Top K Frequent Elements",
+  "chapter": "Ch 01: Arrays & Hashing",
+  "difficulty": "Medium",
+  "methodName": "topKFrequent",
+  "compareMode": "sorted_int_array",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(N)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given an integer array `nums` and an integer `k`, return the `k` most frequent elements. You may return the answer in any order. Achieve `O(N)` time using Bucket Sort by frequency.",
+  "invariant": "freq_buckets[count].append(num)  →  scan buckets from N down to 1",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "Mental Model & Intuition",
+      "content": "A heap takes `O(N log K)`. Notice that no element's frequency can exceed `N = len(nums)`. Create `N + 1` buckets where index `f` stores all numbers that appeared exactly `f` times!"
+    },
+    {
+      "tier": 2,
+      "title": "Pattern Identification",
+      "content": "Hash Map frequency count + Bounded Bucket Sort (`buckets = [[] for _ in range(len(nums) + 1)]`)."
+    },
+    {
+      "tier": 3,
+      "title": "Algorithmic Invariant",
+      "content": "After populating `buckets[freq].append(num)`, iterate `freq` backwards from `len(nums)` down to `1`, collecting numbers until `len(res) == k`."
+    },
+    {
+      "tier": 4,
+      "title": "Edge Cases & Scaffolding",
+      "content": "When `len(nums) == 1` and `k == 1`, `freq` is `1`, so `buckets` must have length `len(nums) + 1` (indices `0..N`)."
+    }
+  ],
+  "cases": [
+    {
+      "id": "case-1",
+      "label": "Case 1",
+      "input": {
+        "nums": [1, 1, 1, 2, 2, 3],
+        "k": 2
+      },
+      "expected": [1, 2]
+    },
+    {
+      "id": "case-2",
+      "label": "Case 2",
+      "input": {
+        "nums": [1],
+        "k": 1
+      },
+      "expected": [1]
+    }
+  ]
+}
+

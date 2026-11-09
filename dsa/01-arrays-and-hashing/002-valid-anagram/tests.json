@@ -1,0 +1,74 @@
+{
+  "slug": "002-valid-anagram",
+  "title": "002. Valid Anagram",
+  "chapter": "Ch 01: Arrays & Hashing",
+  "difficulty": "Easy",
+  "methodName": "isAnagram",
+  "compareMode": "exact",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(1) [26 slots]",
+  "visualizerId": "dsa-valid-anagram",
+  "prompt": "Given two strings `s` and `t`, return `true` if `t` is an anagram of `s`, and `false` otherwise. An anagram uses all the original lowercase letters rearrangements.",
+  "invariant": "count[s[i] - 'a']++  and  count[t[i] - 'a']--  →  all 26 slots == 0",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "Mental Model & Intuition",
+      "content": "Think of a 26-pan balance scale (`a` through `z`). Every letter in `s` adds +1 weight to its letter pan, and every letter in `t` subtracts -1 weight."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern Identification",
+      "content": "A fixed 26-integer frequency array (`[0] * 26`) achieves `O(N)` time and `O(1)` auxiliary space, beating sorting (`O(N log N)`)."
+    },
+    {
+      "tier": 3,
+      "title": "Algorithmic Invariant",
+      "content": "First guard `if len(s) != len(t): return False`. Then iterate `i` from `0` to `len(s)-1`, incrementing `count[ord(s[i]) - ord('a')]` and decrementing `count[ord(t[i]) - ord('a')]`."
+    },
+    {
+      "tier": 4,
+      "title": "Edge Cases & Scaffolding",
+      "content": "Verify strings of different lengths (`s='a', t='ab'`) exit immediately on line 1, and single-character strings (`s='z', t='z'`) return `True`."
+    }
+  ],
+  "cases": [
+    {
+      "id": "case-1",
+      "label": "Case 1",
+      "input": {
+        "s": "anagram",
+        "t": "nagaram"
+      },
+      "expected": true
+    },
+    {
+      "id": "case-2",
+      "label": "Case 2",
+      "input": {
+        "s": "rat",
+        "t": "car"
+      },
+      "expected": false
+    },
+    {
+      "id": "case-3",
+      "label": "Case 3",
+      "input": {
+        "s": "a",
+        "t": "ab"
+      },
+      "expected": false
+    },
+    {
+      "id": "case-4",
+      "label": "Case 4",
+      "input": {
+        "s": "z",
+        "t": "z"
+      },
+      "expected": true
+    }
+  ]
+}
+

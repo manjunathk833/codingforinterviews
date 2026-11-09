@@ -1,0 +1,174 @@
+{
+  "sources": [
+    {
+      "id": "aws-builders-library",
+      "name": "AWS Builders' Library",
+      "category": "system-design",
+      "feedUrl": "https://aws.amazon.com/blogs/architecture/feed/",
+      "homepage": "https://aws.amazon.com/builders-library/"
+    },
+    {
+      "id": "netflix-techblog",
+      "name": "Netflix TechBlog",
+      "category": "system-design",
+      "feedUrl": "https://netflixtechblog.com/feed",
+      "homepage": "https://netflixtechblog.com/"
+    },
+    {
+      "id": "cloudflare-blog",
+      "name": "Cloudflare Engineering",
+      "category": "core-cs",
+      "feedUrl": "https://blog.cloudflare.com/rss/",
+      "homepage": "https://blog.cloudflare.com/"
+    },
+    {
+      "id": "simon-willison",
+      "name": "Simon Willison's Weblog",
+      "category": "ai-engineering",
+      "feedUrl": "https://simonwillison.net/atom/everything/",
+      "homepage": "https://simonwillison.net/"
+    },
+    {
+      "id": "anthropic-engineering",
+      "name": "Anthropic Engineering",
+      "category": "ai-engineering",
+      "feedUrl": "https://www.anthropic.com/engineering",
+      "homepage": "https://www.anthropic.com/engineering"
+    },
+    {
+      "id": "playwright-releases",
+      "name": "Playwright & Browser Internals",
+      "category": "sdet-architecture",
+      "feedUrl": "https://github.com/microsoft/playwright/releases.atom",
+      "homepage": "https://playwright.dev/"
+    }
+  ],
+  "articles": [
+    {
+      "id": "pulse-aws-jitter-01",
+      "sourceId": "aws-builders-library",
+      "sourceName": "AWS Builders' Library",
+      "category": "system-design",
+      "title": "Timeouts, Retries, and Backoff with Jitter in Distributed Systems",
+      "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+      "publishedAt": "2026-11-08",
+      "readingMinutes": 9,
+      "summary": "Empirical simulation proving why AWS Full Jitter cuts retry storm server load by >40% compared to unjittered exponential backoff and Equal Jitter during recovery waves.",
+      "whyItMatters": "Directly validates our Bounded Ring Buffer + Full Jitter invariant in Chapter 1 of System Design.",
+      "tags": ["system-design", "backpressure", "full-jitter", "exponential-backoff", "token-bucket"],
+      "relatedChapters": ["sd-01-continuous-sync-and-backpressure"]
+    },
+    {
+      "id": "pulse-discord-hashing-02",
+      "sourceId": "netflix-techblog",
+      "sourceName": "Distributed Systems Digest",
+      "category": "system-design",
+      "title": "How Consistent Hashing Rings & Virtual Nodes Route Millions of Concurrent Sessions",
+      "url": "https://netflixtechblog.com/",
+      "publishedAt": "2026-11-07",
+      "readingMinutes": 11,
+      "summary": "Deep dive into how virtual nodes (vnodes) prevent cascading hot-spot failovers when stateful worker nodes join or leave high-throughput clusters.",
+      "whyItMatters": "Demonstrates why skipping same-physical-host virtual nodes is mandatory for R=3 fault-tolerant replication.",
+      "tags": ["system-design", "consistent-hashing", "virtual-nodes", "sharding", "dynamodb"],
+      "relatedChapters": ["sd-02-consistent-hashing-and-sharding"]
+    },
+    {
+      "id": "pulse-debezium-outbox-03",
+      "sourceId": "netflix-techblog",
+      "sourceName": "Netflix TechBlog",
+      "category": "system-design",
+      "title": "Zero-Data-Loss Event Streaming with Transactional Outbox and Postgres WAL CDC",
+      "url": "https://netflixtechblog.com/",
+      "publishedAt": "2026-11-06",
+      "readingMinutes": 10,
+      "summary": "Eliminating dual-write race conditions between microservices and Kafka by tailing the relational Write-Ahead Log and enforcing idempotent consumer watermarks.",
+      "whyItMatters": "Pairs directly with our Kafka Outbox & Causal Offset Watermark textbook chapter and interactive simulator.",
+      "tags": ["system-design", "kafka", "transactional-outbox", "cdc", "eventual-consistency", "wal"],
+      "relatedChapters": ["sd-03-kafka-outbox-and-eventual-consistency", "cs-03-lsm-trees-b-trees-and-wal-isolation"]
+    },
+    {
+      "id": "pulse-anthropic-rag-evals-04",
+      "sourceId": "anthropic-engineering",
+      "sourceName": "Anthropic Engineering",
+      "category": "ai-engineering",
+      "title": "Contextual Retrieval, Claim Entailment & Catching Subtle RAG Hallucinations",
+      "url": "https://www.anthropic.com/news/contextual-retrieval",
+      "publishedAt": "2026-11-08",
+      "readingMinutes": 12,
+      "summary": "Why dense cosine similarity misses negation inversions and how combining BM25 + dense embeddings + per-claim entailment verification reduces retrieval failure rates by 67%.",
+      "whyItMatters": "Anchors Volume II Chapter 1 (The RAG Evaluation Triad & Negation Polarity Guard).",
+      "tags": ["ai-engineering", "rag", "rag-evals", "hallucination", "claim-entailment", "vector-search"],
+      "relatedChapters": ["ai-01-rag-triad-and-claim-verification"]
+    },
+    {
+      "id": "pulse-simonw-llm-evals-05",
+      "sourceId": "simon-willison",
+      "sourceName": "Simon Willison's Weblog",
+      "category": "ai-engineering",
+      "title": "Building Deterministic Guardrails and Regression Evals for Production AI Agents",
+      "url": "https://simonwillison.net/",
+      "publishedAt": "2026-11-05",
+      "readingMinutes": 7,
+      "summary": "Practical patterns for testing non-deterministic LLM pipelines in CI using deterministic claim decomposition, schema validation, and golden retrieval datasets.",
+      "whyItMatters": "Shows how Staff AI Engineers keep CI fast and deterministic while auditing LLM outputs.",
+      "tags": ["ai-engineering", "rag-evals", "llm-as-a-judge", "sdet-architecture"],
+      "relatedChapters": ["ai-01-rag-triad-and-claim-verification", "ai-02-self-healing-ast-and-dom-confidence"]
+    },
+    {
+      "id": "pulse-playwright-accessibility-06",
+      "sourceId": "playwright-releases",
+      "sourceName": "Playwright Engineering",
+      "category": "sdet-architecture",
+      "title": "Role-Based Accessibility Trees & Resilient DOM Locators over CDP WebSockets",
+      "url": "https://playwright.dev/docs/locators",
+      "publishedAt": "2026-11-04",
+      "readingMinutes": 8,
+      "summary": "Why WAI-ARIA role and accessible-name locators outlive CSS refactors, and how Playwright multiplexes browser context commands over persistent CDP WebSocket pipes.",
+      "whyItMatters": "Connects Self-Healing DOM Confidence scoring with HTTP/2 & WebSocket transport internals.",
+      "tags": ["ai-engineering", "self-healing", "playwright", "playwright-cdp", "websockets", "sdet-architecture"],
+      "relatedChapters": ["ai-02-self-healing-ast-and-dom-confidence", "cs-02-tcp-tls-http2-and-websocket-framing"]
+    },
+    {
+      "id": "pulse-cloudflare-tcp-tls13-07",
+      "sourceId": "cloudflare-blog",
+      "sourceName": "Cloudflare Engineering",
+      "category": "core-cs",
+      "title": "Inside TLS 1.3 1-RTT Handshakes, SYN Backlog Tuning & HTTP/2 Multiplexing at Edge Scale",
+      "url": "https://blog.cloudflare.com/",
+      "publishedAt": "2026-11-03",
+      "readingMinutes": 14,
+      "summary": "Packet-by-packet breakdown of how TLS 1.3 saves a full round-trip time via early ECDHE key shares and why TCP-layer Head-of-Line blocking occurs on lossy networks.",
+      "whyItMatters": "Real-world kernel & edge telemetry matching our Core CS Chapter 2 interactive handshake simulator.",
+      "tags": ["core-cs", "networking", "tcp", "tls-1.3", "http/2"],
+      "relatedChapters": ["cs-02-tcp-tls-http2-and-websocket-framing"]
+    },
+    {
+      "id": "pulse-linux-rss-gc-08",
+      "sourceId": "cloudflare-blog",
+      "sourceName": "Systems Performance Weekly",
+      "category": "core-cs",
+      "title": "Diagnosing Container OOMKills (Exit 137): Post-GC Trough Regression vs. Off-Heap Native Leaks",
+      "url": "https://blog.cloudflare.com/",
+      "publishedAt": "2026-11-01",
+      "readingMinutes": 10,
+      "summary": "Why managed heap graphs look flat while Linux cgroup RSS climbs to OOM, and how OLS linear regression on post-GC minima catches leaks hours before crash.",
+      "whyItMatters": "Directly mirrors our OS Virtual Memory, Post-GC RSS Slope & File Descriptor Leak textbook chapter.",
+      "tags": ["core-cs", "os-kernel", "virtual-memory", "garbage-collection", "memory-leak", "file-descriptors"],
+      "relatedChapters": ["cs-01-os-virtual-memory-gc-and-fd-leaks"]
+    },
+    {
+      "id": "pulse-rocksdb-lsm-wal-09",
+      "sourceId": "aws-builders-library",
+      "sourceName": "Storage Engine Internals",
+      "category": "core-cs",
+      "title": "B+Trees vs. LSM-Trees: Write Amplification, Bloom Filters & SQLite WAL Concurrency",
+      "url": "https://sqlite.org/wal.html",
+      "publishedAt": "2026-10-29",
+      "readingMinutes": 13,
+      "summary": "Comparing page-based B+Trees with append-only LSM-Trees, Tombstone compaction, and how Write-Ahead Logging unlocks non-blocking concurrent readers.",
+      "whyItMatters": "Explains the exact storage engine architecture powering both RocksDB and this Hub's own SQLite WAL + FTS5 database!",
+      "tags": ["core-cs", "databases", "b-tree", "lsm-tree", "wal", "mvcc", "sqlite"],
+      "relatedChapters": ["cs-03-lsm-trees-b-trees-and-wal-isolation"]
+    }
+  ]
+}

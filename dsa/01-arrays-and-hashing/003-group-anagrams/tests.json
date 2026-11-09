@@ -1,0 +1,70 @@
+{
+  "slug": "003-group-anagrams",
+  "title": "003. Group Anagrams",
+  "chapter": "Ch 01: Arrays & Hashing",
+  "difficulty": "Medium",
+  "methodName": "groupAnagrams",
+  "compareMode": "unordered_groups",
+  "timeComplexity": "O(N · K)",
+  "spaceComplexity": "O(N · K)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given an array of strings `strs`, group the anagrams together. You can return the answer in any order. Achieve `O(N · K)` time using a 26-letter canonical frequency signature.",
+  "invariant": "key = tuple(count[26])  →  buckets[key].append(word)",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "Mental Model & Intuition",
+      "content": "Sorting each word takes `O(K log K)`. Instead, stamp each word with a 26-slot frequency barcode (`a`..`z`) in a single `O(K)` pass so all anagrams collide in the exact same hash bucket."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern Identification",
+      "content": "Map each canonical 26-count signature to a bucket list: `buckets = defaultdict(list)` in Python, or `Map<String, List<String>>` in Java."
+    },
+    {
+      "tier": 3,
+      "title": "Algorithmic Invariant",
+      "content": "In Python, lists are mutable and unhashable, so convert `count` to `tuple(count)` before indexing `buckets`. In Java, prefix each count with `'#'` (`#1#0#2...`) so multi-digit counts never collide."
+    },
+    {
+      "tier": 4,
+      "title": "Edge Cases & Scaffolding",
+      "content": "Test empty strings `[\"\"]`, single-character strings `[\"a\"]`, and arrays where all words are distinct."
+    }
+  ],
+  "cases": [
+    {
+      "id": "case-1",
+      "label": "Case 1",
+      "input": {
+        "strs": ["eat", "tea", "tan", "ate", "nat", "bat"]
+      },
+      "expected": [
+        ["ate", "eat", "tea"],
+        ["nat", "tan"],
+        ["bat"]
+      ]
+    },
+    {
+      "id": "case-2",
+      "label": "Case 2",
+      "input": {
+        "strs": [""]
+      },
+      "expected": [
+        [""]
+      ]
+    },
+    {
+      "id": "case-3",
+      "label": "Case 3",
+      "input": {
+        "strs": ["a"]
+      },
+      "expected": [
+        ["a"]
+      ]
+    }
+  ]
+}
+

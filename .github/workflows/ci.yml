@@ -41,7 +41,7 @@ jobs:
 
       - name: Make Scripts Executable
         run: |
-          chmod +x .agents/skills/github/scripts/safety_check.sh
+          chmod +x tools/safety/safety_check.sh
           chmod +x run.sh
           chmod +x tools/runner.py
           chmod +x tools/tracker.py
@@ -49,7 +49,7 @@ jobs:
 
       - name: "🛡️ Stage 1/4: Pre-Push & Secret Safety Audit"
         run: |
-          ./.agents/skills/github/scripts/safety_check.sh
+          ./tools/safety/safety_check.sh
 
       - name: "🧩 Stage 2/4: DSA Solutions & Curriculum Trackers"
         run: |
@@ -90,4 +90,7 @@ jobs:
           curl -fsS http://127.0.0.1:8090/api/dashboard | grep -q '"readinessScore"'
           curl -fsS http://127.0.0.1:8090/api/feed | grep -q '"cards"'
           curl -fsS http://127.0.0.1:8090/api/visualizers | grep -q '"dsa-group-anagrams"'
+          curl -fsS http://127.0.0.1:8090/api/tracks | grep -q '"interactive-textbook"'
+          curl -fsS "http://127.0.0.1:8090/api/kb/search?q=LSM-Tree" | grep -q '"cs-03-lsm-trees"'
+          curl -fsS http://127.0.0.1:8090/api/newsfeed | grep -q '"articles"'
           kill $HUB_PID || true

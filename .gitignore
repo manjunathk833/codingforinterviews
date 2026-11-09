@@ -20,6 +20,9 @@ id_ed25519
 todos.md
 playground.md
 hub/db.json
+hub/hub.db
+hub/hub.db-wal
+hub/hub.db-shm
 
 # ------------------------------------------------------------------------------
 # 2. Build Artifacts & Binaries

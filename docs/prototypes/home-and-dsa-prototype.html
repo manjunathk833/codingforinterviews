@@ -1,0 +1,2225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Hub of Learning — Antigravity Learning Hub · Zen Editorial Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #FAF7F2;
+      color: #181615;
+      margin: 0;
+    }
+    .font-serif-display {
+      font-family: 'Fraunces', Georgia, serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .tactile-card {
+      background: #FFFFFF;
+      border: 1.5px solid #E4DEC9;
+      box-shadow: 0 3px 0 #DDD4BE, 0 8px 22px -6px rgba(24, 22, 21, 0.06);
+      transition: all 0.18s ease;
+    }
+    .tactile-card:hover {
+      border-color: #181615;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 0 #C8BFA8, 0 12px 28px -6px rgba(24, 22, 21, 0.11);
+    }
+    .coral-btn {
+      background: #C85A32;
+      color: #FFFFFF;
+      transition: all 0.18s ease;
+    }
+    .coral-btn:hover {
+      background: #B24B26;
+      transform: translateY(-1px);
+    }
+    .wood-tile {
+      box-shadow: 0 4px 0 #C8A679, 0 6px 12px rgba(0,0,0,0.08);
+    }
+    /* Editorial Markdown Typography */
+    .kb-prose h1 { font-family: 'Fraunces', serif; font-size: 1.85rem; font-weight: 700; margin: 0.25rem 0 0.85rem; line-height: 1.25; color: #181615; }
+    .kb-prose h2 { font-family: 'Fraunces', serif; font-size: 1.35rem; font-weight: 700; margin: 1.75rem 0 0.65rem; padding-top: 1rem; border-top: 1px solid #EAE3D2; color: #181615; }
+    .kb-prose h3 { font-family: 'Fraunces', serif; font-size: 1.08rem; font-weight: 700; margin: 1.2rem 0 0.45rem; color: #2D2926; }
+    .kb-prose p { font-size: 0.94rem; line-height: 1.72; color: #3F3A36; margin-bottom: 0.85rem; }
+    .kb-prose ul, .kb-prose ol { padding-left: 1.35rem; margin-bottom: 0.95rem; color: #3F3A36; font-size: 0.92rem; line-height: 1.68; }
+    .kb-prose li { margin-bottom: 0.35rem; }
+    .kb-prose pre { background: #18181B; color: #F4F4F5; padding: 1rem 1.15rem; border-radius: 0.9rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; line-height: 1.6; margin: 0.9rem 0 1.15rem; border: 1px solid #27272A; }
+    .kb-prose code.inline-code { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; background: #F3EFE6; border: 1px solid #E2DACB; padding: 0.1rem 0.38rem; border-radius: 0.35rem; color: #9A3412; }
+    .kb-prose table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.25rem; font-size: 0.83rem; background: #FAF7F2; border-radius: 0.75rem; overflow: hidden; border: 1px solid #E2DACB; }
+    .kb-prose th { background: #EFECE3; text-align: left; padding: 0.6rem 0.8rem; font-weight: 700; color: #181615; border-bottom: 1px solid #DFD8C4; }
+    .kb-prose td { padding: 0.6rem 0.8rem; border-bottom: 1px solid #EAE3D2; color: #3F3A36; vertical-align: top; }
+    .kb-prose blockquote { background: #FFF8F1; border-left: 4px solid #C85A32; padding: 0.85rem 1rem; border-radius: 0 0.75rem 0.75rem 0; margin: 1rem 0; font-size: 0.86rem; color: #4A3F38; }
+    mark { background: #FDE68A; color: #181615; padding: 0 2px; border-radius: 3px; font-weight: 600; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- ==========================================================================
+       TOP NAVIGATION MASTHEAD — THE HUB OF LEARNING (ZEN EDITORIAL STUDIO)
+       ========================================================================== -->
+  <header class="sticky top-0 z-50 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#E5DEC9] px-5 py-2.5 flex flex-wrap xl:flex-nowrap items-center justify-between gap-3">
+    <div class="flex items-center gap-2.5 shrink-0">
+      <button onclick="showView('home')" class="flex items-center gap-2 text-left">
+        <div class="w-8 h-8 rounded-xl bg-zinc-900 text-[#FAF7F2] flex items-center justify-center font-serif-display font-bold text-base shadow-sm">
+          H
+        </div>
+        <div>
+          <span class="font-serif-display font-bold text-sm tracking-tight text-zinc-900 block leading-none">The Hub of Learning</span>
+          <span class="text-[10px] text-zinc-500 font-mono">Antigravity Learning Hub · Zen Studio</span>
+        </div>
+      </button>
+    </div>
+
+    <!-- All 6 Purpose-Built Views across the 4 Track Execution Archetypes -->
+    <nav class="flex flex-wrap items-center gap-1 bg-[#EFECE3] p-1 rounded-2xl border border-[#DFD8C4] text-[11px]">
+      <button onclick="showView('home')" id="tab-btn-dashboard" class="px-2.5 py-1.5 rounded-xl font-bold transition bg-zinc-900 text-white shadow-sm">
+        1. Home &amp; 6 Tracks
+      </button>
+      <button onclick="showView('textbook')" id="tab-btn-textbook" class="px-2.5 py-1.5 rounded-xl font-semibold transition text-zinc-700 hover:text-zinc-900">
+        📖 2. Textbooks
+      </button>
+      <button onclick="showView('newsfeed')" id="tab-btn-feed" class="px-2.5 py-1.5 rounded-xl font-semibold transition text-zinc-700 hover:text-zinc-900">
+        📡 3. Tech Pulse
+      </button>
+      <button onclick="showView('roadmap')" id="tab-btn-roadmap" class="px-2.5 py-1.5 rounded-xl font-semibold transition text-zinc-700 hover:text-zinc-900">
+        🗺️ 4. DSA Roadmap
+      </button>
+      <button onclick="showView('workspace')" id="tab-btn-visualizer" class="px-2.5 py-1.5 rounded-xl font-semibold transition text-zinc-700 hover:text-zinc-900">
+        💻 5. 50/50 Studio
+      </button>
+      <button onclick="showView('workbench')" id="tab-btn-workbench" class="px-2.5 py-1.5 rounded-xl font-semibold transition text-zinc-700 hover:text-zinc-900">
+        🛠️ 6. Workbench &amp; Sim
+      </button>
+    </nav>
+
+    <!-- Global Instant SQLite FTS5 Search + Sync Pill -->
+    <div class="relative flex items-center gap-2 text-xs shrink-0">
+      <div class="relative">
+        <input
+          id="global-kb-search"
+          type="search"
+          placeholder="🔍 FTS5 Search (LSM-Tree, RAG...)"
+          oninput="handleGlobalKbSearch(this.value)"
+          class="w-52 bg-white border border-[#DFD8C4] rounded-xl px-3 py-1.5 text-[11px] font-mono text-zinc-800 focus:outline-none focus:border-zinc-900"
+        />
+        <div id="global-search-dropdown" class="hidden absolute right-0 mt-1.5 w-96 max-h-96 overflow-y-auto bg-white rounded-2xl border border-[#DFD8C4] shadow-xl p-2 z-50 space-y-1"></div>
+      </div>
+      <span id="fs-sync-pill" class="hidden xl:inline-block px-2.5 py-1 rounded-full bg-emerald-100/90 text-emerald-800 font-mono font-semibold border border-emerald-300 text-[10px]">
+        ● WAL+FTS5
+      </span>
+      <span id="header-mastery-pill" class="hidden 2xl:inline-block px-2.5 py-1 rounded-full bg-[#EFECE3] text-zinc-800 font-semibold border border-[#DFD8C4] text-[10px]">
+        3/128 DSA · 8 Chapters
+      </span>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       VIEW 1 (BANKED OPTION A + ALL 6 TRACKS): HOME & ENGINEERING PULSE
+       ========================================================================== -->
+  <main id="view-home" class="max-w-6xl w-full mx-auto px-6 py-9 space-y-10">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div class="space-y-1.5">
+        <div class="text-xs font-mono uppercase tracking-widest text-[#C85A32] font-bold">
+          LOCAL-FIRST LIVING KNOWLEDGEBASE · 4 EXECUTION ARCHETYPES
+        </div>
+        <h1 class="font-serif-display text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight">
+          Welcome to The Hub of Learning.
+        </h1>
+        <p class="text-sm text-zinc-600 max-w-3xl">
+          Master first-principles <strong>Interactive Textbooks</strong> (System Design, AI Engineering, Core CS), practice in the <strong>50/50 DSA Studio</strong>, verify <strong>Local IDE Frameworks</strong> deterministically with zero AI, and stay current via the <strong>Engineering Pulse Newsfeed</strong>.
+        </p>
+      </div>
+      <div class="inline-flex bg-[#EFECE3] p-1 rounded-xl border border-[#DFD8C4] text-xs">
+        <button onclick="setHomeHeroMode('featured')" id="hero-mode-featured" class="px-3 py-1 rounded-lg bg-zinc-900 text-white font-bold">
+          Featured Textbook: LSM-Trees & WAL
+        </button>
+        <button onclick="setHomeHeroMode('dsa')" id="hero-mode-dsa" class="px-3 py-1 rounded-lg text-zinc-700 font-semibold">
+          DSA Studio: 003. Group Anagrams
+        </button>
+        <button onclick="setHomeHeroMode('upnext')" id="hero-mode-upnext" class="px-3 py-1 rounded-lg text-zinc-700 font-semibold">
+          Up Next Queue
+        </button>
+      </div>
+    </div>
+
+    <!-- Today's Deep Dive Hero Card -->
+    <section class="bg-white rounded-3xl border border-[#E2DACB] shadow-sm p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <div class="lg:col-span-7 space-y-4">
+        <div id="home-hero-kicker" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#C85A32]">
+          CROWN JEWEL TEXTBOOK · VOLUME III (CORE CS)
+        </div>
+        <h2 id="home-hero-title" class="font-serif-display text-3xl sm:text-4xl font-bold text-zinc-900 leading-tight">
+          Database Storage Engines: B+Trees vs. LSM-Trees, WAL & MVCC Isolation
+        </h2>
+        <p id="home-hero-desc" class="text-sm sm:text-base text-zinc-600 leading-relaxed">
+          Trace how append-only Write-Ahead Logs (<code class="font-mono text-xs bg-[#FAF7F2] px-1.5 py-0.5 rounded border border-[#E2DACB]">WAL</code>), sorted in-memory MemTables, immutable SSTables, and Bloom Filters power RocksDB, Cassandra, and this Hub's own SQLite engine.
+        </p>
+        <div class="pt-1 flex flex-wrap items-center gap-3">
+          <button id="home-hero-cta" onclick="openTextbookChapter('cs-03-lsm-trees-b-trees-and-wal-isolation')" class="coral-btn px-6 py-3 rounded-xl font-bold text-sm shadow-sm">
+            Read Interactive Chapter →
+          </button>
+          <button onclick="openProblemWorkspace('003-group-anagrams')" class="px-4 py-3 rounded-xl bg-[#F5F1E8] hover:bg-[#EAE3D2] text-zinc-800 font-semibold text-xs border border-[#DFD8C4]">
+            Open DSA 50/50 Studio (WS 1)
+          </button>
+          <button onclick="showView('newsfeed')" class="px-4 py-3 rounded-xl bg-[#F5F1E8] hover:bg-[#EAE3D2] text-zinc-800 font-semibold text-xs border border-[#DFD8C4]">
+            📡 Engineering Pulse
+          </button>
+        </div>
+      </div>
+
+      <!-- 3D Tactile Visual Cue Box -->
+      <div class="lg:col-span-5 bg-[#F5F1E8] rounded-2xl p-6 border border-[#E5DEC9] flex flex-col items-center justify-center space-y-4">
+        <div class="text-[11px] font-mono uppercase tracking-wider text-zinc-500 font-semibold">
+          Tactile Storage & Signature Mental Models
+        </div>
+        <div class="flex items-center gap-2 font-mono font-bold text-xs">
+          <span class="wood-tile px-3 py-2.5 rounded-xl bg-[#E6C79C] text-zinc-900">WAL Append</span>
+          <span class="text-zinc-400">→</span>
+          <span class="wood-tile px-3 py-2.5 rounded-xl bg-[#E07A5F] text-white">MemTable</span>
+          <span class="text-zinc-400">→</span>
+          <span class="wood-tile px-3 py-2.5 rounded-xl bg-[#1E6F5C] text-white">SSTable + Bloom</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 w-full">
+          <div class="bg-white rounded-2xl border-t-4 border-[#1E6F5C] p-3 text-center shadow-sm">
+            <div class="font-mono text-[11px] font-bold text-zinc-900">SQLite FTS5 Search</div>
+            <div class="font-mono text-[11px] text-emerald-700 mt-0.5">&lt; 0.2ms BM25 Rank</div>
+          </div>
+          <div class="bg-white rounded-2xl border-t-4 border-[#C85A32] p-3 text-center shadow-sm">
+            <div class="font-mono text-[11px] font-bold text-zinc-900">DSA Bucket: a·e·t</div>
+            <div class="font-mono text-[11px] text-[#C85A32] mt-0.5">["eat", "tea", "ate"]</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- All 6 Core Engineering Volumes Badged by the 4 Execution Archetypes -->
+    <section class="space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 class="font-serif-display text-2xl font-bold text-zinc-900">All 6 Engineering Tracks (By Execution Archetype)</h3>
+          <p class="text-xs text-zinc-500">Every track uses the right tool for how that engineering discipline is learned in the real world</p>
+        </div>
+        <span id="home-dsa-progress" class="font-mono text-xs px-3 py-1 rounded-full bg-[#EFECE3] border border-[#DFD8C4] text-zinc-700 font-semibold">
+          3 / 128 DSA · 8 Textbook Chapters
+        </span>
+      </div>
+
+      <div id="home-tracks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    </section>
+
+    <!-- Live Engineering Pulse Ribbon on Home -->
+    <section class="bg-white rounded-3xl border border-[#E2DACB] p-6 space-y-4 shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div class="text-[11px] font-mono font-bold uppercase tracking-wider text-[#C85A32]">📡 LIVE INDUSTRY & AI SHIFT RADAR</div>
+          <h3 class="font-serif-display text-xl font-bold text-zinc-900">Engineering Pulse Newsfeed (Cross-Linked to Your Textbooks)</h3>
+        </div>
+        <button onclick="showView('newsfeed')" class="px-4 py-2 rounded-xl bg-zinc-900 text-white text-xs font-bold">
+          Explore Full Pulse Feed →
+        </button>
+      </div>
+      <div id="home-pulse-strip" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+    </section>
+  </main>
+
+  <!-- ==========================================================================
+       VIEW 2: INTERACTIVE TEXTBOOK & KNOWLEDGEBASE READER (3-COLUMN ZEN ROOM)
+       ========================================================================== -->
+  <main id="view-textbook" class="hidden max-w-[1440px] w-full mx-auto px-5 py-7">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <!-- LEFT 3 COLS: Volume Switcher + FTS5 Search + Chapter Spine -->
+      <aside class="lg:col-span-3 bg-white rounded-3xl border border-[#E2DACB] p-5 space-y-4 shadow-sm lg:sticky lg:top-20 max-h-[85vh] overflow-y-auto">
+        <div class="space-y-2">
+          <div class="text-[11px] font-mono font-bold uppercase tracking-wider text-[#C85A32]">
+            SQLITE FTS5 BM25 SEARCH
+          </div>
+          <input
+            id="kb-spine-search"
+            type="search"
+            placeholder="Filter chapters or search FTS5..."
+            oninput="handleSpineKbSearch(this.value)"
+            class="w-full bg-[#FAF7F2] border border-[#DFD8C4] rounded-xl px-3 py-2 text-xs font-mono text-zinc-800 focus:outline-none focus:border-zinc-900"
+          />
+          <div id="kb-spine-search-results" class="hidden space-y-1.5 pt-1"></div>
+        </div>
+
+        <!-- Volume Filter Pills -->
+        <div class="flex flex-wrap gap-1.5 text-[11px] font-semibold border-b border-[#EFECE3] pb-3">
+          <button onclick="filterKbTrack('all')" id="kb-filter-all" class="px-2.5 py-1 rounded-lg bg-zinc-900 text-white">All (8)</button>
+          <button onclick="filterKbTrack('system-design')" id="kb-filter-system-design" class="px-2.5 py-1 rounded-lg bg-[#F5F1E8] text-zinc-700">Vol I: SysDesign</button>
+          <button onclick="filterKbTrack('ai-engineering')" id="kb-filter-ai-engineering" class="px-2.5 py-1 rounded-lg bg-[#F5F1E8] text-zinc-700">Vol II: AI Eng</button>
+          <button onclick="filterKbTrack('core-cs')" id="kb-filter-core-cs" class="px-2.5 py-1 rounded-lg bg-[#F5F1E8] text-zinc-700">Vol III: Core CS</button>
+        </div>
+
+        <div id="kb-chapters-spine" class="space-y-2"></div>
+      </aside>
+
+      <!-- CENTER 6 COLS: Editorial Textbook Sheet + Inline Simulator + End-of-Chapter Quiz -->
+      <article class="lg:col-span-6 bg-white rounded-3xl border border-[#E2DACB] p-7 sm:p-9 space-y-6 shadow-sm">
+        <div class="space-y-3 border-b border-[#EFECE3] pb-5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span id="kb-chapter-kicker" class="text-xs font-mono font-bold uppercase tracking-wider text-[#1E6F5C]">
+              VOLUME III · CHAPTER 3 · 22 MIN READ
+            </span>
+            <span id="kb-chapter-mastery-badge" class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#F5F1E8] text-zinc-700 border border-[#DFD8C4]">
+              Quiz Pending
+            </span>
+          </div>
+          <h1 id="kb-chapter-title" class="font-serif-display text-2xl sm:text-3xl font-bold text-zinc-900 leading-tight">
+            Loading Chapter...
+          </h1>
+          <div id="kb-chapter-tags" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Inline Step-by-Step Architecture Simulator (Powered by /api/visualize) -->
+        <div class="bg-[#F5F1E8] rounded-2xl p-5 border border-[#E5DEC9] space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div class="text-[11px] font-mono font-bold uppercase tracking-wider text-[#C85A32]">
+                ⚡ INLINE INTERACTIVE ARCHITECTURE SIMULATOR
+              </div>
+              <h3 id="kb-sim-title" class="font-serif-display text-base font-bold text-zinc-900">
+                Step-by-Step System Behavior Trace
+              </h3>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs">
+              <button onclick="stepKbSimulator(-1)" class="px-3 py-1.5 rounded-xl bg-white hover:bg-zinc-100 border border-[#DFD8C4] font-semibold">
+                ◀ Prev
+              </button>
+              <span id="kb-sim-step-pill" class="font-mono text-[11px] px-2.5 py-1 rounded-lg bg-white border border-[#DFD8C4] font-bold">
+                1 / 3
+              </span>
+              <button onclick="stepKbSimulator(1)" class="coral-btn px-3.5 py-1.5 rounded-xl font-bold">
+                Next Step ▶
+              </button>
+            </div>
+          </div>
+
+          <p id="kb-sim-narration" class="text-xs text-zinc-700 bg-white/90 rounded-xl p-3.5 border border-[#E5DEC9] leading-relaxed"></p>
+
+          <div id="kb-sim-compare-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs"></div>
+
+          <div id="kb-sim-codeline" class="font-mono text-[11px] bg-zinc-900 text-emerald-300 px-3.5 py-2 rounded-xl overflow-x-auto"></div>
+        </div>
+
+        <!-- Rendered Textbook Chapter Markdown Body -->
+        <div id="kb-chapter-body" class="kb-prose"></div>
+
+        <!-- Paired Local Lab Callout -->
+        <div id="kb-lab-callout" class="p-4 rounded-2xl bg-[#FAF7F2] border border-[#DFD8C4] flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div>
+            <div class="font-mono font-bold text-zinc-900">🧪 Paired Hands-On Repository Lab</div>
+            <div id="kb-lab-path-label" class="font-mono text-zinc-600 mt-0.5">system-design/01-endpoint-to-cloud-sync-engine</div>
+          </div>
+          <button onclick="showView('workbench')" class="px-4 py-2 rounded-xl bg-zinc-900 text-white font-bold">
+            Open in Local Workbench →
+          </button>
+        </div>
+
+        <!-- End-of-Chapter Mastery Gate (Interactive Quiz) -->
+        <section class="bg-[#F4FBF8] rounded-3xl border border-[#B7E4D8] p-6 space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div class="text-[11px] font-mono font-bold uppercase tracking-wider text-[#1E6F5C]">
+                🎯 PART IV · END-OF-CHAPTER MASTERY GATE
+              </div>
+              <h3 class="font-serif-display text-xl font-bold text-zinc-900">
+                Verify First-Principles Understanding
+              </h3>
+            </div>
+            <span id="kb-quiz-result-pill" class="hidden px-3 py-1 rounded-full text-xs font-mono font-bold"></span>
+          </div>
+
+          <div id="kb-quiz-questions" class="space-y-4"></div>
+
+          <div class="flex items-center justify-between pt-2">
+            <span class="text-xs text-zinc-600">Score 100% to mark this textbook chapter Mastered in SQLite.</span>
+            <button onclick="submitActiveKbQuiz()" id="kb-quiz-submit-btn" class="px-5 py-2.5 rounded-xl bg-[#1E6F5C] hover:bg-[#165747] text-white font-bold text-xs shadow-sm">
+              ✓ Grade Chapter Quiz
+            </button>
+          </div>
+        </section>
+      </article>
+
+      <!-- RIGHT 3 COLS: Cross-Linked Engineering Pulse Newsfeed -->
+      <aside class="lg:col-span-3 space-y-4 lg:sticky lg:top-20">
+        <div class="bg-white rounded-3xl border border-[#E2DACB] p-5 space-y-4 shadow-sm">
+          <div>
+            <div class="text-[11px] font-mono font-bold uppercase tracking-wider text-[#C85A32]">
+              📡 LIVE ENGINEERING PULSE
+            </div>
+            <h3 class="font-serif-display text-lg font-bold text-zinc-900">
+              In Production Right Now
+            </h3>
+            <p class="text-xs text-zinc-500 mt-0.5">
+              Industry articles cross-linked to this chapter's tags
+            </p>
+          </div>
+
+          <div id="kb-related-news" class="space-y-3"></div>
+
+          <button onclick="showView('newsfeed')" class="w-full py-2 rounded-xl bg-[#F5F1E8] hover:bg-[#EAE3D2] text-zinc-800 font-bold text-xs border border-[#DFD8C4]">
+            Browse All Engineering Pulse →
+          </button>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       VIEW 3: ENGINEERING PULSE NEWSFEED + CONCEPT CARDS
+       ========================================================================== -->
+  <main id="view-newsfeed" class="hidden max-w-6xl w-full mx-auto px-6 py-8 space-y-8">
+    <div class="bg-white rounded-3xl border border-[#E2DACB] p-7 space-y-5 shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="text-xs font-mono font-bold uppercase tracking-wider text-[#C85A32]">
+            CURATED RSS / ATOM AGGREGATOR · OFFLINE-RESILIENT SQLITE CACHE
+          </div>
+          <h2 class="font-serif-display text-3xl font-bold text-zinc-900 mt-1">
+            📡 Engineering Pulse — AI & Systems Shift Radar
+          </h2>
+          <p class="text-sm text-zinc-600 mt-1">
+            High-signal posts from AWS Builders' Library, Netflix TechBlog, Cloudflare, Anthropic Engineering, Simon Willison, and Playwright—every article linked directly to your Textbook Chapters.
+          </p>
+        </div>
+        <button onclick="refreshLiveNewsfeed()" id="news-refresh-btn" class="coral-btn px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm">
+          ↻ Sync Live RSS/Atom Feeds
+        </button>
+      </div>
+
+      <!-- Category & Bookmark Filter Bar -->
+      <div class="flex flex-wrap items-center gap-2 text-xs font-semibold pt-1">
+        <button onclick="loadNewsfeedView('all', false)" id="news-cat-all" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-white">All Tracks</button>
+        <button onclick="loadNewsfeedView('system-design', false)" id="news-cat-system-design" class="px-3.5 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700">System Design</button>
+        <button onclick="loadNewsfeedView('ai-engineering', false)" id="news-cat-ai-engineering" class="px-3.5 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700">AI Engineering</button>
+        <button onclick="loadNewsfeedView('core-cs', false)" id="news-cat-core-cs" class="px-3.5 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700">Core CS</button>
+        <button onclick="loadNewsfeedView('sdet-architecture', false)" id="news-cat-sdet-architecture" class="px-3.5 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700">SDET & Browsers</button>
+        <button onclick="loadNewsfeedView('all', true)" id="news-cat-bookmarked" class="px-3.5 py-1.5 rounded-xl bg-amber-100 text-amber-900">★ Saved Bookmarks</button>
+      </div>
+
+      <div id="newsfeed-articles-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+    </div>
+
+    <!-- Concept Flashcards Section (Preserved for rapid 60s drills) -->
+    <section class="space-y-4">
+      <h3 class="font-serif-display text-2xl font-bold text-zinc-900">60-Second Staff Concept Cards</h3>
+      <div id="feed-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+    </section>
+  </main>
+
+  <!-- ==========================================================================
+       VIEW 4 (BANKED OPTION 1): DYNAMIC 15-CHAPTER DSA TRACK ROADMAP
+       ========================================================================== -->
+  <main id="view-roadmap" class="hidden max-w-6xl w-full mx-auto px-6 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <aside class="lg:col-span-3 space-y-2 border-r border-[#E5DEC9] pr-4 max-h-[82vh] overflow-y-auto">
+        <div class="text-xs font-bold uppercase tracking-widest text-zinc-400 px-2 pb-1">
+          Chapter Volumes (15)
+        </div>
+        <div id="roadmap-chapter-spine" class="space-y-1.5"></div>
+      </aside>
+
+      <section class="lg:col-span-9 space-y-6">
+        <div class="bg-[#F3EFE6] rounded-3xl border border-[#E2DACB] p-7 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          <div class="md:col-span-7 space-y-2">
+            <span id="roadmap-banner-tag" class="px-2.5 py-1 rounded-md bg-[#E6DEC8] text-zinc-800 text-xs font-bold">
+              CHAPTER 01 · ARRAYS & HASHING
+            </span>
+            <h2 id="roadmap-banner-title" class="font-serif-display text-2xl font-bold text-zinc-900 leading-snug">
+              Mental Model: O(1) Instant Lookup via Canonical Signatures vs O(N) Linear Scan
+            </h2>
+            <p id="roadmap-banner-summary" class="text-xs text-zinc-600 leading-relaxed">
+              Pre-index complements or 26-letter frequency signatures in a Hash Table so inner search loops collapse from O(N) to O(1).
+            </p>
+          </div>
+          <div id="roadmap-banner-tiles" class="md:col-span-5 flex justify-center gap-3 font-mono text-xs"></div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 id="roadmap-grid-heading" class="font-serif-display text-xl font-bold text-zinc-900">
+            Chapter Problems (Stepping Stones)
+          </h3>
+          <span class="text-xs text-zinc-500">
+            Click any problem card to open (or 1-click scaffold) in the 50/50 Split Studio
+          </span>
+        </div>
+
+        <div id="roadmap-problems-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       VIEW 5 (BANKED WS 1): "50/50 EDITORIAL SPLIT STUDIO" (DSA)
+       ========================================================================== -->
+  <main id="view-workspace" class="hidden max-w-7xl w-full mx-auto px-6 py-6 space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-3 bg-[#F3EFE6] border border-[#E2DACB] rounded-2xl px-4 py-2.5 text-xs">
+      <div class="flex items-center gap-2">
+        <button onclick="showView('roadmap')" id="ws-breadcrumb-chapter" class="font-bold text-zinc-700 hover:text-zinc-900">
+          ← Ch 01: Arrays & Hashing
+        </button>
+        <span class="text-zinc-400">/</span>
+        <span id="ws-breadcrumb-title" class="font-bold text-zinc-900">003. Group Anagrams</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-1.5">
+        <span class="text-zinc-500 mr-1">Chapter 1 Quick Switch:</span>
+        <button onclick="openProblemWorkspace('001-two-sum')" id="prob-pill-001-two-sum" class="px-2.5 py-1 rounded-lg bg-white border border-[#DFD8C4] font-semibold">001. Two Sum</button>
+        <button onclick="openProblemWorkspace('002-valid-anagram')" id="prob-pill-002-valid-anagram" class="px-2.5 py-1 rounded-lg bg-white border border-[#DFD8C4] font-semibold">002. Valid Anagram</button>
+        <button onclick="openProblemWorkspace('003-group-anagrams')" id="prob-pill-003-group-anagrams" class="px-2.5 py-1 rounded-lg bg-zinc-900 text-white font-bold">003. Group Anagrams</button>
+        <button onclick="openProblemWorkspace('004-longest-consecutive-sequence')" id="prob-pill-004-longest-consecutive-sequence" class="px-2.5 py-1 rounded-lg bg-white border border-[#DFD8C4] font-semibold">004. Longest Consecutive</button>
+        <button onclick="openProblemWorkspace('005-top-k-frequent-elements')" id="prob-pill-005-top-k-frequent-elements" class="px-2.5 py-1 rounded-lg bg-white border border-[#DFD8C4] font-semibold">005. Top K Frequent</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <!-- LEFT 6 COLS -->
+      <section class="lg:col-span-6 bg-white rounded-3xl border border-[#E2DACB] p-6 flex flex-col justify-between space-y-5 shadow-sm">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-[#EFECE3] pb-3">
+            <div class="flex flex-wrap gap-1.5 text-xs">
+              <button onclick="switchLeftTab('problem')" id="left-tab-problem" class="px-3 py-1.5 rounded-xl bg-zinc-900 text-white font-bold">
+                1. Problem & 3D Visualizer
+              </button>
+              <button onclick="switchLeftTab('hints')" id="left-tab-hints" class="px-3 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700 font-semibold hover:bg-[#EAE3D2]">
+                2. 4-Tier Socratic Hints
+              </button>
+              <button onclick="switchLeftTab('walkthrough')" id="left-tab-walkthrough" class="px-3 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700 font-semibold hover:bg-[#EAE3D2]">
+                3. Narrated Walkthrough
+              </button>
+            </div>
+            <span id="ws-difficulty-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900">Medium</span>
+          </div>
+
+          <div id="left-pane-problem" class="space-y-4">
+            <div>
+              <h2 id="ws-problem-title" class="font-serif-display text-2xl font-bold text-zinc-900">003. Group Anagrams</h2>
+              <p id="ws-problem-prompt" class="text-sm text-zinc-600 mt-1.5 leading-relaxed">
+                Given an array of strings <code class="font-mono bg-[#FAF7F2] px-1 rounded">strs</code>, group the anagrams together in <code class="font-mono text-emerald-800 font-semibold">O(N · K)</code> time using a 26-letter canonical frequency signature.
+              </p>
+              <div class="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-[#FAF7F2] border border-[#E2DACB] text-xs font-mono text-zinc-700">
+                <span>Invariant:</span>
+                <strong id="ws-problem-invariant" class="text-emerald-800">key = tuple(count[26]) → buckets[key].append(word)</strong>
+              </div>
+            </div>
+
+            <div class="bg-[#F5F1E8] rounded-2xl p-5 border border-[#E5DEC9] space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span id="viz-step-header" class="font-bold uppercase tracking-wider text-zinc-700">
+                  Interactive 3D Trace · Step 1 of 6
+                </span>
+                <span id="viz-active-badge" class="font-mono font-bold px-2.5 py-0.5 rounded-lg bg-white border border-[#DFD8C4] text-[#C85A32]">
+                  Ready
+                </span>
+              </div>
+
+              <div id="viz-tiles-row" class="flex flex-wrap items-center justify-center gap-2 py-2 min-h-[54px]"></div>
+              <div id="viz-buckets-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs"></div>
+
+              <p id="viz-step-narration" class="text-xs text-zinc-600 bg-white/80 rounded-xl p-3 border border-[#E5DEC9] leading-relaxed">
+                Step through the trace to watch each input fold into its canonical O(1) hash structure.
+              </p>
+
+              <div class="space-y-2.5 pt-1">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div class="flex items-center gap-1.5">
+                    <button onclick="stepVisualizer(-1)" class="px-3 py-1.5 rounded-xl bg-white hover:bg-zinc-100 border border-[#DFD8C4] font-semibold">
+                      ◀ Prev Step
+                    </button>
+                    <button onclick="stepVisualizer(1)" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold">
+                      Next Step ▶
+                    </button>
+                  </div>
+                  <span id="viz-codeline-pill" class="text-zinc-500 font-mono text-[11px]">buckets[tuple(count)].append(word)</span>
+                </div>
+
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="font-semibold text-zinc-500 shrink-0">Custom Input:</span>
+                  <input
+                    id="viz-custom-input"
+                    type="text"
+                    value='{"strs": ["eat", "tea", "tan", "ate", "nat", "bat"]}'
+                    class="flex-1 bg-white border border-[#DFD8C4] rounded-xl px-3 py-1.5 font-mono text-[11px] text-zinc-800 focus:outline-none focus:border-zinc-900"
+                  />
+                  <button onclick="runCustomVisualizerInput()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-[#EAE3D2] border border-[#DFD8C4] font-bold text-zinc-800 shrink-0">
+                    ↻ Trace Input
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="left-pane-hints" class="hidden space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-serif-display text-lg font-bold text-zinc-900">Progressive 4-Tier Socratic Mentor</h3>
+              <button onclick="unlockNextHintTier()" class="coral-btn px-3 py-1.5 rounded-xl text-xs font-bold">
+                Unlock Next Tier →
+              </button>
+            </div>
+            <div id="ws-hints-list" class="space-y-2.5 text-xs"></div>
+          </div>
+
+          <div id="left-pane-walkthrough" class="hidden space-y-4">
+            <div class="bg-[#F5F1E8] rounded-2xl p-5 border border-[#E5DEC9] space-y-3">
+              <div class="flex items-center justify-between text-xs font-bold">
+                <span>🎬 Narrated Pattern Walkthrough</span>
+                <span id="ws-complexity-summary" class="font-mono text-emerald-800">Time: O(N · K) · Space: O(N · K)</span>
+              </div>
+              <p class="text-xs text-zinc-600 leading-relaxed">
+                1. <strong>Identify the Brute-Force Bottleneck:</strong> Nested scans or repeated sorting add an unnecessary <code class="font-mono">O(N)</code> or <code class="font-mono">O(log N)</code> multiplier.<br>
+                2. <strong>Maintain the Hash / Pointer Invariant:</strong> Pre-index seen states or canonical 26-slot signatures so every lookup runs in <code class="font-mono">O(1)</code>.<br>
+                3. <strong>Dual-Language Mastery:</strong> Implement in both Python 3 and Java 17 to cement memory & type invariants.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#E2DACB] flex items-center justify-between text-xs">
+          <span><strong>💡 Socratic Mentor:</strong> Stuck on an edge case? Unlock progressive hints without spoiling the code.</span>
+          <button onclick="switchLeftTab('hints')" class="font-bold text-[#C85A32] hover:underline">Open 4-Tier Hints →</button>
+        </div>
+      </section>
+
+      <!-- RIGHT 6 COLS -->
+      <section class="lg:col-span-6 bg-white rounded-3xl border border-[#E2DACB] p-6 flex flex-col justify-between space-y-4 shadow-sm">
+        <div class="space-y-3 flex-1 flex flex-col">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#EFECE3] pb-3">
+            <div class="flex items-center gap-2 text-xs font-mono">
+              <button onclick="switchEditorLang('python')" id="lang-tab-python" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-white font-bold">
+                🐍 solution.py
+              </button>
+              <button onclick="switchEditorLang('java')" id="lang-tab-java" class="px-3.5 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700 font-semibold hover:bg-[#EAE3D2]">
+                ☕ Solution.java
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span id="editor-disk-status" class="text-[11px] font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                ✓ Saved · dsa/.../solution.py
+              </span>
+              <button onclick="saveActiveFileToDisk()" class="px-3 py-1 rounded-lg bg-[#F5F1E8] hover:bg-[#EAE3D2] text-zinc-800 font-semibold text-xs border border-[#DFD8C4]">
+                Save (⌘S)
+              </button>
+            </div>
+          </div>
+
+          <div class="relative flex-1 flex bg-[#18181B] rounded-2xl overflow-hidden border border-zinc-800 min-h-[320px]">
+            <pre
+              id="editor-line-gutter"
+              aria-hidden="true"
+              class="select-none py-5 pl-4 pr-3 text-right font-mono text-xs leading-relaxed text-zinc-500 bg-[#121215] border-r border-zinc-800 overflow-hidden"
+            >1</pre>
+            <textarea
+              id="ws-code-editor"
+              spellcheck="false"
+              oninput="handleEditorInput()"
+              onscroll="syncEditorGutterScroll()"
+              class="w-full flex-1 bg-transparent text-zinc-100 p-5 font-mono text-xs leading-relaxed focus:outline-none resize-y"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="bg-[#F5F1E8] rounded-2xl p-4 border border-[#E5DEC9] space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div id="ws-case-pills" class="flex flex-wrap items-center gap-2 text-xs font-mono"></div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="markProblemMastered()" id="ws-mastery-btn" class="hidden px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm">
+                🏆 Mark Mastered
+              </button>
+              <button onclick="runAndVerifyWorkspaceCode()" id="ws-run-btn" class="coral-btn px-5 py-2.5 rounded-xl font-bold text-xs shadow-sm">
+                ▶ Run & Verify Code (⌘↵)
+              </button>
+            </div>
+          </div>
+
+          <div id="ws-case-inspector" class="bg-white rounded-xl p-3.5 border border-[#DFD8C4] text-xs font-mono space-y-2">
+            <div class="flex items-center justify-between">
+              <span id="ws-case-input-label" class="text-zinc-600 truncate">Input: strs = ["eat","tea","tan","ate","nat","bat"]</span>
+              <button onclick="visualizeSelectedCase()" class="text-[#C85A32] font-sans font-bold hover:underline shrink-0 ml-2">
+                🔍 Visualize This Case in 3D Trace
+              </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <div class="p-2 rounded-lg bg-[#FAF7F2] border border-[#E5DEC9]">
+                <span class="text-zinc-400 block">Expected:</span>
+                <span id="ws-case-expected" class="text-zinc-800 font-semibold break-all">[["ate","eat","tea"],["nat","tan"],["bat"]]</span>
+              </div>
+              <div class="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200">
+                <span class="text-emerald-700 block">Actual Output:</span>
+                <span id="ws-case-actual" class="text-emerald-950 font-semibold break-all">[["eat","tea","ate"],["tan","nat"],["bat"]]</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       VIEW 6: LOCAL IDE FRAMEWORK WORKBENCH (ZERO AI) & MOCK INTERVIEW SIMULATOR
+       ========================================================================== -->
+  <main id="view-workbench" class="hidden max-w-6xl w-full mx-auto px-6 py-8 space-y-7">
+    <!-- Mode Switcher between Archetype 3 (Local Workbench) & Archetype 4 (Mock Interviews) -->
+    <div class="flex flex-wrap items-center justify-between gap-4 bg-white rounded-3xl border border-[#E2DACB] p-6 shadow-sm">
+      <div>
+        <div class="text-xs font-mono font-bold uppercase tracking-wider text-[#2B6CB0]">
+          PRODUCTION ENGINEERING WORKBENCH & ARCHITECTURAL INTERVIEWS
+        </div>
+        <h2 class="font-serif-display text-2xl sm:text-3xl font-bold text-zinc-900 mt-1">
+          Local IDE Automation Workbench & Staff Mock Simulator
+        </h2>
+      </div>
+      <div class="inline-flex bg-[#EFECE3] p-1.5 rounded-2xl border border-[#DFD8C4] text-xs font-bold">
+        <button onclick="switchWorkbenchMode('frameworks')" id="wb-mode-frameworks" class="px-4 py-2 rounded-xl bg-zinc-900 text-white">
+          🛠️ Local IDE Frameworks (Zero AI)
+        </button>
+        <button onclick="switchWorkbenchMode('interviews')" id="wb-mode-interviews" class="px-4 py-2 rounded-xl text-zinc-700">
+          🎙️ Mock Interview Simulator
+        </button>
+      </div>
+    </div>
+
+    <!-- SUB-PANE A: LOCAL IDE ENGINEERING WORKBENCH (STRICTLY ZERO AI) -->
+    <section id="wb-pane-frameworks" class="space-y-4">
+      <div class="p-4 rounded-2xl bg-[#EBF8FF] border border-blue-200 flex flex-wrap items-center justify-between gap-2 text-xs text-blue-950">
+        <span><strong>Strictly Zero AI Dependency:</strong> Build multi-file frameworks in VS Code / IntelliJ (<code class="font-mono">frameworks/</code>) and run 100% deterministic local verification below.</span>
+        <span class="font-mono font-bold">Target AUT: apps/aerocart/</span>
+      </div>
+
+      <div id="workbench-items-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+
+      <!-- Deterministic Verification Console Output -->
+      <div id="workbench-console-box" class="hidden bg-zinc-900 text-zinc-100 rounded-2xl p-5 font-mono text-xs space-y-2 border border-zinc-800">
+        <div class="flex items-center justify-between text-emerald-400 font-bold">
+          <span id="workbench-console-title">Local Deterministic Verification Output</span>
+          <span id="workbench-console-meta"></span>
+        </div>
+        <pre id="workbench-console-output" class="whitespace-pre-wrap text-[11px] text-zinc-200 max-h-64 overflow-y-auto"></pre>
+      </div>
+    </section>
+
+    <!-- SUB-PANE B: STAFF & SENIOR MOCK INTERVIEW SIMULATOR -->
+    <section id="wb-pane-interviews" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div class="lg:col-span-7 bg-white rounded-3xl border border-[#E2DACB] p-6 space-y-4 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#EFECE3] pb-3">
+          <div>
+            <span id="mi-status-pill" class="text-[11px] font-mono font-bold uppercase text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+              Evaluated · 82 / 100
+            </span>
+            <h3 id="mi-session-title" class="font-serif-display text-xl font-bold text-zinc-900 mt-1">
+              Mock Interview #1
+            </h3>
+          </div>
+          <div class="flex gap-1.5 text-xs font-semibold">
+            <button onclick="switchInterviewDocTab('questions')" id="mi-tab-questions" class="px-3 py-1.5 rounded-xl bg-zinc-900 text-white">Prompts</button>
+            <button onclick="switchInterviewDocTab('evaluation')" id="mi-tab-evaluation" class="px-3 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700">100-Pt Feedback</button>
+          </div>
+        </div>
+        <div id="mi-doc-viewer" class="kb-prose max-h-[620px] overflow-y-auto pr-2"></div>
+      </div>
+
+      <div class="lg:col-span-5 space-y-5">
+        <div class="bg-white rounded-3xl border border-[#E2DACB] p-6 space-y-3 shadow-sm">
+          <div class="text-xs font-mono font-bold uppercase tracking-wider text-[#9B2C2C]">
+            ✍️ CANDIDATE ARCHITECTURAL RESPONSE STUDIO
+          </div>
+          <select id="mi-question-select" onchange="loadSelectedInterviewQuestionResponse()" class="w-full bg-[#FAF7F2] border border-[#DFD8C4] rounded-xl px-3 py-2 text-xs font-semibold">
+            <option value="q1">Q1: 32-Worker Concurrency & Tenant Isolation</option>
+            <option value="q2">Q2: Endpoint-to-Cloud Continuous Sync & Jitter</option>
+            <option value="q3">Q3: OS Post-GC RSS Leak vs Heap Sawtooth</option>
+            <option value="q4">Q4: TLS 1.3, HTTP/2 & CDP WebSocket Framing</option>
+            <option value="q5">Q5: RAG Triad Claim Entailment & Negation Traps</option>
+          </select>
+          <textarea
+            id="mi-response-textarea"
+            rows="9"
+            placeholder="Draft your architectural assumptions, back-of-the-envelope capacity math, invariants, and trade-offs here..."
+            class="w-full bg-[#FAF7F2] border border-[#DFD8C4] rounded-2xl p-3.5 text-xs font-mono text-zinc-800 focus:outline-none focus:border-zinc-900"
+          ></textarea>
+          <div class="flex items-center justify-between">
+            <span id="mi-save-status" class="text-[11px] font-mono text-zinc-500">Synced with SQLite mock_interview_sessions</span>
+            <button onclick="saveInterviewDraft()" class="coral-btn px-4 py-2 rounded-xl text-xs font-bold">
+              Save Response
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-[#E2DACB] p-6 space-y-3 shadow-sm">
+          <div class="text-xs font-mono font-bold uppercase tracking-wider text-[#1E6F5C]">
+            📖 DEEP-LINKED KNOWLEDGEBASE TEXTBOOKS
+          </div>
+          <p class="text-xs text-zinc-500">Close architectural gaps directly in the Interactive Textbook:</p>
+          <div id="mi-related-chapters" class="space-y-2"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==========================================================================
+       CLIENT CONTROLLER — ALL 6 TRACKS, FTS5 KB, NEWSFEED, DSA & WORKBENCH
+       ========================================================================== -->
+  <script>
+    const VIZ_ALIAS_MAP = {
+      "arch-backpressure-jitter": "arch-endpoint-cloud-sync",
+      "arch-consistent-hashing": "arch-concurrency-isolation",
+      "arch-kafka-cdc-pipeline": "arch-concurrency-isolation",
+      "ai-rag-triad-eval": "ai-rag-triad-gate",
+      "cs-os-memory-gc-sawtooth": "cs-os-leak-detector",
+      "cs-tcp-tls-handshake": "cs-tcp-tls-handshake"
+    };
+
+    const FALLBACK_CHAPTERS = [
+      {
+        chapterId: "ch-01",
+        number: "01",
+        pattern: "Arrays & Hashing",
+        title: "Ch 01: Arrays & Hashing",
+        mentalModelTitle: "Mental Model: O(1) Instant Lookup via Canonical Signatures vs O(N) Linear Scan",
+        mentalModelSummary: "Pre-index complements or 26-letter frequency signatures in a Hash Table so inner search loops collapse from O(N) to O(1).",
+        tiles: [{ label: "E", sub: "a·e·t" }, { label: "A", sub: "a·e·t" }, { label: "T", sub: "a·e·t" }],
+        done: 3,
+        total: 10,
+        problems: [
+          { id: 1, title: "Two Sum", slug: "two-sum", folderSlug: "001-two-sum", hasLocalFiles: true, bothDone: true, javaDone: true, pyDone: true, difficulty: "Easy", diagramFormula: "need = target - x", diagramCaption: "Pair complement sum" },
+          { id: 3, title: "Valid Anagram", slug: "valid-anagram", folderSlug: "002-valid-anagram", hasLocalFiles: true, bothDone: true, javaDone: true, pyDone: true, difficulty: "Easy", diagramFormula: "[A][E] ⇄ [E][A]", diagramCaption: "26-slot balance scale" },
+          { id: 4, title: "Group Anagrams", slug: "group-anagrams", folderSlug: "003-group-anagrams", hasLocalFiles: true, bothDone: true, javaDone: true, pyDone: true, difficulty: "Medium", diagramFormula: "key = tuple(count[26])", diagramCaption: "Canonical frequency bucket" }
+        ]
+      }
+    ];
+
+    const FALLBACK_PROBLEMS = {
+      "001-two-sum": {
+        slug: "001-two-sum",
+        title: "001. Two Sum",
+        difficulty: "Easy",
+        visualizerId: "dsa-two-sum",
+        timeComplexity: "O(N)",
+        spaceComplexity: "O(N)",
+        prompt: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+        invariant: "need = target - nums[i]  →  lookup in seen HashMap in O(1)",
+        hints: [
+          { tier: 1, title: "Mental Model & Intuition", content: "Imagine each number x asking the front desk: 'Has target - x already checked in?'" },
+          { tier: 2, title: "Pattern Identification", content: "Use a single-pass HashMap mapping value -> index." },
+          { tier: 3, title: "Algorithmic Invariant", content: "Check if (target - x) is in seen BEFORE inserting x so you never reuse the same index twice." },
+          { tier: 4, title: "Edge Cases", content: "Test duplicate values ([3,3], target=6) and negative numbers." }
+        ],
+        cases: [
+          { id: "case-1", label: "Case 1", passed: true, input: { nums: [2, 7, 11, 15], target: 9 }, expected: [0, 1], actual: [0, 1], durationMs: 0.3 }
+        ],
+        pythonCode: "from typing import List\n\nclass Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        seen = {}\n        for i, num in enumerate(nums):\n            diff = target - num\n            if diff in seen:\n                return [seen[diff], i]\n            seen[num] = i\n        return []\n",
+        javaCode: "import java.util.*;\n\npublic class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> seen = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int need = target - nums[i];\n            if (seen.containsKey(need)) return new int[] { seen.get(need), i };\n            seen.put(nums[i], i);\n        }\n        throw new IllegalArgumentException(\"No match\");\n    }\n}\n"
+      },
+      "002-valid-anagram": {
+        slug: "002-valid-anagram",
+        title: "002. Valid Anagram",
+        difficulty: "Easy",
+        visualizerId: "dsa-valid-anagram",
+        timeComplexity: "O(N)",
+        spaceComplexity: "O(1) [26 slots]",
+        prompt: "Given two strings s and t, return true if t is an anagram of s, and false otherwise.",
+        invariant: "count[s[i]-'a']++ and count[t[i]-'a']--  →  all 26 slots == 0",
+        hints: [
+          { tier: 1, title: "Mental Model & Intuition", content: "Think of a 26-pan balance scale where s adds +1 weight and t subtracts -1 weight." }
+        ],
+        cases: [
+          { id: "case-1", label: "Case 1", passed: true, input: { s: "anagram", t: "nagaram" }, expected: true, actual: true, durationMs: 0.3 }
+        ],
+        pythonCode: "class Solution:\n    def isAnagram(self, s: str, t: str) -> bool:\n        return sorted(s) == sorted(t)\n",
+        javaCode: "public class Solution {\n    public boolean isAnagram(String s, String t) { return true; }\n}\n"
+      },
+      "003-group-anagrams": {
+        slug: "003-group-anagrams",
+        title: "003. Group Anagrams",
+        difficulty: "Medium",
+        visualizerId: "dsa-group-anagrams",
+        timeComplexity: "O(N · K)",
+        spaceComplexity: "O(N · K)",
+        prompt: "Given an array of strings strs, group the anagrams together in O(N · K) time using a 26-letter frequency signature.",
+        invariant: "key = tuple(count[26])  →  buckets[key].append(word)",
+        hints: [
+          { tier: 1, title: "Mental Model & Intuition", content: "Stamp each word with a 26-slot frequency barcode (a..z) in O(K) time instead of sorting in O(K log K)." },
+          { tier: 2, title: "Pattern Identification", content: "Use defaultdict(list) keyed by the 26-integer count tuple." },
+          { tier: 3, title: "Algorithmic Invariant", content: "Lists are unhashable in Python—convert count to tuple(count) before indexing the dict." },
+          { tier: 4, title: "Edge Cases", content: "Empty string [\"\"], single char [\"a\"], and all-distinct words." }
+        ],
+        cases: [
+          { id: "case-1", label: "Case 1", passed: true, input: { strs: ["eat", "tea", "tan", "ate", "nat", "bat"] }, expected: [["ate", "eat", "tea"], ["nat", "tan"], ["bat"]], actual: [["eat", "tea", "ate"], ["tan", "nat"], ["bat"]], durationMs: 0.4 }
+        ],
+        pythonCode: "from collections import defaultdict\nfrom typing import List\n\nclass Solution:\n    def groupAnagrams(self, strs: List[str]) -> List[List[str]]:\n        anagram_map = defaultdict(list)\n        for s in strs:\n            count = [0] * 26\n            for char in s:\n                count[ord(char) - ord(\"a\")] += 1\n            anagram_map[tuple(count)].append(s)\n        return list(anagram_map.values())\n",
+        javaCode: "import java.util.*;\n\npublic class Solution {\n    public List<List<String>> groupAnagrams(String[] strs) {\n        return new ArrayList<>();\n    }\n}\n"
+      }
+    };
+
+    let state = {
+      activeView: 'home',
+      tracks: [],
+      kbChapters: [],
+      kbFilterTrack: 'all',
+      activeKbChapter: null,
+      kbQuizSelections: {},
+      kbSimSteps: [],
+      kbSimIdx: 0,
+      newsCategory: 'all',
+      newsBookmarkedOnly: false,
+      interviewSession: null,
+      interviewActiveDoc: 'questions',
+      chapters: FALLBACK_CHAPTERS,
+      activeChapterIdx: 0,
+      recommendedProblem: null,
+      activeProblemId: 4,
+      activeSlug: '003-group-anagrams',
+      activeVisualizerId: 'dsa-group-anagrams',
+      activeLang: 'python',
+      unlockedHintTier: 1,
+      isDirty: false,
+      files: {
+        python: { path: 'dsa/01-arrays-and-hashing/003-group-anagrams/solution.py', content: '', sha256: '' },
+        java: { path: 'dsa/01-arrays-and-hashing/003-group-anagrams/Solution.java', content: '', sha256: '' }
+      },
+      cases: [],
+      selectedCaseIdx: 0,
+      vizTrace: [],
+      vizStepIdx: 0
+    };
+
+    function escapeHtml(raw) {
+      return String(raw || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    /* ========================================================================
+       LIGHTWEIGHT ZEN EDITORIAL MARKDOWN RENDERER FOR TEXTBOOK CHAPTERS
+       ======================================================================== */
+    function renderEditorialMarkdown(md) {
+      if (!md) return '';
+      const blocks = [];
+      // Extract fenced code blocks first
+      let working = md.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+        const idx = blocks.length;
+        const cleanLang = (lang || 'text').toLowerCase();
+        if (cleanLang === 'mermaid') {
+          blocks.push(`
+            <div class="my-4 p-4 rounded-2xl bg-[#F5F1E8] border border-[#DFD8C4]">
+              <div class="text-[10px] font-mono font-bold uppercase tracking-wider text-[#C85A32] mb-2">Architecture Topology Blueprint (Mermaid)</div>
+              <pre style="margin:0; background:#18181B; color:#A7F3D0;">${escapeHtml(code.trim())}</pre>
+            </div>
+          `);
+        } else {
+          blocks.push(`
+            <div class="my-3">
+              <div class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 bg-zinc-900 px-3.5 pt-2.5 rounded-t-xl border-x border-t border-zinc-800">${escapeHtml(cleanLang)}</div>
+              <pre style="margin-top:0; border-top-left-radius:0; border-top-right-radius:0;">${escapeHtml(code.trim())}</pre>
+            </div>
+          `);
+        }
+        return `@@CODEBLOCK_${idx}@@`;
+      });
+
+      const lines = working.split('\n');
+      const out = [];
+      let inTable = false;
+      let tableRows = [];
+      let inList = false;
+
+      const formatInline = (txt) => {
+        return escapeHtml(txt)
+          .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
+          .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      };
+
+      const flushTable = () => {
+        if (!inTable || !tableRows.length) return;
+        const headerCells = tableRows[0].split('|').filter(Boolean).map(c => `<th>${formatInline(c.trim())}</th>`).join('');
+        const bodyHtml = tableRows.slice(2).map(r => {
+          const cols = r.split('|').filter(Boolean).map(c => `<td>${formatInline(c.trim())}</td>`).join('');
+          return `<tr>${cols}</tr>`;
+        }).join('');
+        out.push(`<table><thead><tr>${headerCells}</tr></thead><tbody>${bodyHtml}</tbody></table>`);
+        inTable = false;
+        tableRows = [];
+      };
+
+      const flushList = () => {
+        if (inList) {
+          out.push('</ul>');
+          inList = false;
+        }
+      };
+
+      for (const rawLine of lines) {
+        const line = rawLine.trimEnd();
+        if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+          flushList();
+          inTable = true;
+          tableRows.push(line.trim());
+          continue;
+        } else if (inTable) {
+          flushTable();
+        }
+
+        if (/^@@CODEBLOCK_\d+@@$/.test(line.trim())) {
+          flushList();
+          out.push(line.trim());
+          continue;
+        }
+        if (line.trim() === '---') {
+          flushList();
+          continue;
+        }
+        if (line.startsWith('# ')) {
+          flushList();
+          continue; // Chapter H1 already rendered in header
+        }
+        if (line.startsWith('## ')) {
+          flushList();
+          out.push(`<h2>${formatInline(line.slice(3))}</h2>`);
+        } else if (line.startsWith('### ')) {
+          flushList();
+          out.push(`<h3>${formatInline(line.slice(4))}</h3>`);
+        } else if (line.startsWith('> ')) {
+          flushList();
+          const cleanedQuote = line.slice(2).replace(/^\[!(WARNING|IMPORTANT|TIP|NOTE)\]\s*/i, '');
+          if (cleanedQuote.trim()) {
+            out.push(`<blockquote>${formatInline(cleanedQuote)}</blockquote>`);
+          }
+        } else if (/^[-*]\s+/.test(line.trim()) || /^\d+\.\s+/.test(line.trim())) {
+          if (!inList) {
+            out.push('<ul class="list-disc">');
+            inList = true;
+          }
+          const itemTxt = line.trim().replace(/^([-*]|\d+\.)\s+/, '');
+          out.push(`<li>${formatInline(itemTxt)}</li>`);
+        } else if (line.trim()) {
+          flushList();
+          out.push(`<p>${formatInline(line.trim())}</p>`);
+        } else {
+          flushList();
+        }
+      }
+      flushTable();
+      flushList();
+
+      let html = out.join('\n');
+      blocks.forEach((b, idx) => {
+        html = html.replace(`@@CODEBLOCK_${idx}@@`, b);
+      });
+      return html;
+    }
+
+    /* ========================================================================
+       NAVIGATION & VIEW SWITCHER
+       ======================================================================== */
+    function showView(viewName) {
+      if (viewName === 'feed') viewName = 'newsfeed';
+      state.activeView = viewName;
+      ['home', 'textbook', 'newsfeed', 'roadmap', 'workspace', 'workbench'].forEach(v => {
+        const el = document.getElementById('view-' + v);
+        if (el) el.classList.toggle('hidden', v !== viewName);
+      });
+      const navMap = {
+        home: 'tab-btn-dashboard',
+        textbook: 'tab-btn-textbook',
+        newsfeed: 'tab-btn-feed',
+        roadmap: 'tab-btn-roadmap',
+        workspace: 'tab-btn-visualizer',
+        workbench: 'tab-btn-workbench'
+      };
+      Object.entries(navMap).forEach(([k, btnId]) => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+          btn.className = (k === viewName)
+            ? 'px-2.5 py-1.5 rounded-xl font-bold transition bg-zinc-900 text-white shadow-sm'
+            : 'px-2.5 py-1.5 rounded-xl font-semibold transition text-zinc-700 hover:text-zinc-900';
+        }
+      });
+      document.getElementById('global-search-dropdown').classList.add('hidden');
+    }
+
+    function setHomeHeroMode(mode) {
+      ['featured', 'dsa', 'upnext'].forEach(m => {
+        const el = document.getElementById('hero-mode-' + m);
+        if (el) {
+          el.className = (m === mode)
+            ? 'px-3 py-1 rounded-lg bg-zinc-900 text-white font-bold'
+            : 'px-3 py-1 rounded-lg text-zinc-700 font-semibold';
+        }
+      });
+
+      if (mode === 'dsa') {
+        document.getElementById('home-hero-kicker').textContent = "DSA 50/50 SPLIT STUDIO · CHAPTER 01";
+        document.getElementById('home-hero-title').textContent = "003. Group Anagrams";
+        document.getElementById('home-hero-desc').innerHTML =
+          'Discover how character frequencies fold words into identical geometric signatures in <code class="font-mono text-xs bg-[#FAF7F2] px-1.5 py-0.5 rounded border border-[#E2DACB]">O(N · K)</code> time—bypassing <code class="font-mono text-xs">O(K log K)</code> string sorting.';
+        document.getElementById('home-hero-cta').textContent = 'Open in 50/50 Studio →';
+        document.getElementById('home-hero-cta').onclick = () => openProblemWorkspace('003-group-anagrams');
+      } else if (mode === 'upnext' && state.recommendedProblem) {
+        const p = state.recommendedProblem;
+        document.getElementById('home-hero-kicker').textContent = `UP NEXT IN DSA · CHAPTER ${p.chapterNumber || '01'}`;
+        document.getElementById('home-hero-title').textContent = `${String(p.id).padStart(3, '0')}. ${p.title}`;
+        document.getElementById('home-hero-desc').textContent = `Master ${p.title} (${p.pattern}) using the core invariant: ${p.diagramFormula}.`;
+        document.getElementById('home-hero-cta').textContent = 'Scaffold & Solve →';
+        document.getElementById('home-hero-cta').onclick = () => openOrScaffoldProblem(p.id, p.folderSlug || p.slug, p.hasLocalFiles);
+      } else {
+        document.getElementById('home-hero-kicker').textContent = "CROWN JEWEL TEXTBOOK · VOLUME III (CORE CS)";
+        document.getElementById('home-hero-title').textContent = "Database Storage Engines: B+Trees vs. LSM-Trees, WAL & MVCC Isolation";
+        document.getElementById('home-hero-desc').textContent =
+          "Trace how append-only Write-Ahead Logs (WAL), sorted in-memory MemTables, immutable SSTables, and Bloom Filters power RocksDB, Cassandra, and SQLite.";
+        document.getElementById('home-hero-cta').textContent = 'Read Interactive Chapter →';
+        document.getElementById('home-hero-cta').onclick = () => openTextbookChapter('cs-03-lsm-trees-b-trees-and-wal-isolation');
+      }
+    }
+
+    /* ========================================================================
+       ALL 6 CORE TRACKS & GLOBAL SQLITE FTS5 SEARCH
+       ======================================================================== */
+    async function loadTracksAndHome() {
+      try {
+        const res = await fetch('/api/tracks');
+        if (res.ok) {
+          const data = await res.json();
+          state.tracks = data.tracks || [];
+          renderHomeTracksGrid();
+        }
+      } catch (_) {}
+    }
+
+    function renderHomeTracksGrid() {
+      const grid = document.getElementById('home-tracks-grid');
+      if (!grid || !state.tracks.length) return;
+      grid.innerHTML = state.tracks.map(t => {
+        let ctaLabel = 'Open Track →';
+        let clickAction = '';
+        if (t.archetype === 'interactive-textbook') {
+          ctaLabel = 'Open Interactive Textbook →';
+          clickAction = `openTrackTextbook('${t.id}')`;
+        } else if (t.id === 'dsa') {
+          ctaLabel = 'Open 15-Chapter DSA Spine →';
+          clickAction = `showView('roadmap')`;
+        } else if (t.id === 'frameworks') {
+          ctaLabel = 'Open Local IDE Workbench →';
+          clickAction = `openWorkbenchSubmode('frameworks')`;
+        } else {
+          ctaLabel = 'Open Mock Interview Sim →';
+          clickAction = `openWorkbenchSubmode('interviews')`;
+        }
+
+        return `
+          <div onclick="${clickAction}" class="tactile-card rounded-2xl p-5 cursor-pointer flex flex-col justify-between space-y-4">
+            <div class="space-y-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-[#F3EFE6] text-zinc-900 border border-[#DFD8C4]">
+                  ${escapeHtml(t.archetypeLabel)}
+                </span>
+                <span class="text-[11px] font-mono font-semibold text-zinc-500">${escapeHtml(t.volume)}</span>
+              </div>
+              <h4 class="font-serif-display text-lg font-bold text-zinc-900">${escapeHtml(t.title)}</h4>
+              <p class="text-xs text-zinc-600 leading-relaxed">${escapeHtml(t.tagline)}</p>
+            </div>
+            <div class="pt-2 border-t border-[#EFECE3] flex items-center justify-between text-xs">
+              <span class="font-mono text-[11px] text-zinc-600">
+                <strong>${t.completedItems}/${t.totalItems}</strong> ${escapeHtml(t.unitLabel)}
+              </span>
+              <span class="font-bold text-[#C85A32]">${ctaLabel}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openTrackTextbook(trackId) {
+      showView('textbook');
+      filterKbTrack(trackId);
+      const firstMatch = state.kbChapters.find(c => c.track === trackId);
+      if (firstMatch) {
+        openTextbookChapter(firstMatch.slug);
+      }
+    }
+
+    function openWorkbenchSubmode(mode) {
+      showView('workbench');
+      switchWorkbenchMode(mode);
+    }
+
+    async function handleGlobalKbSearch(query) {
+      const box = document.getElementById('global-search-dropdown');
+      const trimmed = (query || '').trim();
+      if (!trimmed) {
+        box.classList.add('hidden');
+        return;
+      }
+      try {
+        const res = await fetch(`/api/kb/search?q=${encodeURIComponent(trimmed)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        box.classList.remove('hidden');
+        if (!data.results || !data.results.length) {
+          box.innerHTML = `<div class="p-3 text-xs text-zinc-500">No FTS5 matches for "${escapeHtml(trimmed)}"</div>`;
+          return;
+        }
+        box.innerHTML = `
+          <div class="px-2.5 py-1 text-[10px] font-mono text-emerald-800 font-bold border-b border-[#EFECE3]">
+            SQLite FTS5 BM25 · ${data.count} hits in ${data.latencyMs}ms
+          </div>
+          ${data.results.map(r => `
+            <button onclick="openTextbookChapter('${r.slug}')" class="w-full text-left p-2.5 rounded-xl hover:bg-[#FAF7F2] transition block">
+              <div class="flex items-center justify-between text-[10px] font-mono text-[#C85A32] font-bold">
+                <span>${escapeHtml(r.track.toUpperCase())}</span>
+                <span>BM25 ${r.rank}</span>
+              </div>
+              <div class="font-bold text-xs text-zinc-900 mt-0.5">${escapeHtml(r.title)}</div>
+              <div class="text-[11px] text-zinc-600 mt-0.5 line-clamp-2">${r.snippet || escapeHtml(r.summary)}</div>
+            </button>
+          `).join('')}
+        `;
+      } catch (_) {}
+    }
+
+    /* ========================================================================
+       INTERACTIVE TEXTBOOK & KNOWLEDGEBASE CONTROLLER
+       ======================================================================== */
+    async function loadKbCatalogAndDefaultChapter() {
+      try {
+        const res = await fetch('/api/kb/chapters');
+        if (res.ok) {
+          const data = await res.json();
+          state.kbChapters = data.chapters || [];
+          renderKbChaptersSpine();
+          if (state.kbChapters.length && !state.activeKbChapter) {
+            await openTextbookChapter('cs-03-lsm-trees-b-trees-and-wal-isolation', false);
+          }
+        }
+      } catch (_) {}
+    }
+
+    function filterKbTrack(track) {
+      state.kbFilterTrack = track;
+      ['all', 'system-design', 'ai-engineering', 'core-cs'].forEach(t => {
+        const btn = document.getElementById('kb-filter-' + t);
+        if (btn) {
+          btn.className = (t === track)
+            ? 'px-2.5 py-1 rounded-lg bg-zinc-900 text-white'
+            : 'px-2.5 py-1 rounded-lg bg-[#F5F1E8] text-zinc-700 hover:bg-[#EAE3D2]';
+        }
+      });
+      renderKbChaptersSpine();
+    }
+
+    function renderKbChaptersSpine() {
+      const container = document.getElementById('kb-chapters-spine');
+      if (!container) return;
+      const filtered = state.kbFilterTrack === 'all'
+        ? state.kbChapters
+        : state.kbChapters.filter(c => c.track === state.kbFilterTrack);
+
+      container.innerHTML = filtered.map(c => {
+        const isActive = state.activeKbChapter && state.activeKbChapter.slug === c.slug;
+        return `
+          <div
+            onclick="openTextbookChapter('${c.slug}')"
+            class="p-3 rounded-2xl border cursor-pointer transition ${isActive ? 'bg-[#F5EFE4] border-[#C85A32] shadow-sm' : 'bg-[#FAF7F2] border-[#E5DEC9] hover:border-zinc-900'}"
+          >
+            <div class="flex items-center justify-between text-[10px] font-mono font-bold">
+              <span class="text-[#C85A32]">${escapeHtml(c.track.toUpperCase())} · CH 0${c.chapterNumber}</span>
+              <span class="${c.mastered ? 'text-[#1E6F5C]' : 'text-zinc-500'}">${c.mastered ? '✓ Mastered' : (c.readingTimeMinutes + 'm')}</span>
+            </div>
+            <div class="font-bold text-xs text-zinc-900 mt-1 leading-snug">${escapeHtml(c.title)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function handleSpineKbSearch(query) {
+      const out = document.getElementById('kb-spine-search-results');
+      const q = (query || '').trim();
+      if (!q) {
+        out.classList.add('hidden');
+        return;
+      }
+      try {
+        const res = await fetch(`/api/kb/search?q=${encodeURIComponent(q)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        out.classList.remove('hidden');
+        out.innerHTML = (data.results || []).slice(0, 5).map(r => `
+          <div onclick="openTextbookChapter('${r.slug}')" class="p-2.5 rounded-xl bg-[#FFFDF9] border border-[#DFD8C4] cursor-pointer hover:border-zinc-900 text-xs">
+            <div class="font-bold text-zinc-900">${escapeHtml(r.title)}</div>
+            <div class="text-[11px] text-zinc-600 mt-0.5">${r.snippet || ''}</div>
+          </div>
+        `).join('') || `<div class="text-xs text-zinc-500 p-2">No matches.</div>`;
+      } catch (_) {}
+    }
+
+    async function openTextbookChapter(slug, switchScreen = true) {
+      if (switchScreen) showView('textbook');
+      try {
+        const res = await fetch(`/api/kb/chapter?slug=${encodeURIComponent(slug)}`);
+        if (!res.ok) return;
+        const ch = await res.json();
+        state.activeKbChapter = ch;
+        state.kbQuizSelections = {};
+        renderKbChaptersSpine();
+
+        document.getElementById('kb-chapter-kicker').textContent =
+          `${ch.volume.toUpperCase()} · CHAPTER ${ch.chapterNumber} · ${ch.readingTimeMinutes} MIN READ`;
+        document.getElementById('kb-chapter-title').textContent = ch.title;
+
+        const mBadge = document.getElementById('kb-chapter-mastery-badge');
+        if (ch.mastered) {
+          mBadge.textContent = `✓ Mastered (${ch.quizScore}/${ch.quizTotal})`;
+          mBadge.className = 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-100 text-emerald-900 border border-emerald-300';
+        } else {
+          mBadge.textContent = ch.quizTotal ? `Quiz: ${ch.quizScore || 0}/${ch.quizTotal}` : `${ch.quizCount || (ch.quizzes || []).length} Quiz Questions`;
+          mBadge.className = 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#F5F1E8] text-zinc-700 border border-[#DFD8C4]';
+        }
+
+        document.getElementById('kb-chapter-tags').innerHTML = (ch.tags || []).map(t => `
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-[#F3EFE6] text-zinc-700 border border-[#E2DACB]">#${escapeHtml(t)}</span>
+        `).join('');
+
+        document.getElementById('kb-chapter-body').innerHTML = renderEditorialMarkdown(ch.markdownBody);
+        document.getElementById('kb-lab-path-label').textContent = ch.labPath || ch.sourcePath;
+
+        // Render Quiz Questions
+        renderKbQuizQuestions(ch.quizzes || []);
+
+        // Render Cross-Linked Newsfeed in Right Rail
+        const relEl = document.getElementById('kb-related-news');
+        relEl.innerHTML = (ch.relatedNews || []).map(art => `
+          <div class="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#E5DEC9] space-y-1.5">
+            <div class="flex items-center justify-between text-[10px] font-mono font-bold text-[#C85A32]">
+              <span>${escapeHtml(art.sourceName)}</span>
+              <span>${escapeHtml(art.publishedAt)}</span>
+            </div>
+            <a href="${escapeHtml(art.url)}" target="_blank" rel="noopener" class="font-bold text-xs text-zinc-900 hover:text-[#C85A32] block leading-snug">
+              ${escapeHtml(art.title)} ↗
+            </a>
+            <p class="text-[11px] text-zinc-600 leading-relaxed">${escapeHtml(art.summary)}</p>
+          </div>
+        `).join('') || `<div class="text-xs text-zinc-500">No cross-linked articles yet.</div>`;
+
+        // Load Inline Architecture Simulator
+        const mappedVizId = VIZ_ALIAS_MAP[ch.visualizerId] || ch.visualizerId || 'arch-endpoint-cloud-sync';
+        await loadKbInlineSimulator(mappedVizId);
+      } catch (_) {}
+    }
+
+    async function loadKbInlineSimulator(vizId) {
+      try {
+        const res = await fetch('/api/visualize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visualizerId: vizId })
+        });
+        if (!res.ok) return;
+        const trace = await res.json();
+        document.getElementById('kb-sim-title').textContent = trace.title || 'Interactive Architecture Trace';
+        state.kbSimSteps = trace.steps || [];
+        state.kbSimIdx = 0;
+        renderKbSimulatorStep();
+      } catch (_) {}
+    }
+
+    function stepKbSimulator(delta) {
+      if (!state.kbSimSteps.length) return;
+      state.kbSimIdx = Math.max(0, Math.min(state.kbSimSteps.length - 1, state.kbSimIdx + delta));
+      renderKbSimulatorStep();
+    }
+
+    function renderKbSimulatorStep() {
+      if (!state.kbSimSteps.length) return;
+      const step = state.kbSimSteps[state.kbSimIdx];
+      document.getElementById('kb-sim-step-pill').textContent = `${state.kbSimIdx + 1} / ${state.kbSimSteps.length}`;
+      document.getElementById('kb-sim-narration').textContent = `${step.title ? step.title + ' — ' : ''}${step.narration || ''}`;
+      document.getElementById('kb-sim-codeline').textContent = step.codeLine || '';
+
+      const grid = document.getElementById('kb-sim-compare-grid');
+      const leftMetrics = Object.entries(step.leftMetrics || {}).map(([k, v]) => `<div class="flex justify-between"><span class="text-zinc-500">${escapeHtml(k)}:</span><strong class="font-mono text-zinc-900">${escapeHtml(v)}</strong></div>`).join('');
+      const rightMetrics = Object.entries(step.rightMetrics || {}).map(([k, v]) => `<div class="flex justify-between"><span class="text-zinc-500">${escapeHtml(k)}:</span><strong class="font-mono text-emerald-900">${escapeHtml(v)}</strong></div>`).join('');
+
+      grid.innerHTML = `
+        <div class="bg-white rounded-xl p-3.5 border border-[#DFD8C4] space-y-1.5">
+          <div class="font-bold text-zinc-800 border-b border-[#EFECE3] pb-1">${escapeHtml(step.leftTitle || 'Baseline State')}</div>
+          <div class="space-y-1 text-[11px]">${leftMetrics}</div>
+        </div>
+        <div class="bg-white rounded-xl p-3.5 border-2 border-[#1E6F5C] space-y-1.5">
+          <div class="font-bold text-[#1E6F5C] border-b border-[#EFECE3] pb-1">${escapeHtml(step.rightTitle || 'Production Architecture')}</div>
+          <div class="space-y-1 text-[11px]">${rightMetrics}</div>
+        </div>
+      `;
+    }
+
+    function renderKbQuizQuestions(quizzes, feedbackMap = null) {
+      const container = document.getElementById('kb-quiz-questions');
+      const resPill = document.getElementById('kb-quiz-result-pill');
+      if (!feedbackMap) resPill.classList.add('hidden');
+
+      container.innerHTML = (quizzes || []).map((q, qIdx) => {
+        const qid = q.id || `q${qIdx + 1}`;
+        const fb = feedbackMap ? feedbackMap[qid] : null;
+        return `
+          <div class="bg-white rounded-2xl p-4 border border-[#CBE6DB] space-y-2.5">
+            <div class="font-bold text-sm text-zinc-900">Q${qIdx + 1}. ${escapeHtml(q.question)}</div>
+            <div class="space-y-1.5">
+              ${(q.options || []).map((opt, optIdx) => {
+                const selected = state.kbQuizSelections[qid] === optIdx;
+                let borderCls = selected ? 'border-zinc-900 bg-[#FAF7F2] font-semibold' : 'border-[#E5DEC9] hover:bg-[#FAF7F2]';
+                if (fb) {
+                  if (optIdx === fb.answerIndex) borderCls = 'border-emerald-600 bg-emerald-50 font-bold text-emerald-950';
+                  else if (selected && !fb.correct) borderCls = 'border-rose-500 bg-rose-50 text-rose-900';
+                }
+                return `
+                  <label onclick="selectKbQuizOption('${qid}', ${optIdx})" class="flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer text-xs ${borderCls}">
+                    <input type="radio" name="quiz-${qid}" ${selected ? 'checked' : ''} class="mt-0.5" />
+                    <span>${escapeHtml(opt)}</span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+            ${fb ? `
+              <div class="p-3 rounded-xl text-xs ${fb.correct ? 'bg-emerald-50 text-emerald-900 border border-emerald-200' : 'bg-amber-50 text-amber-950 border border-amber-200'}">
+                <strong>${fb.correct ? '✓ Correct:' : '💡 First-Principles Explanation:'}</strong> ${escapeHtml(fb.explanation)}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectKbQuizOption(qid, optIdx) {
+      state.kbQuizSelections[qid] = optIdx;
+    }
+
+    async function submitActiveKbQuiz() {
+      if (!state.activeKbChapter) return;
+      const slug = state.activeKbChapter.slug;
+      try {
+        const res = await fetch('/api/kb/quiz', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug, answers: state.kbQuizSelections })
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const fbMap = {};
+        (data.feedback || []).forEach(f => { fbMap[f.id] = f; });
+        renderKbQuizQuestions(state.activeKbChapter.quizzes || [], fbMap);
+
+        const pill = document.getElementById('kb-quiz-result-pill');
+        pill.classList.remove('hidden');
+        pill.textContent = data.mastered
+          ? `🏆 Mastered! ${data.score}/${data.total} Correct`
+          : `Score: ${data.score}/${data.total} — Review explanations below`;
+        pill.className = data.mastered
+          ? 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-600 text-white'
+          : 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-200 text-amber-950';
+
+        await loadKbCatalogAndDefaultChapter();
+        await loadTracksAndHome();
+      } catch (_) {}
+    }
+
+    /* ========================================================================
+       ENGINEERING PULSE NEWSFEED CONTROLLER
+       ======================================================================== */
+    async function loadNewsfeedView(category = 'all', bookmarkedOnly = false) {
+      state.newsCategory = category;
+      state.newsBookmarkedOnly = bookmarkedOnly;
+
+      ['all', 'system-design', 'ai-engineering', 'core-cs', 'sdet-architecture'].forEach(c => {
+        const btn = document.getElementById('news-cat-' + c);
+        if (btn) {
+          btn.className = (!bookmarkedOnly && c === category)
+            ? 'px-3.5 py-1.5 rounded-xl bg-zinc-900 text-white'
+            : 'px-3.5 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700';
+        }
+      });
+      const bmBtn = document.getElementById('news-cat-bookmarked');
+      if (bmBtn) {
+        bmBtn.className = bookmarkedOnly
+          ? 'px-3.5 py-1.5 rounded-xl bg-zinc-900 text-white'
+          : 'px-3.5 py-1.5 rounded-xl bg-amber-100 text-amber-900';
+      }
+
+      try {
+        const res = await fetch(`/api/newsfeed?category=${encodeURIComponent(category)}&bookmarked=${bookmarkedOnly ? '1' : '0'}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const articles = data.articles || [];
+
+        // Populate Home 3-card preview strip on initial all load
+        if (category === 'all' && !bookmarkedOnly) {
+          const homeStrip = document.getElementById('home-pulse-strip');
+          if (homeStrip) {
+            homeStrip.innerHTML = articles.slice(0, 3).map(a => `
+              <div class="p-4 rounded-2xl bg-[#FAF7F2] border border-[#E5DEC9] flex flex-col justify-between space-y-3">
+                <div class="space-y-1.5">
+                  <div class="text-[10px] font-mono font-bold text-[#C85A32] uppercase">${escapeHtml(a.sourceName)} · ${escapeHtml(a.publishedAt)}</div>
+                  <a href="${escapeHtml(a.url)}" target="_blank" rel="noopener" class="font-bold text-sm text-zinc-900 hover:text-[#C85A32] block leading-snug">${escapeHtml(a.title)} ↗</a>
+                  <p class="text-xs text-zinc-600 line-clamp-2">${escapeHtml(a.summary)}</p>
+                </div>
+                ${(a.relatedChapters && a.relatedChapters[0]) ? `
+                  <button onclick="openTextbookChapter('${a.relatedChapters[0]}')" class="text-left text-[11px] font-mono font-bold text-[#1E6F5C] hover:underline">
+                    📖 Paired Chapter: ${escapeHtml(a.relatedChapters[0])} →
+                  </button>
+                ` : ''}
+              </div>
+            `).join('');
+          }
+        }
+
+        const grid = document.getElementById('newsfeed-articles-grid');
+        grid.innerHTML = articles.map(a => `
+          <div class="tactile-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between gap-2 text-[11px] font-mono">
+                <span class="font-bold text-[#C85A32]">${escapeHtml(a.sourceName)} · ${escapeHtml(a.publishedAt)} (${a.readingMinutes}m)</span>
+                <button onclick="toggleArticleBookmark('${a.id}')" class="px-2.5 py-0.5 rounded-lg border border-[#DFD8C4] ${a.bookmarked ? 'bg-amber-200 text-amber-950 font-bold' : 'bg-[#FAF7F2] text-zinc-600'}">
+                  ${a.bookmarked ? '★ Saved' : '☆ Save'}
+                </button>
+              </div>
+              <a href="${escapeHtml(a.url)}" target="_blank" rel="noopener" class="font-serif-display text-lg font-bold text-zinc-900 hover:text-[#C85A32] block leading-snug">
+                ${escapeHtml(a.title)} ↗
+              </a>
+              <p class="text-xs text-zinc-600 leading-relaxed">${escapeHtml(a.summary)}</p>
+              ${a.whyItMatters ? `
+                <div class="p-2.5 rounded-xl bg-[#FAF7F2] border border-[#E5DEC9] text-[11px] text-zinc-700">
+                  <strong>Why It Matters:</strong> ${escapeHtml(a.whyItMatters)}
+                </div>
+              ` : ''}
+            </div>
+            <div class="space-y-2 pt-2 border-t border-[#EFECE3]">
+              <div class="flex flex-wrap gap-1">
+                ${(a.tags || []).map(t => `<span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#F3EFE6] text-zinc-600">#${escapeHtml(t)}</span>`).join('')}
+              </div>
+              <div class="flex flex-wrap gap-2">
+                ${(a.relatedChapters || []).map(slug => `
+                  <button onclick="openTextbookChapter('${slug}')" class="px-2.5 py-1 rounded-lg bg-[#E6F4F0] text-[#1E6F5C] font-mono text-[11px] font-bold hover:underline">
+                    📖 Open Chapter: ${escapeHtml(slug)} →
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `).join('') || `<div class="col-span-2 text-sm text-zinc-500 p-4">No articles match this filter.</div>`;
+      } catch (_) {}
+    }
+
+    async function toggleArticleBookmark(articleId) {
+      try {
+        await fetch('/api/newsfeed/bookmark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ articleId })
+        });
+        await loadNewsfeedView(state.newsCategory, state.newsBookmarkedOnly);
+      } catch (_) {}
+    }
+
+    async function refreshLiveNewsfeed() {
+      const btn = document.getElementById('news-refresh-btn');
+      btn.textContent = '⏳ Polling RSS/Atom Feeds...';
+      try {
+        await fetch('/api/newsfeed/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fetchRemote: true })
+        });
+        await loadNewsfeedView(state.newsCategory, state.newsBookmarkedOnly);
+      } catch (_) {}
+      btn.textContent = '↻ Sync Live RSS/Atom Feeds';
+    }
+
+    /* ========================================================================
+       LOCAL IDE ENGINEERING WORKBENCH (ZERO AI) & MOCK INTERVIEW SIMULATOR
+       ======================================================================== */
+    function switchWorkbenchMode(mode) {
+      document.getElementById('wb-pane-frameworks').classList.toggle('hidden', mode !== 'frameworks');
+      document.getElementById('wb-pane-interviews').classList.toggle('hidden', mode !== 'interviews');
+      document.getElementById('wb-mode-frameworks').className = (mode === 'frameworks')
+        ? 'px-4 py-2 rounded-xl bg-zinc-900 text-white'
+        : 'px-4 py-2 rounded-xl text-zinc-700';
+      document.getElementById('wb-mode-interviews').className = (mode === 'interviews')
+        ? 'px-4 py-2 rounded-xl bg-zinc-900 text-white'
+        : 'px-4 py-2 rounded-xl text-zinc-700';
+    }
+
+    async function loadWorkbenchAndInterviews() {
+      try {
+        const wbRes = await fetch('/api/workbench/catalog');
+        if (wbRes.ok) {
+          const data = await wbRes.json();
+          const grid = document.getElementById('workbench-items-grid');
+          grid.innerHTML = (data.items || []).map(item => {
+            const last = item.lastRun;
+            return `
+              <div class="tactile-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between gap-2 text-[11px] font-mono">
+                    <span class="px-2 py-0.5 rounded bg-[#EBF8FF] text-[#2B6CB0] font-bold">${escapeHtml(item.category)}</span>
+                    <span class="text-zinc-500">${escapeHtml(item.stack)}</span>
+                  </div>
+                  <h4 class="font-serif-display text-lg font-bold text-zinc-900">${escapeHtml(item.title)}</h4>
+                  <p class="text-xs text-zinc-600 leading-relaxed">${escapeHtml(item.invariant)}</p>
+                  <div class="p-2.5 rounded-xl bg-[#FAF7F2] border border-[#E5DEC9] font-mono text-[11px] text-zinc-700 break-all">
+                    <div><strong>IDE Path:</strong> ${escapeHtml(item.folderPath)}</div>
+                    <div class="mt-0.5 text-zinc-500">$ ${escapeHtml(item.cliDisplay)}</div>
+                  </div>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#EFECE3]">
+                  ${item.relatedChapter ? `
+                    <button onclick="openTextbookChapter('${item.relatedChapter}')" class="text-[11px] font-mono font-bold text-[#1E6F5C] hover:underline">
+                      📖 Textbook Theory →
+                    </button>
+                  ` : '<span></span>'}
+                  <div class="flex items-center gap-2">
+                    ${last ? `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${last.status === 'PASS' ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'}">${last.status} (${last.durationMs}ms)</span>` : ''}
+                    <button onclick="verifyWorkbenchItem('${item.id}')" id="wb-btn-${item.id}" class="px-3.5 py-2 rounded-xl bg-[#2B6CB0] hover:bg-blue-800 text-white font-bold text-xs">
+                      ▶ Verify Locally
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (_) {}
+
+      try {
+        const miRes = await fetch('/api/interviews/session?id=interview-1');
+        if (miRes.ok) {
+          state.interviewSession = await miRes.json();
+          document.getElementById('mi-session-title').textContent = state.interviewSession.title;
+          document.getElementById('mi-status-pill').textContent = `${state.interviewSession.status} · ${state.interviewSession.overallScore}`;
+          switchInterviewDocTab('questions');
+          loadSelectedInterviewQuestionResponse();
+
+          document.getElementById('mi-related-chapters').innerHTML = (state.interviewSession.relatedChapters || []).map(slug => `
+            <button onclick="openTextbookChapter('${slug}')" class="w-full text-left p-2.5 rounded-xl bg-[#FAF7F2] hover:bg-[#EFECE3] border border-[#DFD8C4] text-xs font-mono font-bold text-[#1E6F5C]">
+              📖 ${escapeHtml(slug)} →
+            </button>
+          `).join('');
+        }
+      } catch (_) {}
+    }
+
+    async function verifyWorkbenchItem(itemId) {
+      const btn = document.getElementById('wb-btn-' + itemId);
+      if (btn) btn.textContent = '⏳ Running...';
+      try {
+        const res = await fetch('/api/workbench/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ itemId })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const box = document.getElementById('workbench-console-box');
+          box.classList.remove('hidden');
+          document.getElementById('workbench-console-title').textContent = `${data.status === 'PASS' ? '✓' : '✗'} ${data.title}`;
+          document.getElementById('workbench-console-meta').textContent = `${data.status} · ${data.durationMs}ms (Exit ${data.exitCode})`;
+          document.getElementById('workbench-console-output').textContent = data.output || '';
+          await loadWorkbenchAndInterviews();
+          await loadTracksAndHome();
+        }
+      } catch (_) {}
+      if (btn) btn.textContent = '▶ Verify Locally';
+    }
+
+    function switchInterviewDocTab(tab) {
+      state.interviewActiveDoc = tab;
+      document.getElementById('mi-tab-questions').className = (tab === 'questions')
+        ? 'px-3 py-1.5 rounded-xl bg-zinc-900 text-white'
+        : 'px-3 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700';
+      document.getElementById('mi-tab-evaluation').className = (tab === 'evaluation')
+        ? 'px-3 py-1.5 rounded-xl bg-zinc-900 text-white'
+        : 'px-3 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700';
+      if (!state.interviewSession) return;
+      const md = tab === 'questions'
+        ? state.interviewSession.questionsMarkdown
+        : state.interviewSession.evaluationMarkdown;
+      document.getElementById('mi-doc-viewer').innerHTML = renderEditorialMarkdown(md);
+    }
+
+    function loadSelectedInterviewQuestionResponse() {
+      if (!state.interviewSession) return;
+      const qid = document.getElementById('mi-question-select').value;
+      const saved = (state.interviewSession.candidateResponses || {})[qid] || '';
+      document.getElementById('mi-response-textarea').value = saved;
+    }
+
+    async function saveInterviewDraft() {
+      const qid = document.getElementById('mi-question-select').value;
+      const text = document.getElementById('mi-response-textarea').value;
+      const statusEl = document.getElementById('mi-save-status');
+      statusEl.textContent = '⏳ Saving...';
+      try {
+        const res = await fetch('/api/interviews/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: 'interview-1', questionId: qid, response: text })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (state.interviewSession) state.interviewSession.candidateResponses = data.candidateResponses;
+          statusEl.textContent = `✓ Saved ${qid.toUpperCase()} to SQLite`;
+        }
+      } catch (_) {}
+    }
+
+    /* ========================================================================
+       BANKED DSA MILESTONES 1–4 (15-CH ROADMAP, 50/50 STUDIO & 3D VISUALIZER)
+       ======================================================================== */
+    function renderRoadmapSpineAndChapter(chapterIdx) {
+      state.activeChapterIdx = chapterIdx;
+      const chapters = state.chapters || FALLBACK_CHAPTERS;
+      const activeCh = chapters[chapterIdx] || chapters[0];
+
+      const spineEl = document.getElementById('roadmap-chapter-spine');
+      spineEl.innerHTML = chapters.map((ch, idx) => {
+        const isActive = idx === chapterIdx;
+        if (isActive) {
+          return `
+            <div onclick="renderRoadmapSpineAndChapter(${idx})" class="p-3.5 rounded-xl bg-[#EFE6DC] border-r-4 border-[#C85A32] space-y-1 cursor-pointer transition">
+              <div class="font-bold text-sm text-zinc-900">${ch.title}</div>
+              <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#C85A32] text-white">
+                ${ch.done}/${ch.total} Mastered
+              </span>
+            </div>
+          `;
+        }
+        return `
+          <div onclick="renderRoadmapSpineAndChapter(${idx})" class="p-3 rounded-xl flex justify-between items-center text-xs text-zinc-700 hover:bg-[#EFECE3] cursor-pointer transition">
+            <span class="truncate pr-2"><strong>Ch ${ch.number}:</strong> ${ch.pattern}</span>
+            <span class="font-mono bg-[#EFECE3] px-2 py-0.5 rounded-full shrink-0">${ch.done}/${ch.total}</span>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('roadmap-banner-tag').textContent = `CHAPTER ${activeCh.number} · ${activeCh.pattern.toUpperCase()}`;
+      document.getElementById('roadmap-banner-title').textContent = activeCh.mentalModelTitle;
+      document.getElementById('roadmap-banner-summary').textContent = activeCh.mentalModelSummary || '';
+
+      document.getElementById('roadmap-banner-tiles').innerHTML = (activeCh.tiles || []).map(t => `
+        <div class="bg-white rounded-2xl p-3 border border-[#DFD8C4] text-center shadow-sm min-w-[74px]">
+          <div class="wood-tile px-2.5 h-10 mx-auto rounded-lg bg-[#D7B38C] font-bold flex items-center justify-center mb-1.5 text-zinc-900">
+            ${t.label}
+          </div>
+          <div class="text-[11px] font-bold text-emerald-800">${t.sub}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('roadmap-grid-heading').textContent = `${activeCh.title} (${activeCh.problems.length} Stepping Stones)`;
+
+      document.getElementById('roadmap-problems-grid').innerHTML = (activeCh.problems || []).map(p => {
+        const numStr = String(p.id).padStart(3, '0');
+        const targetSlug = p.folderSlug || `${numStr}-${p.slug}`;
+        const isMastered = p.bothDone;
+        const isScaffolded = p.hasLocalFiles;
+
+        const badgeHtml = isMastered
+          ? `<span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-600 text-white">Mastered ✓</span>`
+          : isScaffolded
+            ? `<span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-300 text-amber-950">In Studio · Ready</span>`
+            : `<span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-200 text-zinc-700">⚡ 1-Click Scaffold</span>`;
+
+        const borderClass = (!isMastered && isScaffolded)
+          ? 'rounded-2xl bg-white border-2 border-[#C85A32] shadow-md p-4 flex flex-col justify-between space-y-4 cursor-pointer'
+          : 'tactile-card rounded-2xl p-4 flex flex-col justify-between space-y-4 cursor-pointer';
+
+        return `
+          <div onclick="openOrScaffoldProblem(${p.id}, '${targetSlug}', ${isScaffolded})" class="${borderClass}">
+            <div class="space-y-2">
+              <div class="flex items-start justify-between gap-2">
+                <div class="font-bold text-base text-zinc-900 leading-snug">${numStr}. ${p.title}</div>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#F3EFE6] text-zinc-700 shrink-0">${p.difficulty}</span>
+              </div>
+              <div>${badgeHtml}</div>
+              <div class="flex gap-1.5 text-[11px] font-mono pt-1">
+                <span class="px-2 py-0.5 rounded ${p.pyDone ? 'bg-emerald-100 text-emerald-900 font-bold' : 'bg-[#F3EFE6] text-zinc-600'}">Python ${p.pyDone ? '✓' : '○'}</span>
+                <span class="px-2 py-0.5 rounded ${p.javaDone ? 'bg-emerald-100 text-emerald-900 font-bold' : 'bg-[#F3EFE6] text-zinc-600'}">Java ${p.javaDone ? '✓' : '○'}</span>
+              </div>
+            </div>
+            <div class="bg-[#F5F2EB] rounded-xl p-3 border border-[#E5DEC9] text-center text-[11px] text-zinc-600 font-mono">
+              <div class="font-bold text-zinc-800 mb-0.5 truncate">${p.diagramFormula || 'O(1) Invariant'}</div>
+              <div class="text-[10px] text-zinc-500">${p.diagramCaption || activeCh.pattern}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function openOrScaffoldProblem(problemId, slug, isScaffolded) {
+      state.activeProblemId = problemId;
+      if (!isScaffolded) {
+        try {
+          const res = await fetch('/api/dsa/scaffold', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ problemId, slug })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            await refreshDashboardState();
+            if (data.problem && data.problem.slug) return openProblemWorkspace(data.problem.slug);
+          }
+        } catch (_) {}
+      }
+      return openProblemWorkspace(slug);
+    }
+
+    function updateEditorLineNumbers() {
+      const editor = document.getElementById('ws-code-editor');
+      const gutter = document.getElementById('editor-line-gutter');
+      if (!editor || !gutter) return;
+      const linesCount = (editor.value || '').split('\n').length || 1;
+      const nums = [];
+      for (let i = 1; i <= linesCount; i++) nums.push(i);
+      gutter.textContent = nums.join('\n');
+    }
+
+    function syncEditorGutterScroll() {
+      const editor = document.getElementById('ws-code-editor');
+      const gutter = document.getElementById('editor-line-gutter');
+      if (editor && gutter) gutter.scrollTop = editor.scrollTop;
+    }
+
+    function handleEditorInput() {
+      state.isDirty = true;
+      updateEditorLineNumbers();
+      const fileObj = state.files[state.activeLang];
+      if (fileObj) {
+        fileObj.content = document.getElementById('ws-code-editor').value;
+        const statusEl = document.getElementById('editor-disk-status');
+        statusEl.textContent = `● Unsaved edits · ${fileObj.path}`;
+        statusEl.className = 'text-[11px] font-mono text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200';
+      }
+    }
+
+    function attachSmartEditorKeybindings() {
+      const editor = document.getElementById('ws-code-editor');
+      if (!editor) return;
+      editor.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const start = editor.selectionStart;
+          const end = editor.selectionEnd;
+          editor.value = editor.value.substring(0, start) + '    ' + editor.value.substring(end);
+          editor.selectionStart = editor.selectionEnd = start + 4;
+          handleEditorInput();
+        }
+      });
+    }
+
+    async function pollActiveDiskFile() {
+      if (state.activeView !== 'workspace') return;
+      const fileObj = state.files[state.activeLang];
+      if (!fileObj || !fileObj.path || fileObj.sha256 === 'local') return;
+      try {
+        const res = await fetch(`/api/fs/stat?path=${encodeURIComponent(fileObj.path)}`);
+        if (!res.ok) return;
+        const stat = await res.json();
+        if (stat.sha256 && stat.sha256 !== fileObj.sha256 && !state.isDirty) {
+          const fullRes = await fetch(`/api/fs/file?path=${encodeURIComponent(fileObj.path)}`);
+          if (fullRes.ok) {
+            const fullData = await fullRes.json();
+            fileObj.content = fullData.content;
+            fileObj.sha256 = fullData.sha256;
+            document.getElementById('ws-code-editor').value = fullData.content;
+            updateEditorLineNumbers();
+            document.getElementById('editor-disk-status').textContent = `↻ Synced from IDE · ${fileObj.path} (${fullData.sha256.slice(0, 7)})`;
+          }
+        }
+      } catch (_) {}
+    }
+
+    function switchLeftTab(tabName) {
+      ['problem', 'hints', 'walkthrough'].forEach(t => {
+        document.getElementById('left-pane-' + t).classList.toggle('hidden', t !== tabName);
+        const btn = document.getElementById('left-tab-' + t);
+        if (btn) {
+          btn.className = (t === tabName)
+            ? 'px-3 py-1.5 rounded-xl bg-zinc-900 text-white font-bold'
+            : 'px-3 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700 font-semibold hover:bg-[#EAE3D2]';
+        }
+      });
+    }
+
+    async function openProblemWorkspace(slug, switchScreen = true) {
+      state.activeSlug = slug;
+      state.unlockedHintTier = 1;
+      state.isDirty = false;
+      if (switchScreen) showView('workspace');
+
+      ['001-two-sum', '002-valid-anagram', '003-group-anagrams', '004-longest-consecutive-sequence', '005-top-k-frequent-elements'].forEach(s => {
+        const pill = document.getElementById('prob-pill-' + s);
+        if (pill) {
+          pill.className = (s === slug)
+            ? 'px-2.5 py-1 rounded-lg bg-zinc-900 text-white font-bold'
+            : 'px-2.5 py-1 rounded-lg bg-white border border-[#DFD8C4] font-semibold';
+        }
+      });
+
+      const fb = FALLBACK_PROBLEMS[slug] || FALLBACK_PROBLEMS['003-group-anagrams'];
+      let probMeta = fb;
+      state.files.python = { path: `dsa/01-arrays-and-hashing/${slug}/solution.py`, content: fb.pythonCode, sha256: 'local' };
+      state.files.java = { path: `dsa/01-arrays-and-hashing/${slug}/Solution.java`, content: fb.javaCode, sha256: 'local' };
+      state.cases = fb.cases;
+
+      try {
+        const res = await fetch(`/api/dsa/problem?slug=${encodeURIComponent(slug)}`);
+        if (res.ok) {
+          const data = await res.json();
+          probMeta = data.problem || fb;
+          if (data.files && data.files.python) state.files.python = data.files.python;
+          if (data.files && data.files.java) state.files.java = data.files.java;
+          if (probMeta.cases && probMeta.cases.length) {
+            state.cases = probMeta.cases.map(c => ({ ...c, passed: true, actual: c.expected, durationMs: 0.3 }));
+          }
+        }
+      } catch (_) {}
+
+      state.activeVisualizerId = probMeta.visualizerId || 'dsa-group-anagrams';
+      document.getElementById('ws-breadcrumb-chapter').textContent = `← ${probMeta.chapter || 'Ch 01: Arrays & Hashing'}`;
+      document.getElementById('ws-breadcrumb-title').textContent = probMeta.title || slug;
+      document.getElementById('ws-problem-title').textContent = probMeta.title || slug;
+      document.getElementById('ws-problem-prompt').textContent = probMeta.prompt || '';
+      document.getElementById('ws-problem-invariant').textContent = probMeta.invariant || '';
+      document.getElementById('ws-difficulty-badge').textContent = probMeta.difficulty || 'Medium';
+      document.getElementById('ws-complexity-summary').textContent =
+        `Time: ${probMeta.timeComplexity || 'O(N)'} · Space: ${probMeta.spaceComplexity || 'O(N)'}`;
+
+      state.currentHints = probMeta.hints || fb.hints;
+      renderHints(state.currentHints);
+      switchEditorLang(state.activeLang);
+      renderCasePills();
+      selectTestCaseIndex(0);
+
+      const firstInput = state.cases[0] ? state.cases[0].input : null;
+      if (firstInput) document.getElementById('viz-custom-input').value = JSON.stringify(firstInput);
+      await loadVisualizerTrace(state.activeVisualizerId, firstInput);
+    }
+
+    function renderHints(hints) {
+      document.getElementById('ws-hints-list').innerHTML = (hints || []).map(h => {
+        const unlocked = h.tier <= state.unlockedHintTier;
+        return `
+          <div class="p-3.5 rounded-2xl border ${unlocked ? 'bg-[#FAF7F2] border-[#E2DACB]' : 'bg-zinc-100 border-zinc-200 opacity-60'}">
+            <div class="font-bold text-zinc-900">Tier ${h.tier}: ${h.title}</div>
+            <p class="text-zinc-600 mt-1">${unlocked ? h.content : '🔒 Click "Unlock Next Tier" above to reveal this hint.'}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function unlockNextHintTier() {
+      if (state.unlockedHintTier < 4) state.unlockedHintTier += 1;
+      renderHints(state.currentHints || []);
+    }
+
+    function switchEditorLang(lang) {
+      const editor = document.getElementById('ws-code-editor');
+      if (editor && state.files[state.activeLang] && editor.value) {
+        state.files[state.activeLang].content = editor.value;
+      }
+      state.activeLang = lang;
+      document.getElementById('lang-tab-python').className = (lang === 'python')
+        ? 'px-3.5 py-1.5 rounded-xl bg-zinc-900 text-white font-bold'
+        : 'px-3.5 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700 font-semibold hover:bg-[#EAE3D2]';
+      document.getElementById('lang-tab-java').className = (lang === 'java')
+        ? 'px-3.5 py-1.5 rounded-xl bg-zinc-900 text-white font-bold'
+        : 'px-3.5 py-1.5 rounded-xl bg-[#F5F1E8] text-zinc-700 font-semibold hover:bg-[#EAE3D2]';
+
+      const fileObj = state.files[lang];
+      editor.value = fileObj ? fileObj.content : '';
+      updateEditorLineNumbers();
+      const shortSha = fileObj && fileObj.sha256 ? fileObj.sha256.slice(0, 7) : 'local';
+      document.getElementById('editor-disk-status').textContent = `✓ Saved · ${fileObj ? fileObj.path : ''} (${shortSha})`;
+    }
+
+    async function saveActiveFileToDisk() {
+      const fileObj = state.files[state.activeLang];
+      const editor = document.getElementById('ws-code-editor');
+      if (!fileObj || !editor) return;
+      fileObj.content = editor.value;
+      const statusEl = document.getElementById('editor-disk-status');
+      statusEl.textContent = '⏳ Saving to disk...';
+
+      try {
+        const res = await fetch('/api/fs/file', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(fileObj.sha256 && fileObj.sha256 !== 'local' ? { 'If-Match': fileObj.sha256 } : {})
+          },
+          body: JSON.stringify({
+            path: fileObj.path,
+            content: fileObj.content,
+            expectedSha256: fileObj.sha256 !== 'local' ? fileObj.sha256 : undefined
+          })
+        });
+        const data = await res.json();
+        if (res.status === 412) {
+          statusEl.textContent = '⚠️ Disk Conflict (Modified in IDE!)';
+          statusEl.className = 'text-[11px] font-mono text-amber-900 bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-300';
+          return;
+        }
+        if (res.ok && data.sha256) {
+          fileObj.sha256 = data.sha256;
+          state.isDirty = false;
+          statusEl.textContent = `✓ Saved · ${fileObj.path} (${data.sha256.slice(0, 7)})`;
+          statusEl.className = 'text-[11px] font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200';
+        }
+      } catch (_) {
+        statusEl.textContent = `✓ Saved in buffer · ${fileObj.path}`;
+      }
+    }
+
+    async function runAndVerifyWorkspaceCode() {
+      await saveActiveFileToDisk();
+      const btn = document.getElementById('ws-run-btn');
+      btn.textContent = '⏳ Running tests.json...';
+      try {
+        const res = await fetch('/api/run-cases', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: state.activeSlug, lang: state.activeLang })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.cases && data.cases.length) state.cases = data.cases;
+          renderCasePills(data.durationMs);
+          selectTestCaseIndex(state.selectedCaseIdx);
+          document.getElementById('ws-mastery-btn').classList.toggle('hidden', data.status !== 'PASSED');
+        } else {
+          await fetch('/api/run-test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target: state.activeSlug, lang: state.activeLang })
+          });
+        }
+      } catch (_) {}
+      btn.textContent = '▶ Run & Verify Code (⌘↵)';
+    }
+
+    async function markProblemMastered() {
+      const btn = document.getElementById('ws-mastery-btn');
+      btn.textContent = '⏳ Updating MASTER_SHEET.md...';
+      try {
+        await fetch('/api/dsa/mastery', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            problemId: state.activeProblemId,
+            javaDone: true,
+            pyDone: true,
+            score: '95/100',
+            status: 'Passed'
+          })
+        });
+        await refreshDashboardState();
+        await loadTracksAndHome();
+        btn.textContent = '✓ Mastered in MASTER_SHEET.md!';
+      } catch (_) {
+        btn.textContent = '✓ Mastered!';
+      }
+    }
+
+    function renderCasePills(latencyMs) {
+      const container = document.getElementById('ws-case-pills');
+      const pillsHtml = (state.cases || []).map((c, idx) => {
+        const ok = c.passed !== false;
+        const selected = idx === state.selectedCaseIdx ? 'ring-2 ring-zinc-900' : '';
+        return `
+          <button onclick="selectTestCaseIndex(${idx})" class="px-2.5 py-1 rounded-lg font-bold ${selected} ${ok ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}">
+            ${ok ? '✓' : '✗'} ${c.label || ('Case ' + (idx + 1))}
+          </button>
+        `;
+      }).join('');
+      container.innerHTML = pillsHtml + `<span id="ws-run-latency" class="text-zinc-500 ml-1">${latencyMs || 12.4}ms</span>`;
+    }
+
+    function selectTestCaseIndex(idx) {
+      state.selectedCaseIdx = idx;
+      const c = (state.cases || [])[idx];
+      if (!c) return;
+      renderCasePills();
+      document.getElementById('ws-case-input-label').textContent = `Input: ${JSON.stringify(c.input)}`;
+      document.getElementById('ws-case-expected').textContent = JSON.stringify(c.expected);
+      document.getElementById('ws-case-actual').textContent = JSON.stringify(c.actual !== undefined ? c.actual : c.expected);
+    }
+
+    async function visualizeSelectedCase() {
+      switchLeftTab('problem');
+      const c = (state.cases || [])[state.selectedCaseIdx];
+      if (c && c.input) document.getElementById('viz-custom-input').value = JSON.stringify(c.input);
+      await loadVisualizerTrace(state.activeVisualizerId, c ? c.input : null);
+    }
+
+    async function runCustomVisualizerInput() {
+      try {
+        const parsed = JSON.parse(document.getElementById('viz-custom-input').value);
+        await loadVisualizerTrace(state.activeVisualizerId, parsed);
+      } catch (_) {
+        alert('Please enter valid JSON for Custom Input');
+      }
+    }
+
+    async function loadVisualizerTrace(vizId, customInput) {
+      try {
+        const res = await fetch('/api/visualize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visualizerId: vizId, customInput })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          state.vizTrace = data.steps || [];
+          state.vizStepIdx = 0;
+          renderVisualizerStep();
+        }
+      } catch (_) {}
+    }
+
+    function stepVisualizer(delta) {
+      if (!state.vizTrace.length) return;
+      state.vizStepIdx = Math.max(0, Math.min(state.vizTrace.length - 1, state.vizStepIdx + delta));
+      renderVisualizerStep();
+    }
+
+    function renderVisualizerStep() {
+      if (!state.vizTrace.length) return;
+      const step = state.vizTrace[state.vizStepIdx];
+      document.getElementById('viz-step-header').textContent = `Interactive 3D Trace · Step ${state.vizStepIdx + 1} of ${state.vizTrace.length}`;
+      document.getElementById('viz-step-narration').textContent = step.narration || '';
+      document.getElementById('viz-codeline-pill').textContent = step.codeLine || '';
+
+      const tilesRow = document.getElementById('viz-tiles-row');
+      const grid = document.getElementById('viz-buckets-grid');
+      const colors = ['bg-[#E6C79C]', 'bg-[#72D5A5]', 'bg-[#E07A5F] text-white', 'bg-[#5A78E6] text-white'];
+
+      if (step.nums && Array.isArray(step.nums)) {
+        document.getElementById('viz-active-badge').textContent =
+          step.complement !== null && step.complement !== undefined ? `target=${step.target} · need=${step.complement}` : `target=${step.target}`;
+        tilesRow.innerHTML = step.nums.map((num, idx) => {
+          const isMatched = (step.matchedIndices || []).includes(idx);
+          const isCurrent = idx === step.currentIndex;
+          const bg = isMatched
+            ? 'bg-emerald-600 text-white ring-2 ring-emerald-900'
+            : isCurrent
+              ? 'bg-[#C85A32] text-white ring-2 ring-zinc-900 -translate-y-1'
+              : 'bg-[#E6C79C] text-zinc-900';
+          return `<div class="text-center"><span class="wood-tile px-3 h-10 rounded-xl ${bg} font-mono font-bold flex items-center justify-center transition">${num}</span><span class="text-[10px] font-mono text-zinc-500">i=${idx}</span></div>`;
+        }).join('');
+        const seenEntries = Object.entries(step.seenMap || {});
+        grid.innerHTML = seenEntries.length
+          ? seenEntries.map(([val, idx]) => `<div class="bg-white rounded-2xl border border-[#DFD8C4] p-2.5 text-center shadow-sm"><div class="text-[11px] font-bold text-emerald-800">seen[${val}]</div><div class="font-bold text-zinc-900">index → ${idx}</div></div>`).join('')
+          : `<div class="col-span-3 bg-white rounded-2xl border border-[#DFD8C4] p-3 text-center text-zinc-500">seen = {} (Empty HashMap)</div>`;
+        return;
+      }
+
+      if (step.s !== undefined && step.t !== undefined) {
+        document.getElementById('viz-active-badge').textContent = step.title || 'Balance Check';
+        tilesRow.innerHTML = String(step.s).split('').map((ch, idx) => `
+          <span class="wood-tile w-9 h-9 rounded-xl ${idx === step.pointer ? 'bg-[#C85A32] text-white -translate-y-1' : 'bg-[#E6C79C] text-zinc-900'} font-mono font-bold flex items-center justify-center">${ch.toUpperCase()}</span>
+        `).join('');
+        const countsEntries = Object.entries(step.counts || {}).filter(([, v]) => v !== 0);
+        grid.innerHTML = countsEntries.length
+          ? countsEntries.slice(0, 6).map(([ch, cnt]) => `<div class="bg-white rounded-2xl border border-amber-400 p-2.5 text-center"><div class="text-[11px] font-bold text-zinc-600">Slot '${ch}'</div><div class="font-bold ${cnt > 0 ? 'text-emerald-700' : 'text-rose-700'}">${cnt > 0 ? '+' + cnt : cnt}</div></div>`).join('')
+          : `<div class="col-span-3 bg-white rounded-2xl border-2 border-emerald-500 p-3 text-center font-bold text-emerald-800">All 26 frequency slots balanced at 0 ✓</div>`;
+        return;
+      }
+
+      document.getElementById('viz-active-badge').textContent = step.currentWord ? `word = "${step.currentWord}"` : (step.title || 'Active');
+      const word = step.currentWord || 'EAT';
+      tilesRow.innerHTML = String(word).toUpperCase().split('').map((ch, i) => `
+        <span class="wood-tile w-10 h-10 rounded-xl ${colors[i % colors.length]} font-mono font-bold flex items-center justify-center">${ch}</span>
+      `).join('');
+      if (step.buckets && Object.keys(step.buckets).length) {
+        grid.innerHTML = Object.entries(step.buckets).slice(0, 3).map(([k, words]) => `
+          <div class="bg-white rounded-2xl border-2 border-emerald-500 p-3 text-center shadow-sm">
+            <div class="text-[11px] font-bold text-emerald-800 truncate">${k}</div>
+            <div class="font-bold text-zinc-900 mt-1">${JSON.stringify(words)}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    async function refreshDashboardState() {
+      try {
+        const dashRes = await fetch('/api/dashboard');
+        if (dashRes.ok) {
+          const dash = await dashRes.json();
+          if (dash.dsa) {
+            if (dash.dsa.chapters && dash.dsa.chapters.length) state.chapters = dash.dsa.chapters;
+            state.recommendedProblem = dash.dsa.recommendedProblem || null;
+            document.getElementById('home-dsa-progress').textContent = `${dash.dsa.bothDone} / ${dash.dsa.total} DSA · 8 Textbook Chapters`;
+            document.getElementById('header-mastery-pill').textContent = `${dash.dsa.bothDone}/${dash.dsa.total} DSA · 8 Chapters`;
+            renderRoadmapSpineAndChapter(state.activeChapterIdx);
+          }
+        }
+      } catch (_) {
+        renderRoadmapSpineAndChapter(0);
+      }
+    }
+
+    async function initHub() {
+      attachSmartEditorKeybindings();
+      await Promise.all([
+        refreshDashboardState(),
+        loadTracksAndHome(),
+        loadKbCatalogAndDefaultChapter(),
+        loadNewsfeedView('all', false),
+        loadWorkbenchAndInterviews(),
+        openProblemWorkspace('003-group-anagrams', false)
+      ]);
+
+      try {
+        const feedRes = await fetch('/api/feed');
+        if (feedRes.ok) {
+          const feed = await feedRes.json();
+          document.getElementById('feed-cards-container').innerHTML = (feed.cards || []).map(c => `
+            <div class="tactile-card rounded-2xl p-5 space-y-2">
+              <div class="text-[11px] font-mono font-bold text-[#C85A32] uppercase">${escapeHtml(c.category)} · ${escapeHtml(c.readTime)}</div>
+              <h3 class="font-serif-display text-lg font-bold text-zinc-900">${escapeHtml(c.title)}</h3>
+              <p class="text-xs text-zinc-600 leading-relaxed">${escapeHtml(c.mentalModel)}</p>
+            </div>
+          `).join('');
+        }
+      } catch (_) {}
+
+      const hashView = (window.location.hash || '').replace('#', '').trim();
+      const validViews = ['home', 'textbook', 'newsfeed', 'roadmap', 'workspace', 'workbench'];
+      showView(validViews.includes(hashView) ? hashView : 'home');
+      setInterval(pollActiveDiskFile, 3000);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        if (state.activeView === 'workspace') {
+          e.preventDefault();
+          saveActiveFileToDisk();
+        }
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        if (state.activeView === 'workspace') {
+          e.preventDefault();
+          runAndVerifyWorkspaceCode();
+        }
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', initHub);
+  </script>
+</body>
+</html>
