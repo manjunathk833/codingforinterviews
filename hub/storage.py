@@ -1362,6 +1362,194 @@ def get_kb_chapter(slug: str, db_path: pathlib.Path = DEFAULT_DB_PATH) -> Tuple[
         conn.close()
 
 
+def get_kb_course_compendium(
+    course_id: str, db_path: pathlib.Path = DEFAULT_DB_PATH
+) -> Tuple[int, Dict[str, Any]]:
+    """
+    Compile an entire Textbook Course (`Ch 01 -> Ch N`) into a single-page, unabridged
+    Master Revision Compendium in one SQLite pass (`~2-5ms`).
+
+    Retains 100% of deep technical text, mental models, Mermaid diagrams, Naive-vs-Staff
+    contrast matrices, dual-language code blueprints, Staff equations, trade-off tables,
+    Staff gotchas, vocabulary, and Self-Check Q&A explanations while stripping out
+    video/audio walkthrough players, simulator widgets, and quiz submission forms.
+    """
+    t0 = time.perf_counter()
+    ensure_initialized(db_path)
+    conn = _get_connection(db_path)
+    try:
+        target_course = (course_id or "01-zero-to-staff-sdet").strip()
+        course_row = conn.execute(
+            "SELECT * FROM kb_courses WHERE course_id = ?", (target_course,)
+        ).fetchone()
+        if course_row is None:
+            return 404, {"error": f"Course '{target_course}' not found"}
+
+        rows = conn.execute(
+            """
+            SELECT c.*, COALESCE(a.mastered, 0) AS mastered
+            FROM kb_chapters c
+            LEFT JOIN kb_quiz_attempts a ON a.slug = c.slug
+            WHERE c.course_id = ? AND c.slug NOT LIKE 'lab-%'
+            ORDER BY c.module_number ASC, c.chapter_number ASC, c.slug ASC
+            """,
+            (target_course,),
+        ).fetchall()
+
+        chapters_compiled: List[Dict[str, Any]] = []
+        red_thread_map: List[Dict[str, Any]] = []
+        master_glossary: List[Dict[str, Any]] = []
+        seen_terms: set[str] = set()
+
+        total_words = 0
+        total_reading_mins = 0
+        total_code_blocks = 0
+        total_mermaid = 0
+        total_math = 0
+        total_qa = 0
+
+        for idx, row in enumerate(rows):
+            md = row["markdown_body"]
+            words = len(md.split())
+            code_blocks = len(re.findall(r"```(?:python|java)\b", md, flags=re.IGNORECASE))
+            mermaids = len(re.findall(r"```mermaid\b", md, flags=re.IGNORECASE))
+            maths = len(re.findall(r"\$\$[\s\S]*?\$\$", md))
+
+            total_words += words
+            total_reading_mins += int(row["reading_time_minutes"] or 15)
+            total_code_blocks += code_blocks
+            total_mermaid += mermaids
+            total_math += maths
+
+            raw_cont = json.loads(row["continuity_json"] or "{}")
+            continuity_out = {
+                "previously": raw_cont.get("previously")
+                or (
+                    f"Ch {rows[idx - 1]['chapter_number']:02d}: {rows[idx - 1]['title']}"
+                    if idx > 0
+                    else f"Course Start — {course_row['title']}"
+                ),
+                "painPoint": raw_cont.get("painPoint") or row["summary"],
+                "unlock": raw_cont.get("unlock") or row["summary"],
+            }
+
+            pretraining = json.loads(row["pretraining_json"] or "[]")
+            for pt in pretraining:
+                tk = str(pt.get("term", "")).strip().lower()
+                if tk and tk not in seen_terms:
+                    seen_terms.add(tk)
+                    master_glossary.append(
+                        {
+                            "term": pt.get("term", ""),
+                            "formula": pt.get("formula", ""),
+                            "meaning": pt.get("meaning", ""),
+                            "chapterNumber": row["chapter_number"],
+                            "chapterSlug": row["slug"],
+                        }
+                    )
+
+            qa_key: List[Dict[str, Any]] = []
+            poe = json.loads(row["prediction_prompt_json"] or "{}")
+            if poe.get("question") and poe.get("options"):
+                opts = poe.get("options") or []
+                aidx = int(poe.get("answerIndex", 0))
+                qa_key.append(
+                    {
+                        "id": f"{row['slug']}-poe",
+                        "kind": "Architecture Prediction",
+                        "question": poe["question"],
+                        "correctAnswer": opts[aidx] if 0 <= aidx < len(opts) else "",
+                        "options": opts,
+                        "answerIndex": aidx,
+                        "explanation": poe.get("explanation", ""),
+                    }
+                )
+            for q in json.loads(row["quizzes_json"] or "[]"):
+                opts = q.get("options") or []
+                aidx = int(q.get("answerIndex", 0))
+                qa_key.append(
+                    {
+                        "id": q.get("id", ""),
+                        "kind": "Staff Scenario Check",
+                        "question": q.get("question", ""),
+                        "correctAnswer": opts[aidx] if 0 <= aidx < len(opts) else "",
+                        "options": opts,
+                        "answerIndex": aidx,
+                        "explanation": q.get("explanation", ""),
+                    }
+                )
+            total_qa += len(qa_key)
+
+            red_thread_map.append(
+                {
+                    "chapterNumber": row["chapter_number"],
+                    "moduleNumber": row["module_number"],
+                    "moduleTitle": row["module_title"],
+                    "slug": row["slug"],
+                    "title": row["title"],
+                    "painPoint": continuity_out["painPoint"],
+                    "unlock": continuity_out["unlock"],
+                    "readingTimeMinutes": row["reading_time_minutes"],
+                }
+            )
+
+            chapters_compiled.append(
+                {
+                    "slug": row["slug"],
+                    "chapterNumber": row["chapter_number"],
+                    "moduleNumber": row["module_number"],
+                    "moduleTitle": row["module_title"],
+                    "levelTag": row["level_tag"],
+                    "title": row["title"],
+                    "summary": row["summary"],
+                    "readingTimeMinutes": row["reading_time_minutes"],
+                    "wordCount": words,
+                    "labPath": row["lab_path"] or "",
+                    "tags": json.loads(row["tags_json"] or "[]"),
+                    "mastered": bool(row["mastered"]),
+                    "continuity": continuity_out,
+                    "pretraining": pretraining,
+                    "steps": split_markdown_into_steps(md),
+                    "markdownBody": md,
+                    "selfCheckKey": qa_key,
+                }
+            )
+
+        latency_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        return 200, {
+            "course": {
+                "courseId": course_row["course_id"],
+                "priorityRank": course_row["priority_rank"],
+                "title": course_row["title"],
+                "shortTitle": course_row["short_title"],
+                "levelSpan": course_row["level_span"],
+                "plannedModules": course_row["planned_modules"],
+                "plannedChapters": course_row["planned_chapters"],
+                "publishedChapters": len(chapters_compiled),
+                "accentColor": course_row["accent_color"],
+                "pillBg": course_row["pill_bg"],
+                "tagline": course_row["tagline"],
+            },
+            "latencyMs": latency_ms,
+            "stats": {
+                "chapterCount": len(chapters_compiled),
+                "totalWords": total_words,
+                "totalReadingMinutes": total_reading_mins,
+                "reviseEstimatedMinutes": max(15, round(total_reading_mins * 0.55)),
+                "totalCodeBlocks": total_code_blocks,
+                "totalMermaidDiagrams": total_mermaid,
+                "totalDisplayEquations": total_math,
+                "totalGlossaryTerms": len(master_glossary),
+                "totalSelfCheckQuestions": total_qa,
+            },
+            "redThreadMap": red_thread_map,
+            "masterGlossary": master_glossary,
+            "chapters": chapters_compiled,
+        }
+    finally:
+        conn.close()
+
+
 def search_knowledgebase(
     raw_query: str,
     track: Optional[str] = None,

@@ -684,6 +684,12 @@ class LearningHubHandler(BaseHTTPRequestHandler):
             self._send_json(200, storage.get_kb_courses())
             return
 
+        if path == "/api/kb/course-compendium":
+            course_id = (query.get("course") or ["01-zero-to-staff-sdet"])[0]
+            code, data = storage.get_kb_course_compendium(course_id)
+            self._send_json(code, data)
+            return
+
         if path in ("/api/kb/chapters", "/api/kb/catalog"):
             track = (query.get("track") or [None])[0]
             course = (query.get("course") or [None])[0]

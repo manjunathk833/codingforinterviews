@@ -752,6 +752,44 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             except OSError:
                 pass
 
+    def test_20_course_compendium_single_page_revise_mode(self):
+        """Verify Course-Level Single-Page Master Compendium ('Revise / In-Single-Page' Mode) API & UI."""
+        comp_01 = hub_server.dispatch_request("GET", "/api/kb/course-compendium?course=01-zero-to-staff-sdet")
+        self.assertEqual(comp_01["status_code"], 200)
+        d01 = comp_01["data"]
+        self.assertEqual(d01["course"]["courseId"], "01-zero-to-staff-sdet")
+        self.assertEqual(d01["stats"]["chapterCount"], 12)
+        self.assertGreater(d01["stats"]["totalWords"], 20000)
+        self.assertGreaterEqual(d01["stats"]["totalCodeBlocks"], 40)
+        self.assertEqual(d01["stats"]["totalMermaidDiagrams"], 12)
+        self.assertEqual(len(d01["redThreadMap"]), 12)
+        self.assertGreaterEqual(len(d01["masterGlossary"]), 30)
+        self.assertEqual(len(d01["chapters"]), 12)
+        for ch in d01["chapters"]:
+            self.assertEqual(len(ch["steps"]), 4)
+            self.assertGreater(len(ch["markdownBody"]), 500)
+            self.assertGreaterEqual(len(ch["selfCheckKey"]), 3)
+            self.assertNotIn("walkthrough", ch)
+
+        comp_02 = hub_server.dispatch_request("GET", "/api/kb/course-compendium?course=02-building-testing-frameworks")
+        self.assertEqual(comp_02["status_code"], 200)
+        self.assertEqual(comp_02["data"]["stats"]["chapterCount"], 10)
+        self.assertGreater(comp_02["data"]["stats"]["totalWords"], 15000)
+
+        missing = hub_server.dispatch_request("GET", "/api/kb/course-compendium?course=does-not-exist")
+        self.assertEqual(missing["status_code"], 404)
+
+        root_html = hub_server.dispatch_request("GET", "/")["data"]["html"]
+        for token in (
+            "kb-mode-revise",
+            "kb-compendium-container",
+            "openCourseCompendium",
+            "toggleCompendiumLayer",
+            "switchAllCompendiumCodeLang",
+            "/api/kb/course-compendium",
+        ):
+            self.assertIn(token, root_html)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
