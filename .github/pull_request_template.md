@@ -33,7 +33,7 @@
 ---
 
 ### 🛡️ Safety & Quality Checklist
-- [ ] Pre-push safety audit passed (`./.agents/skills/github/scripts/safety_check.sh`)
+- [ ] Pre-push safety audit passed (`./tools/safety/safety_check.sh`)
 - [ ] Zero secrets, API tokens, private keys, or passwords committed
 - [ ] No personal resume or PII files staged or committed
 - [ ] Clean conventional commit message used (`feat(...)`, `fix(...)`, `docs(...)`)

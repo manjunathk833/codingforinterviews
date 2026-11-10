@@ -1,0 +1,17 @@
+{
+  "post-edit-verification-reminder": {
+    "hooks": {
+      "PostToolUse": [
+        {
+          "matcher": "write_file|edit_file",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "echo '{\"systemMessage\": \"Reminder: After completing approved production file edits, run the 3-Layer Post-Implementation Check (Service API, SQLite DB/Disk, Live Browser on 127.0.0.1:8090) and Smart Conditional CI per 02-verification-and-ci-gate.md.\"}'"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

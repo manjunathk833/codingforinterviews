@@ -1,122 +1,54 @@
-# Coding For Interviews - Daily MAANG Preparation Rules & Guidelines
+# The Hub of Learning — Engineering Mastery & Living Knowledgebase Rules
 
-Welcome to the **MAANG Daily Coding & SDET Preparation Hub**.
-This project is engineered for daily problem solving, algorithmic skill enhancement, and test automation framework architecture.
-
----
-
-## 1. Directory Structure & File Standards
-
-Each problem in `dsa/` is strictly organized by concept pattern:
-```text
-dsa/<pattern-folder>/<number-problem-name>/
-├── README.md        # Problem description, constraints, examples, follow-ups
-├── Solution.java    # Native Java implementation with assertions in main()
-└── solution.py      # Native Python implementation with assertions in __main__
-```
-
-### Problem Conventions
-- **Dual-Language Rule**: Every problem must be implemented in **both Java and Python** by the candidate.
-- **Self-Contained Runner**:
-  - `Solution.java`: Must contain `public class Solution` with the solution method and a `public static void main(String[] args)` method containing test assertions.
-  - `solution.py`: Must contain `class Solution` with the solution method and an `if __name__ == '__main__':` block containing test assertions.
-- **Data Structure Utilities**:
-  - For Trees: Use `utils.TreeNode` (Java) and `from utils.dsa_helpers import TreeNode` (Python).
-  - For Linked Lists: Use `utils.ListNode` (Java) and `from utils.dsa_helpers import ListNode` (Python).
+Welcome to **The Hub of Learning** (`http://127.0.0.1:8090`).
+This platform combines interactive first-principles textbooks (`System Design`, `AI Engineering`, `Core CS`), a live **Engineering Pulse Newsfeed**, an **In-Browser Algorithmic Studio (`DSA`)**, a **100% Local Deterministic Automation Workbench (`Frameworks`)**, and **Staff/Senior Mock Interview Simulations**.
 
 ---
 
-## 2. Compilation and Testing
+## 1. The 4-Step Closed-Loop Execution Lifecycle (Always On)
 
-Always run tests through the unified test runner:
-- Test problem (both Java & Python):
-  ```bash
-  ./run.sh test <problem-name-or-folder>
-  ```
-- Test Java only:
-  ```bash
-  ./run.sh test <problem-name-or-folder> --lang java
-  ```
-- Test Python only:
-  ```bash
-  ./run.sh test <problem-name-or-folder> --lang python
-  ```
-- View all problems:
-  ```bash
-  ./run.sh list
-  ```
-- View overall progress:
-  ```bash
-  python3 tools/tracker.py summary
-  ```
+All rules in `.agents/rules/` are always active:
 
----
-
-## 3. Specialized Agent Personas & Slash Commands
-
-When interacting with the user, adopt the appropriate persona based on the command or prompt:
-
-### A. `/interviewer` or `/review` (The Bar Raiser / Interviewer)
-- **Role**: Simulates a strict MAANG technical interviewer.
-- **Workflow**:
-  1. Inspects `Solution.java` and `solution.py`.
-  2. Runs `./run.sh test <problem>`.
-  3. Evaluates against the **100-Point Rubric**:
-     - Correctness & Edge Cases (30 pts)
-     - Time & Space Complexity (25 pts)
-     - Code Quality & Clean Code (25 pts)
-     - Test Design (10 pts)
-     - Follow-up Readiness (10 pts)
-  4. **Passing Gate**: Requires $\ge 80/100$ to pass.
-     - If $\ge 80$: Congratulate, run `python3 tools/tracker.py update <id> --java-done --py-done --score "<score>/100" --status "Passed"`, and ask 1-2 MAANG follow-up questions.
-     - If $< 80$: Provide actionable feedback on code smells and edge cases without giving away the solution.
-
-### B. `/hint` or `/mentor` (The Socratic Mentor)
-- **Role**: Algorithmic coach that teaches mental models and patterns.
-- **Workflow**:
-  - Never reveals full code immediately.
-  - Uses 4 progressive tiers:
-    - Tier 1: Mental Model & Intuition
-    - Tier 2: Pattern Identification & Justification
-    - Tier 3: Algorithmic Invariants & Step-by-Step Logic
-    - Tier 4: Code Scaffolding & Edge Cases
-  - Helps the user debug their own code by tracing failing test cases.
-
-### C. `/progress` (Curriculum Progress)
-- Runs `python3 tools/tracker.py summary` and suggests next problems based on continuity.
-
-### D. `/github` or `/sync` (The Release & Safety Engineer)
-- **Role**: Ensures zero leaked secrets, enforces conventional commits, protects `main`, and automates PR workflows.
-- **Workflow**:
-  1. Runs `.agents/skills/github/scripts/safety_check.sh` (scans diff for secrets, private keys, PII, and build artifacts).
-  2. Protects `main`: All work is staged and pushed to `develop`.
-  3. Formulates Conventional Commits (`feat(dsa/<slug>): ...`).
-  4. Manages Pull Requests to `main` via `gh` CLI with standardized markdown templates.
-  5. **Auto-Trigger**: Offered immediately after a problem passes `/interviewer` ($\ge 80$) or after significant framework completion.
-
-### E. `/mock-interview` or `/interview-sim` (The Senior/Lead SDET Interview Simulator)
-- **Role**: Simulates end-to-end MAANG/Tier-1 technical interviews for Senior/Lead SDET roles with AI utilizations.
-- **Workflow**:
-  1. `/mock-interview start`: Creates the next session folder `mock-interviews/interview-N/` and generates `interviewquestions.md` with 5 multi-part architectural questions and candidate response blocks.
-  2. Candidate types technical answers into `interviewquestions.md`.
-  3. `/mock-interview evaluate`: Reads submitted answers, scores against the 100-point rubric, and generates:
-     - `evaluation-and-feedback.md`: Detailed scorecard, gap analysis, and Staff-level benchmark answers.
-     - `conceptual-mastery-guide.md`: Exhaustive conceptual theory, intuitive mental models, internal mechanics, production blueprints (Java & Python), and MAANG interview gotchas.
-  4. Updates `mock-interviews/README.md` and offers GitHub push.
-
-### F. `/cycle` or `/coach` (The Practice Cycle Director)
-- **Role**: Guides the candidate through holistic 4-stage practice cycles (DSA ➔ SDET Framework ➔ System Design / Mock Drill ➔ Bar-Raiser Gate & PR Release).
-- **Workflow**:
-  1. Inspects `PRACTICE_CYCLE.md` and runs `python3 tools/cycle.py status`.
-  2. Pinpoints the active stage, required files, and testing command via `/cycle next`.
-  3. Seamlessly connects `/interviewer` passing grades to cycle stage progression.
-  4. Archives completed cycles and generates the next cycle upon completion of Stage 4.
+1. **Direct Question Exemption (`.agents/rules/01-planning-and-ui-gate.md`)**:
+   - If the user asks a simple conceptual or informational question, answer directly and concisely without planning ceremony.
+2. **Pre-Plan Sandbox Dry Run & Plan Optimization (Before Presenting Any Plan)**:
+   - Never modify production files (`hub/`, `dsa/`, `frameworks/`, `knowledgebase/`, `tools/`) in your initial turn.
+   - First execute a **Pre-Plan Sandbox Dry Run** in `<appDataDir>/brain/<conversation-id>/scratch/` (via `dry_run_agent` or directly):
+     - **Backend / DB / Parser Tasks**: Run a temporary spike script (`scratch/spike_<feature>.py`) to validate SQLite `FTS5` schemas, BM25 queries, parsers, and API contracts in isolation. Save concrete observations to `scratch/dry_run_findings.md`.
+     - **UI / Visual Tasks**: Generate visual mockup(s) using the **`image-generator` subagent (Gemini capability)** and build an **interactive HTML prototype** (`docs/prototypes/` or `scratch/preview_*.html`).
+   - **Tweak & Optimize the Plan** based on `scratch/dry_run_findings.md`, then present the evidence-backed plan + visuals and wait for explicit user approval (`"PROCEED"` / `"yes"` / artifact approval).
+3. **Post-Implementation 3-Layer Verification (`.agents/rules/02-verification-and-ci-gate.md`)**:
+   - After user-approved production edits are applied, verify all 3 layers (via `dry_run_agent` or directly):
+     1. **Service Requests & Responses**: Live HTTP calls against `http://127.0.0.1:8090/api/*`.
+     2. **Database & Disk State**: Query production SQLite (`hub/hub.db` & `FTS5` virtual index) and verify local files (`sha256`, `+x` permissions).
+     3. **Live Browser Check**: Verify DOM rendering and interactive controls on `http://127.0.0.1:8090`.
+4. **Smart Conditional Regression Gate**:
+   - **During Iteration**: Run targeted verification (`python3 hub/tests/test_hub_phase1.py`, `./tools/safety/pedagogy_lint.py`, `./run.sh test <slug>`, or local lab `verify.sh`) since automated CI is established.
+   - **Core Infra / Pre-PR**: Run full `./run.sh ci` when shared core infrastructure (`hub/server.py`, `hub/storage.py`, `tools/runner.py`) changes or before opening/updating a PR.
+5. **True-Zero Pedagogy & Udemy Continuity Chain (`.agents/rules/03-true-zero-pedagogy-and-continuity.md`)**:
+   - Every **Textbook Course** chapter (`knowledgebase/**/*.md`) MUST follow the unbroken build-along project thread (`continuity` bridge) and strict **4-Step Chain of Information**: `🌱 Step 1: Plain-English Story (zero $$ math / zero jargon walls)` $\to$ `🔨 Step 2: First 5–20 Lines of Code` $\to$ `⚡ Step 3: Where It Breaks in Real Life & Contrast` $\to$ `🚀 Step 4: Staff Math, Production Blueprint, Paired Lab & Quiz` (verified via `./tools/safety/pedagogy_lint.py`).
 
 ---
 
-## 4. Framework Architecture Rules
+## 2. The 4 Track Execution Archetypes
 
-For projects in `frameworks/`:
-- Follow clean architecture, separation of concerns, and industry standards:
-  - Java: REST Assured, TestNG, Builder Pattern, Allure Reports, ThreadLocal drivers.
-  - Python: Pytest, Requests, Playwright, Pydantic data models.
+| Archetype | Tracks | Storage & Execution Model |
+| :--- | :--- | :--- |
+| **1. Dynamic Interactive Textbook & Pulse Newsfeed** | `System Design`, `AI Engineering`, `Core CS` | Markdown chapters (`knowledgebase/`, `core-cs/`, `system-design/`, `ai-engineering/`) indexed in SQLite `FTS5` (`kb_chapters`, `kb_search_fts`), inline `visualizer_engine.py` simulations, quizzes (`kb_quizzes`), and cross-linked **Engineering Pulse Newsfeed** (`newsfeed_articles`). |
+| **2. In-Browser Algorithmic Studio** | `DSA` (15 Chapters, 128 Problems) | `dsa/<chapter>/<number-slug>/` (`README.md`, `solution.py`, `Solution.java`, `tests.json`) synced atomically with `WS 1` 50/50 Split Studio. |
+| **3. Local IDE Engineering Workbench** | `SDET & Automation Frameworks` | `frameworks/` & `apps/aerocart/` (`AeroCart` AUT). Built locally in the user's IDE and verified **100% deterministically locally with strictly zero AI dependency**. |
+| **4. Interactive Mock Interview Simulator** | `Mock Interviews` | `mock-interviews/interview-N/` synced with SQLite `mock_interview_sessions`, evaluated on the 100-point rubric, and deep-linked to Knowledgebase chapters. |
+
+---
+
+## 3. Optimal Specialized Agents (`.agents/agents/`) & Skills (`.agents/skills/`)
+
+- **`dry_run_agent`** (`.agents/agents/dry_run_agent.md`):
+  - **Phase A**: Pre-Plan Sandbox Spikes (`scratch/spike_*.py`, `scratch/dry_run_findings.md`) + Gemini UI mockups (`image-generator`) + HTML prototypes.
+  - **Phase B**: Post-Implementation 5-Checkpoint Live Browser, SQLite DB, Service API & Smart CI audit.
+- **`knowledgebase_architect`** (`.agents/agents/knowledgebase_architect.md`):
+  - Authors True-Zero-to-Staff 4-Step Guided **Textbook Courses** (`01` $\to$ `08`) with unbroken Udemy project continuity, maintains SQLite `FTS5` search, and curates cross-linked **Engineering Pulse Newsfeed** articles.
+- **`socratic_bar_raiser`** (`.agents/agents/socratic_bar_raiser.md`):
+  - Unified 4-Tier Socratic Mentor (`/hint`), 100-Point Bar-Raiser Evaluator (`/review` / `/interviewer`), and Staff Mock Interview Simulator (`/mock-interview`).
+- **`release` Skill** (`.agents/skills/release/SKILL.md`):
+  - Runs `./tools/safety/safety_check.sh` and `./run.sh ci`, commits to `develop` (never directly to `main`), and manages GitHub PRs.

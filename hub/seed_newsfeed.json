@@ -1,0 +1,332 @@
+{
+  "sources": [
+    {
+      "id": "aws-builders-library",
+      "name": "AWS Builders' Library",
+      "category": "system-design",
+      "feedUrl": "https://aws.amazon.com/blogs/architecture/feed/",
+      "homepage": "https://aws.amazon.com/builders-library/"
+    },
+    {
+      "id": "netflix-techblog",
+      "name": "Netflix TechBlog",
+      "category": "system-design",
+      "feedUrl": "https://netflixtechblog.com/feed",
+      "homepage": "https://netflixtechblog.com/"
+    },
+    {
+      "id": "cloudflare-blog",
+      "name": "Cloudflare Engineering",
+      "category": "core-cs",
+      "feedUrl": "https://blog.cloudflare.com/rss/",
+      "homepage": "https://blog.cloudflare.com/"
+    },
+    {
+      "id": "simon-willison",
+      "name": "Simon Willison's Weblog",
+      "category": "ai-engineering",
+      "feedUrl": "https://simonwillison.net/atom/everything/",
+      "homepage": "https://simonwillison.net/"
+    },
+    {
+      "id": "anthropic-engineering",
+      "name": "Anthropic Engineering",
+      "category": "ai-engineering",
+      "feedUrl": "https://www.anthropic.com/engineering",
+      "homepage": "https://www.anthropic.com/engineering"
+    },
+    {
+      "id": "playwright-releases",
+      "name": "Playwright & Browser Internals",
+      "category": "sdet-architecture",
+      "feedUrl": "https://github.com/microsoft/playwright/releases.atom",
+      "homepage": "https://playwright.dev/"
+    },
+    {
+      "id": "google-testing-blog",
+      "name": "Google Testing Blog",
+      "category": "sdet-architecture",
+      "feedUrl": "https://testing.googleblog.com/feeds/posts/default",
+      "homepage": "https://testing.googleblog.com/"
+    }
+  ],
+  "articles": [
+    {
+      "id": "pulse-google-flaky-math-10",
+      "sourceId": "google-testing-blog",
+      "sourceName": "Google Testing Blog",
+      "category": "sdet-architecture",
+      "title": "Flaky Tests at Scale: Why 99% Per-Test Reliability Yields 63% Red Pipelines and How Quarantine SLAs Fix It",
+      "url": "https://testing.googleblog.com/",
+      "publishedAt": "2026-11-09",
+      "readingMinutes": 10,
+      "summary": "Empirical data across millions of CI runs showing why blind test retries hide concurrency regressions, and how statistical pass-on-retry telemetry routes flaky tests into non-blocking quarantine lanes.",
+      "whyItMatters": "Directly anchors Course 01 (Zero to Staff SDET) Chapters 1 & 9 and Course 02 Smart Retry Analyzers.",
+      "tags": ["sdet", "flakiness", "quarantine", "determinism", "sdet-architecture"],
+      "relatedChapters": [
+        "sdet-01-determinism-and-flakiness-math",
+        "sdet-09-statistical-flake-quarantine-governance",
+        "fw-07-smart-retries-and-rate-limited-clients"
+      ]
+    },
+    {
+      "id": "pulse-tia-sharding-11",
+      "sourceId": "google-testing-blog",
+      "sourceName": "Google Testing Blog",
+      "category": "sdet-architecture",
+      "title": "Compressing 1,000-Hour Monorepo Test Suites into 12-Minute PR Gates with AST Test Impact Analysis & LPT Sharding",
+      "url": "https://testing.googleblog.com/",
+      "publishedAt": "2026-11-09",
+      "readingMinutes": 11,
+      "summary": "Combining static dependency graphs, historical spec-duration min-heap bin packing, and hermetic per-worker tenant namespaces to eliminate CI straggler shards.",
+      "whyItMatters": "Pairs directly with Course 01 Module 2 & 3 (Tenant Isolation, LPT Sharding & TIA) and Playwright Blob Sharding.",
+      "tags": ["sdet", "ci-sharding", "tia", "bin-packing", "sdet-architecture"],
+      "relatedChapters": [
+        "sdet-05-parallel-tenant-isolation",
+        "sdet-07-ci-sharding-and-bin-packing",
+        "sdet-08-test-impact-analysis-and-ast-graphs",
+        "pw-10-containerized-sharding-and-blob-reports"
+      ]
+    },
+    {
+      "id": "pulse-otel-traceparent-qa-12",
+      "sourceId": "netflix-techblog",
+      "sourceName": "Netflix TechBlog",
+      "category": "sdet-architecture",
+      "title": "Trace-Driven Testing: Injecting W3C traceparent Headers in Automation Frameworks for 10-Second Root Cause Triage",
+      "url": "https://opentelemetry.io/docs/specs/otel/context/api-propagators/",
+      "publishedAt": "2026-11-08",
+      "readingMinutes": 9,
+      "summary": "How propagating OpenTelemetry trace IDs from Pytest, Playwright, and REST Assured harnesses links failed assertions directly to downstream gRPC and SQLite/Postgres spans.",
+      "whyItMatters": "Anchors Course 01 Chapter 10 (OpenTelemetry Triage) and Course 02 Chapter 9 (Structured Reporters).",
+      "tags": ["sdet", "opentelemetry", "traceparent", "observability", "sdet-architecture"],
+      "relatedChapters": [
+        "sdet-10-opentelemetry-traceparent-triage",
+        "sdet-11-shift-right-canaries-and-chaos",
+        "fw-09-structured-artifacts-allure-and-otel-reporters"
+      ]
+    },
+    {
+      "id": "pulse-aws-jitter-01",
+      "sourceId": "aws-builders-library",
+      "sourceName": "AWS Builders' Library",
+      "category": "system-design",
+      "title": "Timeouts, Retries, and Backoff with Jitter in Distributed Systems",
+      "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+      "publishedAt": "2026-11-08",
+      "readingMinutes": 9,
+      "summary": "Empirical simulation proving why AWS Full Jitter cuts retry storm server load by >40% compared to unjittered exponential backoff and Equal Jitter during recovery waves.",
+      "whyItMatters": "Directly validates our Bounded Ring Buffer + Full Jitter invariant in System Design and API Rate Limiting.",
+      "tags": ["system-design", "backpressure", "full-jitter", "exponential-backoff", "token-bucket"],
+      "relatedChapters": [
+        "sd-01-continuous-sync-and-backpressure",
+        "api-05-rate-limiting-token-buckets-and-timeouts",
+        "fw-07-smart-retries-and-rate-limited-clients"
+      ]
+    },
+    {
+      "id": "pulse-anthropic-rag-evals-04",
+      "sourceId": "anthropic-engineering",
+      "sourceName": "Anthropic Engineering",
+      "category": "ai-engineering",
+      "title": "Contextual Retrieval, Hybrid BM25 + RRF & Catching Subtle RAG Hallucinations",
+      "url": "https://www.anthropic.com/news/contextual-retrieval",
+      "publishedAt": "2026-11-08",
+      "readingMinutes": 12,
+      "summary": "Why dense cosine similarity misses exact identifiers and negation inversions, and how prepending chunk context + BM25 + Reciprocal Rank Fusion + cross-encoder reranking slashes retrieval failures by 67%.",
+      "whyItMatters": "Anchors Course 05 (Hybrid RAG & Contextual Reranking) and Course 06 (RAG Triad & Negation Traps).",
+      "tags": ["ai-engineering", "rag", "rag-evals", "hallucination", "claim-entailment", "vector-search"],
+      "relatedChapters": [
+        "ai-01-rag-triad-and-claim-verification",
+        "aie-09-hybrid-rag-chunking-hnsw-bm25-and-rrf",
+        "aie-10-cross-encoder-reranking-and-contextual-retrieval",
+        "aiqa-04-negation-flips-entity-swaps-and-abstention-qa"
+      ]
+    },
+    {
+      "id": "pulse-vllm-kv-cache-13",
+      "sourceId": "anthropic-engineering",
+      "sourceName": "LLM Systems Digest",
+      "category": "ai-engineering",
+      "title": "Inside Modern LLM Inference: Scaled Dot-Product Attention, GQA, PagedAttention & Prefix Caching Economics",
+      "url": "https://arxiv.org/abs/2309.06180",
+      "publishedAt": "2026-11-07",
+      "readingMinutes": 14,
+      "summary": "First-principles memory math showing how Grouped-Query Attention (GQA), INT4/FP8 quantization, and virtual-memory PagedAttention unlock 4–8x higher token throughput.",
+      "whyItMatters": "Pairs directly with Course 05 Module 2 & 3 (Self-Attention, RoPE/GQA/MoE, KV-Cache & Prefix Caching).",
+      "tags": ["ai-engineering", "transformers", "kv-cache", "attention", "quantization"],
+      "relatedChapters": [
+        "aie-04-scaled-dot-product-attention-and-causal-masking",
+        "aie-05-modern-transformers-rope-swiglu-gqa-and-moe",
+        "aie-06-inference-mechanics-kv-cache-pagedattention-quantization",
+        "aie-08-context-architecture-prefix-caching-and-ttft-economics"
+      ]
+    },
+    {
+      "id": "pulse-mcp-judge-calibration-14",
+      "sourceId": "simon-willison",
+      "sourceName": "Simon Willison's Weblog",
+      "category": "ai-engineering",
+      "title": "Calibrating LLM-as-a-Judge with Rogan-Gladen Estimators & Red-Teaming MCP Agents Against Indirect Prompt Injection",
+      "url": "https://modelcontextprotocol.io/",
+      "publishedAt": "2026-11-07",
+      "readingMinutes": 11,
+      "summary": "Why raw LLM judge pass rates are statistically biased without sensitivity/specificity correction, and how untrusted RAG documents attempt tool-call privilege escalation over MCP.",
+      "whyItMatters": "Connects Course 05 Chapter 12 (MCP Agents) with Course 06 Modules 3 & 4 (Rogan-Gladen Calibration & Red-Teaming).",
+      "tags": ["ai-engineering", "mcp", "llm-as-a-judge", "prompt-injection", "ai-qa"],
+      "relatedChapters": [
+        "aie-12-agentic-architectures-tool-contracts-and-mcp",
+        "aiqa-05-llm-judge-biases-and-pairwise-swap-debiasing",
+        "aiqa-06-statistical-judge-calibration-kappa-and-rogan-gladen",
+        "aiqa-07-adversarial-red-teaming-prompt-injection-and-pii",
+        "aiqa-08-agent-trajectory-qa-and-mock-mcp-sandboxes"
+      ]
+    },
+    {
+      "id": "pulse-discord-hashing-02",
+      "sourceId": "netflix-techblog",
+      "sourceName": "Distributed Systems Digest",
+      "category": "system-design",
+      "title": "How Consistent Hashing Rings, Singleflight Coalescing & Virtual Nodes Protect Stateful Clusters",
+      "url": "https://netflixtechblog.com/",
+      "publishedAt": "2026-11-07",
+      "readingMinutes": 11,
+      "summary": "Deep dive into how virtual nodes (vnodes) and request coalescing (Singleflight) prevent hot-key cache stampedes and cascading failovers.",
+      "whyItMatters": "Demonstrates Course 07 Chapters 2, 4 & 5 (Consistent Hashing, Singleflight Caching & Quorum Replication).",
+      "tags": ["system-design", "consistent-hashing", "virtual-nodes", "sharding", "caching"],
+      "relatedChapters": [
+        "sd-02-consistent-hashing-and-sharding",
+        "sd-04-distributed-caching-and-singleflight",
+        "sd-05-replication-quorums-and-raft-consensus"
+      ]
+    },
+    {
+      "id": "pulse-debezium-outbox-03",
+      "sourceId": "netflix-techblog",
+      "sourceName": "Netflix TechBlog",
+      "category": "system-design",
+      "title": "Zero-Data-Loss Event Streaming with Transactional Outbox and Postgres WAL CDC",
+      "url": "https://netflixtechblog.com/",
+      "publishedAt": "2026-11-06",
+      "readingMinutes": 10,
+      "summary": "Eliminating dual-write race conditions between microservices and Kafka by tailing the relational Write-Ahead Log and enforcing idempotent consumer watermarks.",
+      "whyItMatters": "Pairs directly with Course 01 Async Saga Testing, Course 04 Async APIs, and Course 07 Kafka Outbox.",
+      "tags": ["system-design", "kafka", "transactional-outbox", "cdc", "eventual-consistency", "wal"],
+      "relatedChapters": [
+        "sd-03-kafka-outbox-and-eventual-consistency",
+        "sdet-06-async-event-driven-and-saga-testing",
+        "api-08-async-saga-and-webhook-verification",
+        "cs-03-lsm-trees-b-trees-and-wal-isolation"
+      ]
+    },
+    {
+      "id": "pulse-api-pact-contracts-15",
+      "sourceId": "aws-builders-library",
+      "sourceName": "API Architecture Weekly",
+      "category": "sdet-architecture",
+      "title": "Idempotency Keys, GraphQL Partial-Error Traps & Replacing Staging E2E Bottlenecks with Pact Contracts",
+      "url": "https://docs.pact.io/",
+      "publishedAt": "2026-11-05",
+      "readingMinutes": 10,
+      "summary": "How consumer-driven contract matrices (`can-i-deploy`), OpenAPI breaking-change linters, and typed Pydantic/REST Assured clients catch integration breaks in 400ms.",
+      "whyItMatters": "Directly backs Course 04 (API & API Automation) Modules 1–4 and Course 01 Seam Economics.",
+      "tags": ["api-automation", "pact", "graphql", "idempotency", "sdet-architecture"],
+      "relatedChapters": [
+        "api-02-rest-idempotency-caching-and-pagination",
+        "api-04-production-api-clients-pydantic-and-rest-assured",
+        "api-06-graphql-ast-n-plus-one-and-error-envelopes",
+        "api-10-pact-consumer-driven-contract-testing",
+        "sdet-03-test-pyramid-and-seam-economics"
+      ]
+    },
+    {
+      "id": "pulse-simonw-llm-evals-05",
+      "sourceId": "simon-willison",
+      "sourceName": "Simon Willison's Weblog",
+      "category": "ai-engineering",
+      "title": "Building Deterministic Guardrails, Golden Datasets and Regression Evals for Production AI Pipelines",
+      "url": "https://simonwillison.net/",
+      "publishedAt": "2026-11-05",
+      "readingMinutes": 7,
+      "summary": "Practical patterns for testing non-deterministic LLM pipelines in CI using metamorphic invariants, constrained JSON decoding, and stratified golden retrieval datasets.",
+      "whyItMatters": "Shows how Staff AI QA Engineers keep PR CI fast and deterministic while auditing LLM outputs.",
+      "tags": ["ai-engineering", "rag-evals", "llm-as-a-judge", "sdet-architecture"],
+      "relatedChapters": [
+        "aiqa-01-testing-nondeterministic-systems-and-metamorphic-qa",
+        "aiqa-02-golden-dataset-engineering-and-stratification",
+        "ai-01-rag-triad-and-claim-verification",
+        "aiqa-10-production-ai-ci-gates-and-shadow-drift-monitoring"
+      ]
+    },
+    {
+      "id": "pulse-playwright-accessibility-06",
+      "sourceId": "playwright-releases",
+      "sourceName": "Playwright Engineering",
+      "category": "sdet-architecture",
+      "title": "Role-Based Accessibility Trees, Actionability Gates & Persistent CDP/BiDi Pipes in Playwright",
+      "url": "https://playwright.dev/docs/locators",
+      "publishedAt": "2026-11-04",
+      "readingMinutes": 8,
+      "summary": "Why WAI-ARIA role locators outlive CSS refactors, how Playwright checks 5 actionability states per frame, and how `storageState` + `page.route` eliminate UI test flakiness.",
+      "whyItMatters": "Connects Course 03 (Playwright UI Automation) with Course 06 AST Self-Healing Locators.",
+      "tags": ["ai-engineering", "self-healing", "playwright", "playwright-cdp", "websockets", "sdet-architecture"],
+      "relatedChapters": [
+        "pw-01-webdriver-http-vs-cdp-and-bidi-pipes",
+        "pw-04-accessibility-tree-locators-and-strict-mode",
+        "pw-05-five-actionability-gates-and-web-first-assertions",
+        "pw-07-network-interception-route-and-har-replay",
+        "ai-02-self-healing-ast-and-dom-confidence"
+      ]
+    },
+    {
+      "id": "pulse-cloudflare-tcp-tls13-07",
+      "sourceId": "cloudflare-blog",
+      "sourceName": "Cloudflare Engineering",
+      "category": "core-cs",
+      "title": "Inside TLS 1.3 1-RTT Handshakes, SYN Backlog Tuning & HTTP/2 Multiplexing at Edge Scale",
+      "url": "https://blog.cloudflare.com/",
+      "publishedAt": "2026-11-03",
+      "readingMinutes": 14,
+      "summary": "Packet-by-packet breakdown of how TLS 1.3 saves a full round-trip time via early ECDHE key shares and why TCP-layer Head-of-Line blocking occurs on lossy networks.",
+      "whyItMatters": "Real-world kernel & edge telemetry matching Course 04 Chapter 1 and Course 08 Chapter 2.",
+      "tags": ["core-cs", "networking", "tcp", "tls-1.3", "http/2"],
+      "relatedChapters": [
+        "cs-02-tcp-tls-http2-and-websocket-framing",
+        "api-01-tcp-tls13-and-http2-connection-pooling",
+        "api-07-grpc-protobuf-framing-and-deadlines"
+      ]
+    },
+    {
+      "id": "pulse-linux-rss-gc-08",
+      "sourceId": "cloudflare-blog",
+      "sourceName": "Systems Performance Weekly",
+      "category": "core-cs",
+      "title": "Diagnosing Container OOMKills (Exit 137), epoll Readiness Queues & Lock-Free CAS Contention",
+      "url": "https://blog.cloudflare.com/",
+      "publishedAt": "2026-11-01",
+      "readingMinutes": 10,
+      "summary": "Why managed heap graphs look flat while Linux cgroup v2 RSS climbs to OOM, how CFS CPU quotas throttle over-threaded JVM pools, and how OLS regression on post-GC minima catches leaks early.",
+      "whyItMatters": "Directly mirrors Course 08 Chapters 1, 4 & 5 (OS Memory Leaks, Lock-Free CAS & Linux epoll/cgroups).",
+      "tags": ["core-cs", "os-kernel", "virtual-memory", "garbage-collection", "memory-leak", "epoll", "cgroups"],
+      "relatedChapters": [
+        "cs-01-os-virtual-memory-gc-and-fd-leaks",
+        "cs-04-concurrency-mutexes-and-lock-free-cas",
+        "cs-05-linux-epoll-cgroups-and-containers"
+      ]
+    },
+    {
+      "id": "pulse-rocksdb-lsm-wal-09",
+      "sourceId": "aws-builders-library",
+      "sourceName": "Storage Engine Internals",
+      "category": "core-cs",
+      "title": "B+Trees vs. LSM-Trees: Write Amplification, Bloom Filters & SQLite WAL Concurrency",
+      "url": "https://sqlite.org/wal.html",
+      "publishedAt": "2026-10-29",
+      "readingMinutes": 13,
+      "summary": "Comparing page-based B+Trees with append-only LSM-Trees, Tombstone compaction, and how Write-Ahead Logging unlocks non-blocking concurrent readers.",
+      "whyItMatters": "Explains the exact storage engine architecture powering both RocksDB and this Hub's own SQLite WAL + FTS5 database!",
+      "tags": ["core-cs", "databases", "b-tree", "lsm-tree", "wal", "mvcc", "sqlite"],
+      "relatedChapters": ["cs-03-lsm-trees-b-trees-and-wal-isolation"]
+    }
+  ]
+}

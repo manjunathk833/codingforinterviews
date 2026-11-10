@@ -1,0 +1,54 @@
+{
+  "slug": "006-product-of-array-except-self",
+  "title": "006. Product of Array Except Self",
+  "chapter": "Ch 01: Arrays & Hashing",
+  "difficulty": "Medium",
+  "methodName": "productExceptSelf",
+  "compareMode": "exact",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(1) auxiliary",
+  "visualizerId": "dsa-two-sum",
+  "prompt": "Given an integer array `nums`, return an array `answer` such that `answer[i]` is equal to the product of all the elements of `nums` except `nums[i]`. You must write an algorithm that runs in `O(N)` time and without using the division operation.",
+  "invariant": "answer[i] = prefix_product[0..i-1] * suffix_product[i+1..N-1]",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "Mental Model & Intuition",
+      "content": "Every index `i` needs the product of everything to its left multiplied by the product of everything to its right."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern Identification",
+      "content": "Two-pass Prefix & Suffix running products stored directly inside the output array `res` for `O(1)` extra space."
+    },
+    {
+      "tier": 3,
+      "title": "Algorithmic Invariant",
+      "content": "Pass 1 (Left → Right): store running `prefix` in `res[i]`, then `prefix *= nums[i]`. Pass 2 (Right → Left): multiply `res[i] *= suffix`, then `suffix *= nums[i]`."
+    },
+    {
+      "tier": 4,
+      "title": "Edge Cases & Scaffolding",
+      "content": "Test arrays containing a single `0` (only the zero's position is non-zero) and arrays with two `0`s (all outputs become `0`)."
+    }
+  ],
+  "cases": [
+    {
+      "id": "case-1",
+      "label": "Case 1",
+      "input": {
+        "nums": [1, 2, 3, 4]
+      },
+      "expected": [24, 12, 8, 6]
+    },
+    {
+      "id": "case-2",
+      "label": "Case 2",
+      "input": {
+        "nums": [-1, 1, 0, -3, 3]
+      },
+      "expected": [0, 0, 9, 0, 0]
+    }
+  ]
+}
+

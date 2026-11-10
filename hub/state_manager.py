@@ -448,6 +448,145 @@ def save_db(data: Dict[str, Any]) -> None:
     DB_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
+DSA_CHAPTER_CATALOG: Dict[str, Dict[str, Any]] = {
+    "Arrays & Hashing": {
+        "number": "01",
+        "folder": "01-arrays-and-hashing",
+        "mentalModelTitle": "Mental Model: O(1) Instant Lookup via Canonical Signatures vs O(N) Linear Scan",
+        "mentalModelSummary": "Pre-index complements or 26-letter frequency signatures in a Hash Table so inner search loops collapse from O(N) to O(1).",
+        "tiles": [{"label": "E", "sub": "a·e·t"}, {"label": "A", "sub": "a·e·t"}, {"label": "T", "sub": "a·e·t"}],
+        "diagramFormula": "key = tuple(count[26])",
+        "diagramCaption": "O(1) hash bucket lookup",
+    },
+    "Two Pointers": {
+        "number": "02",
+        "folder": "02-two-pointers",
+        "mentalModelTitle": "Mental Model: Converging L & R Pointers Collapse O(N²) Pair Scans to O(N)",
+        "mentalModelSummary": "Exploit sorted order or monotonic container heights to discard an entire row/column of suboptimal pairs on every pointer step.",
+        "tiles": [{"label": "L→", "sub": "idx 0"}, {"label": "⇄", "sub": "O(N)"}, {"label": "←R", "sub": "idx N-1"}],
+        "diagramFormula": "while L < R: move min side",
+        "diagramCaption": "Converging boundary scan",
+    },
+    "Sliding Window": {
+        "number": "03",
+        "folder": "03-sliding-window",
+        "mentalModelTitle": "Mental Model: Elastic Window [L..R] Maintains Substring Invariants in O(N)",
+        "mentalModelSummary": "Expand right pointer R to ingest elements and contract left pointer L only when the window constraint is violated.",
+        "tiles": [{"label": "[L", "sub": "shrink"}, {"label": "WIN", "sub": "valid"}, {"label": "R]", "sub": "expand"}],
+        "diagramFormula": "window_len = R - L + 1",
+        "diagramCaption": "Amortized 2N pointer moves",
+    },
+    "Stack & Queue": {
+        "number": "04",
+        "folder": "04-stack-and-queue",
+        "mentalModelTitle": "Mental Model: Monotonic LIFO Stack Resolves Next-Greater Boundaries in O(N)",
+        "mentalModelSummary": "Hold unresolved indices in a monotonic stack; the first element that breaks monotonicity resolves all smaller/larger items on top.",
+        "tiles": [{"label": "PUSH", "sub": "idx i"}, {"label": "TOP", "sub": "mono"}, {"label": "POP", "sub": "resolve"}],
+        "diagramFormula": "while stack and cur > top: pop()",
+        "diagramCaption": "Monotonic boundary resolution",
+    },
+    "Binary Search": {
+        "number": "05",
+        "folder": "05-binary-search",
+        "mentalModelTitle": "Mental Model: Monotonic T/F Predicate Halves the Search Space in O(log N)",
+        "mentalModelSummary": "Binary search works on any monotonic boolean condition (sorted rotated halves or answer-space feasibility).",
+        "tiles": [{"label": "LO", "sub": "False"}, {"label": "MID", "sub": "check()"}, {"label": "HI", "sub": "True"}],
+        "diagramFormula": "mid = lo + (hi - lo) // 2",
+        "diagramCaption": "Logarithmic boundary bisection",
+    },
+    "Linked List": {
+        "number": "06",
+        "folder": "06-linked-list",
+        "mentalModelTitle": "Mental Model: Fast/Slow Tortoise-Hare Pointers & Dummy Sentinel Nodes",
+        "mentalModelSummary": "Use a dummy head to eliminate null-head edge cases and 2x/1x pointers to locate midpoints or cycles in O(1) space.",
+        "tiles": [{"label": "PREV", "sub": "node"}, {"label": "CURR", "sub": "flip"}, {"label": "NEXT", "sub": "save"}],
+        "diagramFormula": "nxt = cur.next; cur.next = prev",
+        "diagramCaption": "In-place pointer rewiring",
+    },
+    "Trees & BST": {
+        "number": "07",
+        "folder": "07-trees-and-bst",
+        "mentalModelTitle": "Mental Model: Bottom-Up Post-Order Heights & Top-Down BST Range Bounds",
+        "mentalModelSummary": "Pass range invariants (min_val, max_val) down the tree in Pre-Order, and aggregate subtree heights/diameters up in Post-Order.",
+        "tiles": [{"label": "LEFT", "sub": "< root"}, {"label": "ROOT", "sub": "(lo,hi)"}, {"label": "RIGHT", "sub": "> root"}],
+        "diagramFormula": "1 + max(dfs(L), dfs(R))",
+        "diagramCaption": "Recursive subtree decomposition",
+    },
+    "Heaps & Priority Queue": {
+        "number": "08",
+        "folder": "08-heaps-priority-queue",
+        "mentalModelTitle": "Mental Model: Bounded K-Element Min-Heap Tracks Stream Leaders in O(N log K)",
+        "mentalModelSummary": "Maintain a Min-Heap of size K so the K-th largest element always sits at heap[0] in O(1) peek time.",
+        "tiles": [{"label": "MIN", "sub": "heap[0]"}, {"label": "LOG K", "sub": "sift"}, {"label": "TOP K", "sub": "stream"}],
+        "diagramFormula": "if len(heap) > k: heappop(heap)",
+        "diagramCaption": "Bounded priority frontier",
+    },
+    "Backtracking": {
+        "number": "09",
+        "folder": "09-backtracking",
+        "mentalModelTitle": "Mental Model: Choose → Explore → Unchoose State-Space Decision Tree",
+        "mentalModelSummary": "Mutate shared path state in-place before recursing and undo the mutation immediately upon return.",
+        "tiles": [{"label": "+X", "sub": "choose"}, {"label": "DFS", "sub": "explore"}, {"label": "-X", "sub": "unchoose"}],
+        "diagramFormula": "path.append(x); dfs(); path.pop()",
+        "diagramCaption": "State tree pruning",
+    },
+    "Graphs": {
+        "number": "10",
+        "folder": "10-graphs",
+        "mentalModelTitle": "Mental Model: Multi-Source BFS Wavefronts & Kahn's Topological Indegrees",
+        "mentalModelSummary": "Use BFS queues for unweighted shortest paths and 3-color DFS / Indegree queues for dependency cycle detection.",
+        "tiles": [{"label": "U", "sub": "indeg 0"}, {"label": "──►", "sub": "edge"}, {"label": "V", "sub": "queue"}],
+        "diagramFormula": "indegree[v] -= 1; if 0: push(v)",
+        "diagramCaption": "Topological & wavefront traversal",
+    },
+    "1D Dynamic Programming": {
+        "number": "11",
+        "folder": "11-dynamic-programming",
+        "mentalModelTitle": "Mental Model: Optimal Substructure Folded into Rolling O(1) State Registers",
+        "mentalModelSummary": "Express state i in terms of i-1 and i-2 so exponential recursion collapses into a single linear scan.",
+        "tiles": [{"label": "prev2", "sub": "dp[i-2]"}, {"label": "prev1", "sub": "dp[i-1]"}, {"label": "curr", "sub": "dp[i]"}],
+        "diagramFormula": "dp[i] = max(dp[i-1], dp[i-2] + val)",
+        "diagramCaption": "Rolling state recurrence",
+    },
+    "2D Dynamic Programming": {
+        "number": "12",
+        "folder": "11-dynamic-programming",
+        "mentalModelTitle": "Mental Model: 2D Grid & Prefix Alignment Transitions (i, j)",
+        "mentalModelSummary": "Transition each cell (i, j) from its top (i-1, j), left (i, j-1), and diagonal (i-1, j-1) subproblems.",
+        "tiles": [{"label": "TOP", "sub": "(r-1,c)"}, {"label": "DIAG", "sub": "(r-1,c-1)"}, {"label": "CELL", "sub": "(r,c)"}],
+        "diagramFormula": "dp[i][j] = 1 + dp[i-1][j-1]",
+        "diagramCaption": "2D state lattice transition",
+    },
+    "Greedy & Intervals": {
+        "number": "13",
+        "folder": "12-greedy-and-intervals",
+        "mentalModelTitle": "Mental Model: Sort Intervals by Start/End to Resolve Overlaps Locally",
+        "mentalModelSummary": "Sorting intervals by start time guarantees that overlapping intervals appear contiguously.",
+        "tiles": [{"label": "[S1,E1]", "sub": "prev"}, {"label": "∪", "sub": "S2 ≤ E1"}, {"label": "[S1,E2]", "sub": "merged"}],
+        "diagramFormula": "if cur.start <= prev.end: merge()",
+        "diagramCaption": "Greedy sweep-line invariant",
+    },
+    "Design & Concurrency": {
+        "number": "14",
+        "folder": "13-design-and-concurrency",
+        "mentalModelTitle": "Mental Model: O(1) HashMap + Doubly-Linked Node & Condition-Variable Locks",
+        "mentalModelSummary": "Combine HashMaps with doubly-linked lists for O(1) eviction and guard bounded queues with Condition wait/notify.",
+        "tiles": [{"label": "LOCK", "sub": "mutex"}, {"label": "WAIT", "sub": "not_full"}, {"label": "NOTIFY", "sub": "not_empty"}],
+        "diagramFormula": "while len(q) == cap: cond.wait()",
+        "diagramCaption": "Thread-safe data structure invariants",
+    },
+    "Bit Manipulation": {
+        "number": "15",
+        "folder": "14-bit-manipulation",
+        "mentalModelTitle": "Mental Model: XOR Self-Cancellation (x ^ x = 0) & Kernighan's Bit Clear",
+        "mentalModelSummary": "Use bitwise XOR to cancel paired duplicates and n & (n - 1) to strip the lowest set bit in O(1) space.",
+        "tiles": [{"label": "X ^ X", "sub": "== 0"}, {"label": "N & N-1", "sub": "drop 1"}, {"label": "O(1)", "sub": "registers"}],
+        "diagramFormula": "n = n & (n - 1)",
+        "diagramCaption": "Bitwise register arithmetic",
+    },
+}
+
+
 def discover_local_dsa_folders() -> Dict[str, str]:
     """Map problem slug to relative directory path for problems that exist on disk."""
     mapping = {}
@@ -459,7 +598,6 @@ def discover_local_dsa_folders() -> Dict[str, str]:
         if "Solution.java" in files or "solution.py" in files:
             p = Path(root)
             rel = str(p.relative_to(REPO_ROOT))
-            # Extract slug without numeric prefix, e.g. '001-two-sum' -> 'two-sum'
             slug = re.sub(r"^\d+-", "", p.name.lower())
             mapping[slug] = rel
             mapping[p.name.lower()] = rel
@@ -467,9 +605,22 @@ def discover_local_dsa_folders() -> Dict[str, str]:
 
 
 def get_dsa_overview() -> Dict[str, Any]:
-    """Parse dsa/MASTER_SHEET.md and enrich with local runnable status."""
+    """Parse dsa/MASTER_SHEET.md and enrich with local runnable status and 15-Chapter Roadmap metadata."""
     local_folders = discover_local_dsa_folders()
     problems = []
+
+    problem_diagrams = {
+        "two-sum": ("need = target - x", "Pair complement sum"),
+        "contains-duplicate": ("x in seen_set", "O(1) duplicate check"),
+        "valid-anagram": ("[A][E] ⇄ [E][A]", "26-slot balance scale"),
+        "group-anagrams": ("key = tuple(count[26])", "Canonical frequency bucket"),
+        "top-k-frequent-elements": ("buckets[freq].append(x)", "Bounded frequency buckets"),
+        "product-of-array-except-self": ("prefix[i] * suffix[i]", "Two-pass prefix/suffix"),
+        "encode-and-decode-strings": ("len(s) + '#' + s", "Length-prefixed framing"),
+        "longest-consecutive-sequence": ("(x - 1) not in set", "Sequence head detection"),
+        "subarray-sum-equals-k": ("prefix_sum - k in map", "Prefix sum complement"),
+        "first-missing-positive": ("swap nums[i] to idx x-1", "Cyclic index placement"),
+    }
 
     if MASTER_SHEET.exists():
         content = MASTER_SHEET.read_text(encoding="utf-8")
@@ -490,14 +641,24 @@ def get_dsa_overview() -> Dict[str, Any]:
                 status = m.group(9).strip()
 
                 slug = url.strip("/").split("/")[-1].lower()
+                # Also match shortened folder slugs like lowest-common-ancestor-of-bst
                 local_path = local_folders.get(slug)
-                folder_slug = Path(local_path).name if local_path else None
+                if not local_path:
+                    for k, v in local_folders.items():
+                        if slug.startswith(k) or k.startswith(slug[:18]):
+                            local_path = v
+                            break
+                folder_slug = Path(local_path).name if local_path else f"{prob_id:03d}-{slug}"
 
                 visualizer_map = {
                     "two-sum": "dsa-two-sum",
                     "valid-anagram": "dsa-valid-anagram",
-                    "group-anagrams": "dsa-group-anagrams"
+                    "group-anagrams": "dsa-group-anagrams",
                 }
+                ch_meta = DSA_CHAPTER_CATALOG.get(pattern, DSA_CHAPTER_CATALOG["Arrays & Hashing"])
+                diag_formula, diag_caption = problem_diagrams.get(
+                    slug, (ch_meta["diagramFormula"], ch_meta["diagramCaption"])
+                )
 
                 problems.append({
                     "id": prob_id,
@@ -506,9 +667,13 @@ def get_dsa_overview() -> Dict[str, Any]:
                     "folderSlug": folder_slug,
                     "localPath": local_path,
                     "hasLocalFiles": bool(local_path),
-                    "visualizerId": visualizer_map.get(slug),
+                    "visualizerId": visualizer_map.get(slug, "dsa-group-anagrams"),
                     "url": url,
                     "pattern": pattern,
+                    "chapterNumber": ch_meta["number"],
+                    "chapterFolder": ch_meta["folder"],
+                    "diagramFormula": diag_formula,
+                    "diagramCaption": diag_caption,
                     "difficulty": difficulty,
                     "javaDone": java_done,
                     "pyDone": py_done,
@@ -522,15 +687,36 @@ def get_dsa_overview() -> Dict[str, Any]:
     local_scaffolded = sum(1 for p in problems if p["hasLocalFiles"])
 
     by_pattern: Dict[str, Dict[str, int]] = {}
-    for p in problems:
-        pat = p["pattern"]
-        if pat not in by_pattern:
-            by_pattern[pat] = {"total": 0, "done": 0, "scaffolded": 0}
-        by_pattern[pat]["total"] += 1
-        if p["bothDone"]:
-            by_pattern[pat]["done"] += 1
-        if p["hasLocalFiles"]:
-            by_pattern[pat]["scaffolded"] += 1
+    chapters_list: List[Dict[str, Any]] = []
+    for pat_name, ch_meta in DSA_CHAPTER_CATALOG.items():
+        ch_probs = [p for p in problems if p["pattern"] == pat_name]
+        ch_done = sum(1 for p in ch_probs if p["bothDone"])
+        ch_scaf = sum(1 for p in ch_probs if p["hasLocalFiles"])
+        by_pattern[pat_name] = {
+            "total": len(ch_probs),
+            "done": ch_done,
+            "scaffolded": ch_scaf,
+        }
+        chapters_list.append({
+            "chapterId": f"ch-{ch_meta['number']}",
+            "number": ch_meta["number"],
+            "pattern": pat_name,
+            "title": f"Ch {ch_meta['number']}: {pat_name}",
+            "folder": ch_meta["folder"],
+            "mentalModelTitle": ch_meta["mentalModelTitle"],
+            "mentalModelSummary": ch_meta["mentalModelSummary"],
+            "tiles": ch_meta["tiles"],
+            "total": len(ch_probs),
+            "done": ch_done,
+            "scaffolded": ch_scaf,
+            "problems": ch_probs,
+        })
+
+    # Dynamic recommendation: prefer scaffolded-but-unmastered problem, else first unmastered
+    next_unmastered = next(
+        (p for p in problems if p["hasLocalFiles"] and not p["bothDone"]),
+        next((p for p in problems if not p["bothDone"]), problems[0] if problems else None)
+    )
 
     return {
         "total": len(problems),
@@ -538,8 +724,44 @@ def get_dsa_overview() -> Dict[str, Any]:
         "localScaffolded": local_scaffolded,
         "completionPct": round((both_done / total) * 100, 1),
         "byPattern": by_pattern,
+        "chapters": chapters_list,
+        "recommendedProblem": next_unmastered,
         "problems": problems
     }
+
+
+def update_dsa_mastery(
+    prob_id: int,
+    java_done: bool = None,
+    py_done: bool = None,
+    score: str = None,
+    status: str = None
+) -> bool:
+    """Update a problem row in dsa/MASTER_SHEET.md when test suites pass."""
+    if not MASTER_SHEET.exists():
+        return False
+    content = MASTER_SHEET.read_text(encoding="utf-8")
+    row_pattern = re.compile(rf"^\|\s*{prob_id}\s*\|")
+    updated = False
+    new_lines = []
+    for line in content.splitlines():
+        if row_pattern.match(line):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) >= 8:
+                if java_done is not None:
+                    cells[4] = "[x]" if java_done else "[ ]"
+                if py_done is not None:
+                    cells[5] = "[x]" if py_done else "[ ]"
+                if score is not None:
+                    cells[6] = score
+                if status is not None:
+                    cells[7] = status
+                line = f"| {' | '.join(cells)} |"
+                updated = True
+        new_lines.append(line)
+    if updated:
+        MASTER_SHEET.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+    return updated
 
 
 def get_practice_cycle() -> Dict[str, Any]:

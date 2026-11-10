@@ -1,0 +1,223 @@
+#!/usr/bin/env python3
+"""
+Deterministic True-Zero Pedagogy & Udemy Continuity Linter
+(`.agents/rules/03-true-zero-pedagogy-and-continuity.md`)
+
+Enforces:
+1. Antigravity `always_on` rule size & token budget (< 24 KB per file, < 20,000 tokens total).
+2. Law 1 (Udemy Continuity): Non-empty ```json continuity``` (`previously`, `painPoint`, `unlock`).
+3. Law 2 (4-Step Chain of Information):
+   - Sequential `## ... Step 1` -> `Step 2` -> `Step 3` -> `Step 4` headings.
+   - Step 1 (Plain-English Story): ZERO `$$` display-math equations and ZERO >20-line code blocks.
+   - Step 2 (First Lines of Code): Contains both `python` and `java` starter code blocks.
+   - Step 3 (Where It Breaks in Real Life): Contains a `contrast` Naive-vs-Pro comparison card.
+   - Step 4 (Staff Engineer Deep-Dive): Contains a `> [!WARNING]` Staff Gotcha and `>= 3` quiz questions.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import pathlib
+import re
+import sys
+
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+KB_ROOT = REPO_ROOT / "knowledgebase"
+
+REQUIRED_TRUE_ZERO_RELPATHS: tuple[str, ...] = (
+    # Course 01: Zero to Staff SDET (12/12 chapters)
+    "01-zero-to-staff-sdet/01-determinism-and-flakiness-math.md",
+    "01-zero-to-staff-sdet/02-test-design-bva-and-pairwise.md",
+    "01-zero-to-staff-sdet/03-test-pyramid-and-seam-economics.md",
+    "01-zero-to-staff-sdet/04-hermetic-environments-and-ephemeral-containers.md",
+    "01-zero-to-staff-sdet/05-parallel-tenant-isolation.md",
+    "01-zero-to-staff-sdet/06-async-event-driven-and-saga-testing.md",
+    "01-zero-to-staff-sdet/07-ci-sharding-and-bin-packing.md",
+    "01-zero-to-staff-sdet/08-test-impact-analysis-and-ast-graphs.md",
+    "01-zero-to-staff-sdet/09-statistical-flake-quarantine-governance.md",
+    "01-zero-to-staff-sdet/10-opentelemetry-traceparent-triage.md",
+    "01-zero-to-staff-sdet/11-shift-right-canaries-and-chaos.md",
+    "01-zero-to-staff-sdet/12-staff-sdet-rfcs-and-dora-metrics.md",
+    # Course 02: Building Testing Frameworks (10/10 chapters)
+    "02-building-testing-frameworks/01-runner-lifecycles-and-ast-discovery.md",
+    "02-building-testing-frameworks/02-di-fixtures-and-lifo-teardown.md",
+    "02-building-testing-frameworks/03-pom-components-app-actions-screenplay.md",
+    "02-building-testing-frameworks/04-fluent-immutable-data-builders.md",
+    "02-building-testing-frameworks/05-recursive-payload-and-ast-diff-engines.md",
+    "02-building-testing-frameworks/06-parallel-worker-process-and-thread-isolation.md",
+    "02-building-testing-frameworks/07-smart-retries-and-rate-limited-clients.md",
+    "02-building-testing-frameworks/08-stateful-in-memory-mock-servers.md",
+    "02-building-testing-frameworks/09-structured-artifacts-allure-and-otel-reporters.md",
+    "02-building-testing-frameworks/10-multi-env-config-secrets-and-sdk-packaging.md",
+)
+
+
+def is_true_zero_chapter(md_path: pathlib.Path) -> bool:
+    rel = md_path.relative_to(KB_ROOT).as_posix()
+    if rel in REQUIRED_TRUE_ZERO_RELPATHS:
+        return True
+    raw = md_path.read_text(encoding="utf-8")
+    return bool(
+        re.search(r"```json\s+continuity\b", raw)
+        or re.search(r"^##\s+.*Step\s+1\b", raw, flags=re.MULTILINE)
+    )
+
+
+def audit_true_zero_chapter(md_path: pathlib.Path) -> list[str]:
+    raw = md_path.read_text(encoding="utf-8")
+    errors: list[str] = []
+
+    # 1. Law 1: Mandatory ```json continuity``` story bridge
+    m_cont = re.search(r"```json\s+continuity\s*\n(.*?)```", raw, flags=re.DOTALL)
+    if not m_cont:
+        errors.append("Missing ```json continuity``` story bridge block")
+    else:
+        try:
+            c_data = json.loads(m_cont.group(1).strip())
+            for key in ("previously", "painPoint", "unlock"):
+                if not str(c_data.get(key, "")).strip():
+                    errors.append(f"Empty continuity.{key}")
+        except json.JSONDecodeError as exc:
+            errors.append(f"Invalid JSON in continuity block: {exc}")
+
+    # 2. Law 2: Exact 4-Step Progressive Chain (Step 1 -> Step 2 -> Step 3 -> Step 4)
+    step_headings = re.findall(r"^##\s+.*Step\s+([1-4])\b.*$", raw, flags=re.MULTILINE)
+    if step_headings != ["1", "2", "3", "4"]:
+        errors.append(f"Expected sequential Step 1..4 headings, found {step_headings}")
+
+    # 3. Law 2.1: Step 1 must NOT ambush beginners with `$$` display math or >20-line code blocks
+    m_step1 = re.search(
+        r"^##\s+.*Step\s+1\b.*?\n(.*?)(?=^##\s+.*Step\s+2\b)",
+        raw,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    if m_step1:
+        step1_text = m_step1.group(1)
+        if "$$" in step1_text:
+            errors.append("Symbol-shock violation: `$$` display math found inside Step 1 (Plain-English Story)")
+        for code_m in re.finditer(r"```(?!mermaid)[^\n]*\n(.*?)```", step1_text, flags=re.DOTALL):
+            lines = code_m.group(1).strip().splitlines()
+            if len(lines) > 20:
+                errors.append(f"Code-wall violation in Step 1: {len(lines)} lines (>20 max)")
+
+    # 4. Law 2.2: Step 2 must provide immediate working starter code in Python 3 + Java 17
+    m_step2 = re.search(
+        r"^##\s+.*Step\s+2\b.*?\n(.*?)(?=^##\s+.*Step\s+3\b)",
+        raw,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    if m_step2:
+        step2_text = m_step2.group(1)
+        if "```python" not in step2_text or "```java" not in step2_text:
+            errors.append("Step 2 must include both ```python and ```java starter code blocks")
+
+    # 5. Law 2.3: Step 3 must include a Contrastive Naive-vs-Pro card
+    m_step3 = re.search(
+        r"^##\s+.*Step\s+3\b.*?\n(.*?)(?=^##\s+.*Step\s+4\b)",
+        raw,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    if m_step3 and not re.search(r"```(?:json\s+)?contrast\b", m_step3.group(1)):
+        errors.append("Missing ```json contrast``` card in Step 3")
+
+    # 6. Law 2.4: Step 4 must include a Staff Interview Gotcha (`> [!WARNING]`) and >=3 Quiz items
+    m_step4 = re.search(r"^##\s+.*Step\s+4\b.*?\n(.*)$", raw, flags=re.MULTILINE | re.DOTALL)
+    if m_step4:
+        step4_text = m_step4.group(1)
+        if "[!WARNING]" not in step4_text:
+            errors.append("Missing `> [!WARNING]` Staff Interview Gotcha callout in Step 4")
+        m_quiz = re.search(r"```json\s+quiz\s*\n(.*?)```", step4_text, flags=re.DOTALL)
+        if not m_quiz:
+            errors.append("Missing ```json quiz``` block in Step 4")
+        else:
+            try:
+                q_list = json.loads(m_quiz.group(1).strip())
+                if not isinstance(q_list, list) or len(q_list) < 3:
+                    errors.append("Step 4 quiz must contain at least 3 questions")
+            except json.JSONDecodeError as exc:
+                errors.append(f"Invalid JSON in Step 4 quiz: {exc}")
+
+    return errors
+
+
+def audit_rule_budget() -> list[str]:
+    errors: list[str] = []
+    rule_files = [REPO_ROOT / "GEMINI.md"] + sorted((REPO_ROOT / ".agents" / "rules").glob("*.md"))
+    total_bytes = 0
+    for rf in rule_files:
+        if not rf.exists():
+            continue
+        size = rf.stat().st_size
+        total_bytes += size
+        if size > 24000:
+            errors.append(f"Rule file {rf.name} exceeds 24,000-byte limit ({size} bytes)")
+    est_tokens = total_bytes // 4
+    if est_tokens > 20000:
+        errors.append(f"Aggregate always_on rules exceed 20,000-token budget (~{est_tokens} tokens)")
+    return errors
+
+
+def audit_all_upgraded_chapters() -> tuple[int, int, dict[str, list[str]]]:
+    all_chapters = sorted(KB_ROOT.glob("*/*.md"))
+    upgraded_count = 0
+    violations: dict[str, list[str]] = {}
+    for md_path in all_chapters:
+        if is_true_zero_chapter(md_path):
+            upgraded_count += 1
+            errs = audit_true_zero_chapter(md_path)
+            if errs:
+                violations[md_path.relative_to(KB_ROOT).as_posix()] = errs
+    return upgraded_count, len(all_chapters), violations
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Audit True-Zero Pedagogy & Udemy Continuity rules.")
+    parser.add_argument("--report", action="store_true", help="Print per-course True-Zero migration report.")
+    parser.add_argument("--strict", nargs="*", help="Strictly audit specific chapter file path(s).")
+    args = parser.parse_args()
+
+    budget_errors = audit_rule_budget()
+    if budget_errors:
+        for err in budget_errors:
+            print(f"[FAIL] Rule budget: {err}", file=sys.stderr)
+        return 1
+
+    if args.strict:
+        failed = 0
+        for raw_target in args.strict:
+            target = pathlib.Path(raw_target).resolve()
+            errs = audit_true_zero_chapter(target)
+            if errs:
+                failed += 1
+                print(f"[FAIL] {target.relative_to(REPO_ROOT)}: {errs}")
+            else:
+                print(f"[PASS] {target.relative_to(REPO_ROOT)}: True-Zero 4-Step Chain verified.")
+        return 1 if failed else 0
+
+    upgraded_count, total_count, violations = audit_all_upgraded_chapters()
+
+    if args.report:
+        print("=== True-Zero Udemy-Continuity Course Migration Report ===")
+        for course_dir in sorted(p for p in KB_ROOT.iterdir() if p.is_dir()):
+            ch_files = sorted(course_dir.glob("*.md"))
+            tz_files = [f for f in ch_files if is_true_zero_chapter(f)]
+            print(f"  {course_dir.name:<36} {len(tz_files):>2} / {len(ch_files):<2} True-Zero 4-Step chapters")
+        print(f"Total Upgraded: {upgraded_count} / {total_count} chapters | Violations in Upgraded: {len(violations)}")
+
+    if violations:
+        for rel, errs in violations.items():
+            print(f"[FAIL] {rel}:", file=sys.stderr)
+            for err in errs:
+                print(f"  - {err}", file=sys.stderr)
+        return 1
+
+    print(
+        f"[PASS] Rule 03 Pedagogy Gate: {upgraded_count}/{total_count} True-Zero chapters verified "
+        f"(0 Step-1 math/jargon violations, 100% continuity & 4-Step chain)."
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

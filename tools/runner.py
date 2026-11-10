@@ -167,7 +167,7 @@ def run_python(problem_dir: Path) -> dict:
     start_time = time.perf_counter()
     try:
         run_proc = subprocess.run(
-            ["python3", str(py_file)],
+            [sys.executable, str(py_file)],
             cwd=str(REPO_ROOT),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -327,7 +327,7 @@ def cmd_test_all(lang: str):
 def cmd_ci():
     """Execute the full local CI suite mirroring .github/workflows/ci.yml."""
     steps = [
-        ("🛡️ Stage 1/4: Pre-Push & Secret Safety Audit", [str(REPO_ROOT / ".agents/skills/github/scripts/safety_check.sh")]),
+        ("🛡️ Stage 1/4: Pre-Push & Secret Safety Audit", [str(REPO_ROOT / "tools/safety/safety_check.sh")]),
         ("🧩 Stage 2/4: Completed DSA Solutions (Java 17 & Python 3)", [sys.executable, str(REPO_ROOT / "tools/runner.py"), "test-completed"]),
         ("🏗️ Stage 3/4: SDET System Design & Concurrency Katas", [sys.executable, str(REPO_ROOT / "frameworks/sdet-system-design/01-distributed-concurrency-isolation/reference_solution.py")]),
         ("🌐 Stage 4/4: Learning Hub, Visualizer & AeroCart 10-Suite CI", [sys.executable, str(REPO_ROOT / "hub/tests/test_hub_phase1.py")]),

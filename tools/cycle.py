@@ -64,7 +64,7 @@ def init_default_cycle():
 | **1** | **DSA Algorithmic Mastery** | `Group Anagrams` (Arrays & Hashing) | `./run.sh test 003-group-anagrams` | `In Progress` |
 | **2** | **Framework / Concurrency** | `01-distributed-concurrency-isolation` | `python3 frameworks/sdet-system-design/01-distributed-concurrency-isolation/solution.py` | `In Progress` |
 | **3** | **System Design & AI Drill** | `mock-interviews/interview-1/` | Review `conceptual-mastery-guide.md` | `Pending` |
-| **4** | **Bar-Raiser Gate & Release** | Full Suite Audit & PR Sync | `.agents/skills/github/scripts/safety_check.sh` | `Pending` |
+| **4** | **Bar-Raiser Gate & Release** | Full Suite Audit & PR Sync | `tools/safety/safety_check.sh` | `Pending` |
 
 ---
 

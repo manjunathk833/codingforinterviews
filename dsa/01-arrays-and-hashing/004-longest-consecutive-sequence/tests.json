@@ -1,0 +1,70 @@
+{
+  "slug": "004-longest-consecutive-sequence",
+  "title": "004. Longest Consecutive Sequence",
+  "chapter": "Ch 01: Arrays & Hashing",
+  "difficulty": "Medium",
+  "methodName": "longestConsecutive",
+  "compareMode": "exact",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(N)",
+  "visualizerId": "dsa-two-sum",
+  "prompt": "Given an unsorted array of integers `nums`, return the length of the longest consecutive elements sequence. You must write an algorithm that runs in `O(N)` time.",
+  "invariant": "(x - 1) not in num_set  →  x is the start of a consecutive chain",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "Mental Model & Intuition",
+      "content": "Sorting takes `O(N log N)`. Instead, throw all numbers into a Hash Set for `O(1)` lookup, and only start counting a chain from its true 'head' (a number `x` whose left neighbor `x - 1` is NOT in the set)."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern Identification",
+      "content": "Hash Set + Sequence-Head Detection (`if (x - 1) not in num_set:`)."
+    },
+    {
+      "tier": 3,
+      "title": "Algorithmic Invariant",
+      "content": "Because the inner `while (x + length) in num_set:` loop ONLY runs for sequence heads, each element in the set is visited at most twice across the entire algorithm—guaranteeing strict `O(N)` time."
+    },
+    {
+      "tier": 4,
+      "title": "Edge Cases & Scaffolding",
+      "content": "Check empty array `[]` (returns `0`), single element `[10]` (returns `1`), and arrays with duplicates `[0, 1, 1, 2]` (Hash Set deduplicates automatically)."
+    }
+  ],
+  "cases": [
+    {
+      "id": "case-1",
+      "label": "Case 1",
+      "input": {
+        "nums": [100, 4, 200, 1, 3, 2]
+      },
+      "expected": 4
+    },
+    {
+      "id": "case-2",
+      "label": "Case 2",
+      "input": {
+        "nums": [0, 3, 7, 2, 5, 8, 4, 6, 0, 1]
+      },
+      "expected": 9
+    },
+    {
+      "id": "case-3",
+      "label": "Case 3",
+      "input": {
+        "nums": []
+      },
+      "expected": 0
+    },
+    {
+      "id": "case-4",
+      "label": "Case 4",
+      "input": {
+        "nums": [10]
+      },
+      "expected": 1
+    }
+  ]
+}
+
