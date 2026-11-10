@@ -198,7 +198,7 @@ class TestHubAndArchitectureCI(unittest.TestCase):
 
         viz_list_res = hub_server.dispatch_request("GET", "/api/visualizers")
         self.assertEqual(viz_list_res["status_code"], 200)
-        self.assertEqual(len(viz_list_res["data"]["visualizers"]), 9)
+        self.assertGreaterEqual(len(viz_list_res["data"]["visualizers"]), 34)
 
         viz_post_res = hub_server.dispatch_request(
             "POST",
@@ -613,6 +613,144 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             "/api/interviews/save",
         ):
             self.assertIn(required_token, html, f"Missing UI token '{required_token}' in hub/static/index.html")
+
+    def test_18_phase4_textbook_courses_and_scientific_pedagogy(self):
+        """Verify all 8 Prioritized Textbook Courses (74 chapters) implement all 6 scientific visual-aid blocks & runnable labs."""
+        courses_res = hub_server.dispatch_request("GET", "/api/kb/courses")
+        self.assertEqual(courses_res["status_code"], 200)
+        payload = courses_res["data"]
+        self.assertEqual(payload["sectionTitle"], "Textbook Courses")
+        self.assertEqual(payload["totalCourses"], 8)
+        self.assertEqual(payload["totalPublishedChapters"], 74)
+
+        expected_order = [
+            ("01-zero-to-staff-sdet", 12),
+            ("02-building-testing-frameworks", 10),
+            ("03-ui-automation-playwright", 10),
+            ("04-api-and-api-automation", 10),
+            ("05-ai-engineering", 12),
+            ("06-ai-engineering-qa-focused", 10),
+            ("07-distributed-system-design", 5),
+            ("08-core-cs-internals", 5),
+        ]
+        actual_order = [(c["courseId"], c["publishedChapters"]) for c in payload["courses"]]
+        self.assertEqual(actual_order, expected_order)
+
+        # Verify course-filtered chapters & FTS5 search across new Textbook Courses
+        c01_res = hub_server.dispatch_request("GET", "/api/kb/chapters?course=01-zero-to-staff-sdet")
+        self.assertEqual(c01_res["status_code"], 200)
+        self.assertEqual(len(c01_res["data"]["chapters"]), 12)
+
+        from urllib.parse import quote
+        for q_term, exp_course in (
+            ("Flakiness Combinatorics", "01-zero-to-staff-sdet"),
+            ("BrowserContext", "03-ui-automation-playwright"),
+            ("Pact", "04-api-and-api-automation"),
+            ("PagedAttention", "05-ai-engineering"),
+            ("Rogan-Gladen", "06-ai-engineering-qa-focused"),
+        ):
+            sr = hub_server.dispatch_request("GET", f"/api/kb/search?q={quote(q_term)}&course={exp_course}")
+            self.assertEqual(sr["status_code"], 200)
+            self.assertGreater(sr["data"]["count"], 0, f"Expected FTS5 match for '{q_term}' in '{exp_course}'")
+
+        # Audit all 74 chapters for the 6-Mechanism Golden Spec + valid visualizer + existing lab_path
+        import re
+        for course in payload["courses"]:
+            for mod in course["modules"]:
+                for ch_summary in mod["chapters"]:
+                    slug = ch_summary["slug"]
+                    ch_res = hub_server.dispatch_request("GET", f"/api/kb/chapter?slug={slug}")
+                    self.assertEqual(ch_res["status_code"], 200, f"Failed GET /api/kb/chapter for {slug}")
+                    ch = ch_res["data"]
+                    self.assertGreaterEqual(len(ch.get("pretraining", [])), 3, f"{slug} missing pretraining primitives")
+                    poe = ch.get("predictionPrompt", {})
+                    self.assertTrue(poe.get("question") and len(poe.get("options", [])) >= 3, f"{slug} missing POE prompt")
+                    self.assertIn("```mermaid", ch["markdownBody"], f"{slug} missing mermaid topology")
+                    self.assertIsNotNone(
+                        re.search(r"```(?:json\s+)?contrast\s*\n", ch["markdownBody"]),
+                        f"{slug} missing contrast card",
+                    )
+                    self.assertGreaterEqual(len(ch.get("quizzes", [])), 3, f"{slug} has <3 quiz questions")
+                    viz = hub_server.dispatch_request("POST", "/api/visualize", body={"visualizerId": ch["visualizerId"]})
+                    self.assertEqual(viz["status_code"], 200, f"{slug} invalid visualizerId {ch['visualizerId']}")
+                    self.assertTrue((REPO_ROOT / ch["labPath"]).exists(), f"{slug} missing labPath {ch['labPath']}")
+
+    def test_19_phase5_udemy_continuity_walkthrough_and_media_range(self):
+        """Verify Phase 5 Udemy-Continuity Bridge, 90s Walkthrough Storyboards, 4-Step Lesson Splitting & HTTP 206 Media Range streaming."""
+        for pilot_slug in (
+            "sdet-01-determinism-and-flakiness-math",
+            "sdet-02-test-design-bva-and-pairwise",
+            "sdet-03-test-pyramid-and-seam-economics",
+            "fw-01-runner-lifecycles-and-ast-discovery",
+            "fw-02-di-fixtures-and-lifo-teardown",
+        ):
+            res = hub_server.dispatch_request("GET", f"/api/kb/chapter?slug={pilot_slug}")
+            self.assertEqual(res["status_code"], 200)
+            ch = res["data"]
+            self.assertTrue(ch["continuity"]["previously"])
+            self.assertTrue(ch["continuity"]["painPoint"])
+            self.assertTrue(ch["continuity"]["unlock"])
+            self.assertGreaterEqual(len(ch["walkthrough"]), 4)
+            self.assertEqual(len(ch["steps"]), 4)
+
+        # Verify FTS5 indexes walkthrough & continuity phrases
+        from urllib.parse import quote
+        wt_search = hub_server.dispatch_request("GET", f"/api/kb/search?q={quote('Socks-Before-Shoes')}")
+        self.assertEqual(wt_search["status_code"], 200)
+        self.assertGreaterEqual(wt_search["data"]["count"], 1)
+
+        # Enforce Rule 03 True-Zero Pedagogy & Udemy Continuity Linter Gate
+        from tools.safety import pedagogy_lint
+        self.assertEqual(pedagogy_lint.audit_rule_budget(), [])
+        upgraded_count, total_count, violations = pedagogy_lint.audit_all_upgraded_chapters()
+        self.assertGreaterEqual(upgraded_count, 22)
+        self.assertEqual(total_count, 74)
+        self.assertEqual(violations, {})
+
+        # Verify POST /api/kb/walkthrough-audio (stock-analysis TTS + section duration normalization + visual_cues)
+        wt_audio = hub_server.dispatch_request(
+            "POST",
+            "/api/kb/walkthrough-audio",
+            body={"slug": "sdet-01-determinism-and-flakiness-math", "offline": True},
+        )
+        self.assertEqual(wt_audio["status_code"], 200)
+        wt_payload = wt_audio["data"]
+        self.assertTrue(wt_payload["audioUrl"].startswith("/media/walkthroughs/"))
+        self.assertGreater(wt_payload["audioDuration"], 1.0)
+        self.assertEqual(len(wt_payload["slides"]), 4)
+        self.assertGreater(wt_payload["slides"][-1]["t_end"], wt_payload["slides"][0]["t_start"])
+        self.assertGreaterEqual(len(wt_payload["slides"][0]["nodes"]), 3)
+        self.assertGreaterEqual(len(wt_payload["slides"][0]["visual_cues"]), 1)
+        # Clean up test-generated walkthrough audio file
+        gen_file = REPO_ROOT / wt_payload["audioUrl"].lstrip("/")
+        if gen_file.exists():
+            gen_file.unlink()
+
+        # Verify HTTP 206 Partial Content byte-range streaming & path traversal guard on /media/
+        media_dir = REPO_ROOT / "media" / "test-course"
+        media_dir.mkdir(parents=True, exist_ok=True)
+        sample_mp4 = media_dir / "sample_byte_range.mp4"
+        try:
+            sample_mp4.write_bytes(b"0123456789ABCDEF" * 4)  # 64 bytes
+            partial = hub_server.dispatch_request(
+                "GET",
+                "/media/test-course/sample_byte_range.mp4",
+                headers={"Range": "bytes=0-15"},
+            )
+            self.assertEqual(partial["status_code"], 206)
+            self.assertEqual(partial["headers"].get("Content-Range"), "bytes 0-15/64")
+            self.assertEqual(partial["headers"].get("Accept-Ranges"), "bytes")
+
+            traversal = hub_server.dispatch_request("GET", "/media/../../.env")
+            self.assertEqual(traversal["status_code"], 404)
+        finally:
+            if sample_mp4.exists():
+                sample_mp4.unlink()
+            try:
+                media_dir.rmdir()
+                media_dir.parent.rmdir()
+            except OSError:
+                pass
 
 
 if __name__ == "__main__":

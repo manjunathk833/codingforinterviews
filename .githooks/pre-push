@@ -3,7 +3,7 @@
 set -e
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-AUDIT_SCRIPT="$REPO_ROOT/.agents/skills/github/scripts/safety_check.sh"
+AUDIT_SCRIPT="$REPO_ROOT/tools/safety/safety_check.sh"
 
 echo "🛡️  Executing Git pre-push hook..."
 

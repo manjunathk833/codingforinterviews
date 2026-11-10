@@ -587,6 +587,57 @@ class LearningHubHandler(BaseHTTPRequestHandler):
                 self._send_json(404, {"error": "Prototype HTML not found"})
             return
 
+        if path.startswith("/media/"):
+            media_root = (REPO_ROOT / "media").resolve()
+            rel_media = path[len("/media/") :].lstrip("/")
+            target_file = (media_root / rel_media).resolve()
+            if not str(target_file).startswith(str(media_root)) or not target_file.is_file():
+                self._send_json(404, {"error": "Media asset not found"})
+                return
+            ext = target_file.suffix.lower()
+            mime_map = {
+                ".mp4": "video/mp4",
+                ".webm": "video/webm",
+                ".mp3": "audio/mpeg",
+                ".m4a": "audio/mp4",
+                ".wav": "audio/wav",
+            }
+            content_type = mime_map.get(ext, "application/octet-stream")
+            file_size = target_file.stat().st_size
+            range_hdr = (self.headers.get("Range") or "").strip()
+            if range_hdr.startswith("bytes="):
+                m = re.match(r"^bytes=(\d*)-(\d*)$", range_hdr)
+                if m:
+                    start = int(m.group(1)) if m.group(1) else 0
+                    end = int(m.group(2)) if m.group(2) else (file_size - 1)
+                    end = min(end, file_size - 1)
+                    if start >= file_size or start > end:
+                        self.send_response(416)
+                        self.send_header("Content-Range", f"bytes */{file_size}")
+                        self.end_headers()
+                        return
+                    length = end - start + 1
+                    with target_file.open("rb") as fh:
+                        fh.seek(start)
+                        chunk = fh.read(length)
+                    self.send_response(206)
+                    self.send_header("Content-Type", content_type)
+                    self.send_header("Accept-Ranges", "bytes")
+                    self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
+                    self.send_header("Content-Length", str(len(chunk)))
+                    self.end_headers()
+                    self.wfile.write(chunk)
+                    return
+
+            raw_media = target_file.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Length", str(len(raw_media)))
+            self.end_headers()
+            self.wfile.write(raw_media)
+            return
+
         if path == "/api/health":
             self._send_json(200, {"status": "UP", "service": "antigravity-learning-hub"})
             return
@@ -629,22 +680,30 @@ class LearningHubHandler(BaseHTTPRequestHandler):
             self._send_json(200, storage.get_tracks_catalog())
             return
 
+        if path == "/api/kb/courses":
+            self._send_json(200, storage.get_kb_courses())
+            return
+
         if path in ("/api/kb/chapters", "/api/kb/catalog"):
             track = (query.get("track") or [None])[0]
+            course = (query.get("course") or [None])[0]
             include_labs = (query.get("includeLabs") or ["0"])[0] in ("1", "true", "yes")
-            self._send_json(200, {"chapters": storage.list_kb_chapters(track=track, include_labs=include_labs)})
+            self._send_json(200, {"chapters": storage.list_kb_chapters(track=track, course=course, include_labs=include_labs)})
             return
 
         if path == "/api/kb/chapter":
-            slug = (query.get("slug") or ["sd-01-continuous-sync-and-backpressure"])[0]
+            slug = (query.get("slug") or ["sdet-01-determinism-and-flakiness-math"])[0]
             code, data = storage.get_kb_chapter(slug)
+            if code == 404 and not query.get("slug"):
+                code, data = storage.get_kb_chapter("sd-01-continuous-sync-and-backpressure")
             self._send_json(code, data)
             return
 
         if path == "/api/kb/search":
             q = (query.get("q") or [""])[0]
             track = (query.get("track") or [None])[0]
-            self._send_json(200, storage.search_knowledgebase(q, track=track))
+            course = (query.get("course") or [None])[0]
+            self._send_json(200, storage.search_knowledgebase(q, track=track, course=course))
             return
 
         if path == "/api/newsfeed":
@@ -765,6 +824,21 @@ class LearningHubHandler(BaseHTTPRequestHandler):
             answers = payload.get("answers") or {}
             code, data = storage.submit_kb_quiz(slug, answers)
             self._send_json(code, data)
+            return
+
+        if path == "/api/kb/walkthrough-audio":
+            from hub import tts_walkthrough_engine
+
+            slug = payload.get("slug") or "sdet-01-determinism-and-flakiness-math"
+            force_offline = bool(payload.get("offline", False))
+            code, ch_data = storage.get_kb_chapter(slug)
+            if code != 200:
+                self._send_json(code, ch_data)
+                return
+            audio_res = tts_walkthrough_engine.generate_walkthrough_audio(
+                slug, ch_data.get("walkthrough", []), force_offline=force_offline
+            )
+            self._send_json(200, audio_res)
             return
 
         if path == "/api/newsfeed/bookmark":

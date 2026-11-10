@@ -63,6 +63,16 @@ blob-report/
 execution-traces/
 screenshots/
 videos/
+media/*.mp4
+media/**/*.mp4
+media/*.webm
+media/**/*.webm
+media/*.mp3
+media/**/*.mp3
+media/*.m4a
+media/**/*.m4a
+media/*.wav
+media/**/*.wav
 .pytest_cache/
 .coverage
 htmlcov/

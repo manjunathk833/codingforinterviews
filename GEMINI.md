@@ -23,8 +23,10 @@ All rules in `.agents/rules/` are always active:
      2. **Database & Disk State**: Query production SQLite (`hub/hub.db` & `FTS5` virtual index) and verify local files (`sha256`, `+x` permissions).
      3. **Live Browser Check**: Verify DOM rendering and interactive controls on `http://127.0.0.1:8090`.
 4. **Smart Conditional Regression Gate**:
-   - **During Iteration**: Run targeted verification (`python3 hub/tests/test_hub_phase1.py`, `./run.sh test <slug>`, or local lab `verify.sh`) since automated CI is established.
+   - **During Iteration**: Run targeted verification (`python3 hub/tests/test_hub_phase1.py`, `./tools/safety/pedagogy_lint.py`, `./run.sh test <slug>`, or local lab `verify.sh`) since automated CI is established.
    - **Core Infra / Pre-PR**: Run full `./run.sh ci` when shared core infrastructure (`hub/server.py`, `hub/storage.py`, `tools/runner.py`) changes or before opening/updating a PR.
+5. **True-Zero Pedagogy & Udemy Continuity Chain (`.agents/rules/03-true-zero-pedagogy-and-continuity.md`)**:
+   - Every **Textbook Course** chapter (`knowledgebase/**/*.md`) MUST follow the unbroken build-along project thread (`continuity` bridge) and strict **4-Step Chain of Information**: `🌱 Step 1: Plain-English Story (zero $$ math / zero jargon walls)` $\to$ `🔨 Step 2: First 5–20 Lines of Code` $\to$ `⚡ Step 3: Where It Breaks in Real Life & Contrast` $\to$ `🚀 Step 4: Staff Math, Production Blueprint, Paired Lab & Quiz` (verified via `./tools/safety/pedagogy_lint.py`).
 
 ---
 
@@ -45,7 +47,7 @@ All rules in `.agents/rules/` are always active:
   - **Phase A**: Pre-Plan Sandbox Spikes (`scratch/spike_*.py`, `scratch/dry_run_findings.md`) + Gemini UI mockups (`image-generator`) + HTML prototypes.
   - **Phase B**: Post-Implementation 5-Checkpoint Live Browser, SQLite DB, Service API & Smart CI audit.
 - **`knowledgebase_architect`** (`.agents/agents/knowledgebase_architect.md`):
-  - Authors 4-Part Interactive Textbook chapters (`System Design`, `AI Engineering`, `Core CS`), maintains SQLite `FTS5` search, and curates cross-linked **Engineering Pulse Newsfeed** articles.
+  - Authors True-Zero-to-Staff 4-Step Guided **Textbook Courses** (`01` $\to$ `08`) with unbroken Udemy project continuity, maintains SQLite `FTS5` search, and curates cross-linked **Engineering Pulse Newsfeed** articles.
 - **`socratic_bar_raiser`** (`.agents/agents/socratic_bar_raiser.md`):
   - Unified 4-Tier Socratic Mentor (`/hint`), 100-Point Bar-Raiser Evaluator (`/review` / `/interviewer`), and Staff Mock Interview Simulator (`/mock-interview`).
 - **`release` Skill** (`.agents/skills/release/SKILL.md`):
