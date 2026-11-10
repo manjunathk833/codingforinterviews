@@ -42,6 +42,7 @@ jobs:
       - name: Make Scripts Executable
         run: |
           chmod +x tools/safety/safety_check.sh
+          chmod +x tools/safety/pedagogy_lint.py
           chmod +x run.sh
           chmod +x tools/runner.py
           chmod +x tools/tracker.py
@@ -50,6 +51,7 @@ jobs:
       - name: "🛡️ Stage 1/4: Pre-Push & Secret Safety Audit"
         run: |
           ./tools/safety/safety_check.sh
+          ./tools/safety/pedagogy_lint.py --strict
 
       - name: "🧩 Stage 2/4: DSA Solutions & Curriculum Trackers"
         run: |
@@ -85,12 +87,20 @@ jobs:
           python3 hub/tests/test_hub_phase1.py
           python3 hub/server.py --port 8090 &
           HUB_PID=$!
-          sleep 1
+          trap 'kill $HUB_PID 2>/dev/null || true; wait $HUB_PID 2>/dev/null || true' EXIT
+          for i in {1..15}; do
+            if curl -fsS http://127.0.0.1:8090/api/health >/dev/null 2>&1; then
+              break
+            fi
+            sleep 0.5
+          done
           curl -fsS http://127.0.0.1:8090/api/health | grep -q '"status": "UP"'
           curl -fsS http://127.0.0.1:8090/api/dashboard | grep -q '"readinessScore"'
           curl -fsS http://127.0.0.1:8090/api/feed | grep -q '"cards"'
           curl -fsS http://127.0.0.1:8090/api/visualizers | grep -q '"dsa-group-anagrams"'
           curl -fsS http://127.0.0.1:8090/api/tracks | grep -q '"interactive-textbook"'
-          curl -fsS "http://127.0.0.1:8090/api/kb/search?q=LSM-Tree" | grep -q '"cs-03-lsm-trees"'
+          curl -fsS http://127.0.0.1:8090/api/kb/courses | grep -q '"Textbook Courses"'
+          curl -fsS "http://127.0.0.1:8090/api/kb/search?q=LSM-Tree" | grep -q '"cs-03-lsm-trees-b-trees-and-wal-isolation"'
           curl -fsS http://127.0.0.1:8090/api/newsfeed | grep -q '"articles"'
-          kill $HUB_PID || true
+          kill $HUB_PID 2>/dev/null || true
+          wait $HUB_PID 2>/dev/null || true
