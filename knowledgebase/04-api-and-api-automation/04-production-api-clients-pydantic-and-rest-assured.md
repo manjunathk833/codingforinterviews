@@ -6,10 +6,10 @@ volume: "04. Zero to Mastery: API & API Automation"
 module_number: 2
 module_title: "Module 2: Security, Throttling & Production Client Pipelines"
 chapter_number: 4
-level_tag: "Mid → Staff"
+level_tag: "Beginner → Staff"
 title: "Production Domain API Clients: Pydantic v2 Pipelines & Java 17 REST Assured"
-summary: "Eliminating raw URL strings and untyped dictionary lookups across 1,000+ tests via Domain API Clients, Pydantic v2 Rust-core strict schema parsing, W3C traceparent hooks, Java 17 immutable record DTOs, and REST Assured RequestSpecBuilder + redacted cURL Filter pipelines."
-reading_time_minutes: 22
+summary: "Evolving AeroClient v0.3 into AeroClient v0.4: replacing scattered URL strings and raw dictionary lookups with typed Domain API Clients, strict Pydantic v2 and Java 17 record schemas, dual-mode result envelopes, W3C traceparent headers, and secret-redacted cURL failure artifacts."
+reading_time_minutes: 15
 visualizer_id: fw-abstraction-diff-builder
 lab_path: frameworks/api-automation/pytest-requests-python
 tags: ["api-automation", "pydantic-v2", "rest-assured", "domain-client", "java-17", "traceparent", "curl-filter"]
@@ -17,132 +17,241 @@ tags: ["api-automation", "pydantic-v2", "rest-assured", "domain-client", "java-1
 
 # Production Domain API Clients: Pydantic v2 Pipelines & Java 17 REST Assured
 
-```json pretraining
+```json continuity
+{
+  "previously": "In Chapter 03, we upgraded AeroClient v0.3 with thread-safe OAuth2 token caching, mTLS certificates, and HMAC webhook verification.",
+  "painPoint": "As our test suite grew to 400 tests, every test still hardcoded '/v1/orders' URL strings and raw dictionary lookups like resp.json()['price_cents']. When a backend developer renamed one field or returned a 422 validation error, 400 tests crashed with cryptic KeyErrors and leaked secret tokens into CI logs.",
+  "unlock": "We will build AeroClient v0.4: a clean Domain API Client that wraps every HTTP call in strict data models (Pydantic v2 and Java 17 records), returns a safe result envelope for both 200 OK and 4xx errors, and prints a secret-redacted cURL command with a trace ID only when a test fails."
+}
+```
+
+```json walkthrough
 [
   {
-    "term": "Domain API Seam",
-    "formula": "Test -> OrdersClient.create(OrderReq) -> ApiResponse[OrderDto]",
-    "meaning": "Decouples business assertions from wire paths, headers, and serialization so a route change updates 1 client method instead of 400 test files."
+    "slide": 1,
+    "title": "The Restaurant Waiter Analogy",
+    "time": "0:00 - 0:22",
+    "badge": "PLAIN STORY",
+    "caption": "Writing raw HTTP URLs and dictionary lookups inside every test is like letting 400 restaurant customers walk directly into the kitchen to shout orders. A Domain API Client acts like a polite waiter with a printed menu—if a recipe changes in the kitchen, you update the menu in one place instead of retraining 400 customers.",
+    "focusSelector": "#step-1-story",
+    "code": "# Scattered vs Waiter Seam\n# Bad:  requests.post(f'{URL}/v1/orders', json={'sku': 'A'})\n# Good: aero_client.create_order(OrderRequest(sku='A'))"
   },
   {
-    "term": "Dual-Mode Envelope",
-    "formula": "ApiEnvelope[T] = (status, headers, raw_body, parsed: T | ProblemDetail)",
-    "meaning": "Never raise_for_status() inside the client; return a typed envelope so both 201 positive and 422 negative tests share identical plumbing."
+    "slide": 2,
+    "title": "AeroClient v0.4: First Typed Client",
+    "time": "0:22 - 0:45",
+    "badge": "FIRST CODE",
+    "caption": "In less than 15 lines of Python or Java, we replace loose dictionaries with a typed OrderRequest and OrderReceipt class inside AeroClient v0.4. Now your IDE autocompletes every field name before the test even runs.",
+    "focusSelector": "#step-2-code",
+    "code": "@dataclass(frozen=True)\nclass OrderReceipt:\n    order_id: str\n    price_cents: int"
   },
   {
-    "term": "W3C Trace Propagation",
-    "formula": "traceparent: 00-<32-hex-trace-id>-<16-hex-span-id>-01",
-    "meaning": "Injects a deterministic trace ID per test call, linking a failed CI assertion directly to Backend/DB OpenTelemetry spans in <5 seconds."
+    "slide": 3,
+    "title": "Why Naive Clients Break on 4xx & Type Drift",
+    "time": "0:45 - 1:10",
+    "badge": "FAILURE MODE",
+    "caption": "If your client throws an exception on HTTP 422, writing negative tests becomes a nightmare. Worse, if a backend bug changes price_cents from integer 2500 to string '2500', loose JSON parsers silently ignore it while mobile apps crash.",
+    "focusSelector": "#step-3-breaks",
+    "code": "# Loose parser passes string '2500' -> iOS app crashes!\n# Strict schema catches '2500' != 2500 immediately"
   },
   {
-    "term": "Redacted cURL Artifact",
-    "formula": "On Failure -> Emit Reproducible curl (Authorization: REDACTED)",
-    "meaning": "Interceptors record wire traffic in a ring buffer and attach copy-pasteable, secret-scrubbed cURL commands ONLY when a test fails."
+    "slide": 4,
+    "title": "Staff Blueprint: Envelopes, Trace IDs & Redacted cURL",
+    "time": "1:10 - 1:35",
+    "badge": "STAFF BLUEPRINT",
+    "caption": "Our Staff AeroClient v0.4 returns an ApiEnvelope holding either the validated data or a structured error, attaches a unique tracking ID header to link test failures to server logs, and builds a secret-scrubbed cURL command for instant debugging.",
+    "focusSelector": "#step-4-staff",
+    "code": "envelope = client.create_order(req, idem_key='k1')\norder = envelope.expect_ok(201) # Emits redacted curl on fail"
   }
 ]
 ```
 
-```json poe
-{
-  "question": "A Domain API Client method OrdersClient.create_order() calls response.raise_for_status() internally and directly returns an OrderResponse Pydantic model. Six months later, engineers must write 45 negative validation tests (400, 403, 409, 422 RFC 9457 Problem Details). What architectural anti-pattern immediately emerges?",
-  "options": [
-    "Pydantic v2 refuses to parse HTTP 422 JSON bodies",
-    "Engineers either wrap every negative test in brittle try/except HTTPError blocks parsing raw e.response.json() dicts, or bypass OrdersClient entirely with raw requests.post() calls—shattering the single-source-of-truth client abstraction",
-    "HTTP/2 closes the TCP socket whenever raise_for_status() executes",
-    "Pytest marks caught HTTPError exceptions as XFAIL automatically"
-  ],
-  "answerIndex": 1,
-  "explanation": "A Staff Domain Client returns a typed ApiResult[T, ProblemDetail] wrapper (or exposes raw Response alongside lazy typed parsing) rather than throwing exceptions on 4xx, keeping positive and negative tests on the exact same middleware pipeline."
-}
+```json pretraining
+[
+  {
+    "term": "Domain API Client",
+    "formula": "Test -> AeroClient.create_order(req) -> Typed Result",
+    "meaning": "A helper class that hides raw URLs, headers, and JSON formatting behind simple business methods so tests read like plain English and only one file changes when an endpoint URL changes."
+  },
+  {
+    "term": "Strict Schema Validation",
+    "formula": "JSON Wire Bytes -> Exact Type Check (int != str)",
+    "meaning": "Checking that every field returned by the server has the exact right data type—such as rejecting the text string '2500' when the contract promises the whole number 2500."
+  },
+  {
+    "term": "Dual-Mode Envelope",
+    "formula": "ApiEnvelope = (status_code, ok_data, error_detail)",
+    "meaning": "A wrapper box returned by our client that safely holds either a successful order receipt OR a structured error message, so negative tests can inspect 400/422 errors cleanly without crashing."
+  },
+  {
+    "term": "Redacted cURL & Trace Header",
+    "formula": "Failure -> curl -H 'Authorization: <REDACTED>' + Trace ID",
+    "meaning": "A copy-pasteable terminal command and unique tracking tag printed only when a test fails, letting developers reproduce the exact bug in seconds without leaking secret passwords into logs."
+  }
+]
 ```
 
-## 1. Why Raw `requests.post()` & `given().when().then()` Scatter Fails at Scale
+## 🌱 Step 1: Plain-English Story — The Restaurant Waiter & The Printed Menu
 
-In a 50-test prototype, writing inline `requests.post(f"{BASE}/v1/orders", json={"sku": "A", "qty": 1})` or raw REST Assured `given().header(...).body(map).post("/v1/orders")` inside test functions feels productive. At **2,500+ tests across 14 microservices**, inline HTTP construction causes three systemic failures:
+Imagine running a busy restaurant where 400 customers skip the dining room, barge straight into the kitchen, and scribble their own ticket notes onto sticky pads. One customer writes `"qty": 2`, another writes `"quantity": 2`, and when the chef moves the burger grill to a new station, all 400 customers get lost.
 
-1. **Shotgun Surgery on Contract Evolution**: Adding a mandatory `X-Tenant-Region` header or renaming `qty` $\to$ `quantity` forces regex edits across hundreds of test files.
-2. **Untyped Dictionary `KeyError` Triage**: `assert resp.json()["data"]["items"][0]["totalCents"] == 1999` crashes with an opaque `KeyError: 'data'` whenever the backend returns `502 Bad Gateway` HTML or an `RFC 9457` error JSON, hiding the actual status code and trace ID.
-3. **Zero Observability Correlation**: Without a centralized request interceptor injecting `traceparent` (`00-<trace_id>-<span_id>-01`) and `X-Test-Name`, backend engineers investigating a `500 Internal Server Error` must grep millions of staging log lines by timestamp guesswork.
+That is exactly what happens when we scatter raw `session.post(f"{url}/v1/orders", json={"sku": "BAG"})` calls across 400 test files. If a backend engineer changes `/v1/orders` to `/v2/orders` or renames a JSON field, you are stuck editing 400 files by hand. Even worse, when a test fails in overnight automation, the raw dictionary lookup `resp.json()["order_id"]` crashes with an unhelpful `KeyError: 'order_id'`, hiding the real reason the kitchen rejected the order.
+
+To fix this in **`AeroClient v0.4`**, we introduce a **Domain API Client**—our polite restaurant waiter—paired with a **Strict Schema** (the printed menu):
 
 ```mermaid
 flowchart LR
-  Test["Business Test (Zero Wire Strings)"] -->|Immutable Builder| Client["Domain OrdersClient"]
-  Client -->|Serialize DTO| Hook["Traceparent + Redacted cURL Filter"]
-  Hook -->|Pooled TLS 1.3| API["AeroCart Orders Service"]
-  API -->|201 or 422 RFC 9457| Envelope["ApiEnvelope[OrderDto, ProblemDetail]"]
-  Envelope -->|Strict Schema Check| Assert["Fluent Domain Assertions"]
+  Test["Business Test"] -->|1. Typed OrderReq| Client["AeroClient v0.4"]
+  Client -->|2. Add Auth & Trace ID| Server["AeroCart API"]
+  Server -->|3. JSON Response| Envelope["Safe Result Envelope"]
+  Envelope -->|4. Strict Type Check| Receipt["Typed OrderReceipt"]
 ```
+
+Instead of touching raw URLs or JSON dictionaries, a test simply hands a typed request object to `AeroClient`. `AeroClient` handles the URL, attaches our Chapter 03 auth token and a tracking number, and checks that the kitchen's response matches the printed menu before handing back a clean receipt.
 
 ---
 
-## 2. Python `Pydantic v2` + Hooks vs. Java 17 `record` + `REST Assured` Specs
+## 🔨 Step 2: First Lines of Code — Wrapping `AeroClient v0.4` in Typed Models
+
+Let's evolve our `AeroClient` from Chapter 03 by wrapping `/v1/orders` inside a dedicated method that accepts a typed `OrderRequest` and returns a validated `OrderReceipt`.
+
+```python
+from dataclasses import asdict, dataclass
+import requests
+
+@dataclass(frozen=True)
+class OrderRequest:
+    sku: str
+    quantity: int = 1
+
+@dataclass(frozen=True)
+class OrderReceipt:
+    order_id: str
+    price_cents: int
+
+class AeroClientV04:
+    def __init__(self, session: requests.Session, base_url: str) -> None:
+        self.session, self.base_url = session, base_url.rstrip("/")
+
+    def create_order(self, req: OrderRequest) -> OrderReceipt:
+        resp = self.session.post(f"{self.base_url}/v1/orders", json=asdict(req), timeout=5.0)
+        body = resp.json()
+        return OrderReceipt(order_id=body["order_id"], price_cents=body["price_cents"])
+```
+
+### Java 17 Equivalent
+
+```java
+package com.aerocart.client;
+
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+
+public class AeroClientV04 {
+    public record OrderRequest(String sku, int quantity) {}
+    public record OrderReceipt(String orderId, int priceCents) {}
+
+    private final String baseUrl;
+    public AeroClientV04(String baseUrl) { this.baseUrl = baseUrl; }
+
+    public OrderReceipt createOrder(OrderRequest req) {
+        return RestAssured.given().baseUri(baseUrl).contentType(ContentType.JSON)
+            .body(req).when().post("/v1/orders").then().extract().as(OrderReceipt.class);
+    }
+}
+```
+
+With just 18 lines of code, our test files no longer contain `/v1/orders` or untyped string keys!
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — Silent Type Coercion, 4xx Crashes & Leaked Secrets
+
+Our simple `AeroClientV04` feels clean until three real-world production incidents hit:
+
+1. **Silent String-to-Integer Coercion**: A backend developer accidentally changes `price_cents` from integer `2500` to string `"2500"`. Many default JSON validators (including default Pydantic lax mode) quietly convert `"2500"` into `2500` so your Python test passes green—while the iOS Swift app crashes in production!
+2. **Negative Tests Bypass the Client**: If `create_order` assumes every response is a `201 Created` `OrderReceipt`, it crashes whenever a test intentionally sends `quantity: -5` to verify a `422 Unprocessable Entity` error. Frustrated engineers go right back to writing raw `requests.post()` calls for negative tests.
+3. **Leaked Bearer Tokens in CI Logs**: Turning on global request logging prints `Authorization: Bearer eyJ...` into shared build logs for all 1,000 passing tests.
 
 ```json contrast
 {
-  "title": "Scattered Dict/JsonPath Scripts vs Typed Domain Client + Observability Filters",
-  "naiveTitle": "Inline Dicts & Raw JsonPath Strings",
-  "naiveMetric": "400-File Refactors · Opaque KeyError",
+  "title": "Naive Client Wrapper vs Staff AeroClient v0.4 Pipeline",
+  "naiveTitle": "Naive Happy-Path Client",
+  "naiveMetric": "400-File Edits · Missed Type Bugs",
   "naivePoints": [
-    "Hardcodes '/v1/orders', Bearer headers, and untyped Python dicts / Java HashMaps inside every test method",
-    "Silent type drift: backend changes 'priceCents' from int 1500 to string '1500' and loose assertions miss it",
-    "Logs full Authorization JWTs and PII into public CI stdout on every passing request"
+    "Throws exceptions or crashes on 400/422 responses, forcing negative tests to bypass the client",
+    "Permissive JSON parsing silently converts string '2500' to int 2500, missing mobile-crashing bugs",
+    "Dumps raw Authorization JWTs into public CI stdout on every passing request"
   ],
-  "staffTitle": "Typed Domain Client + Strict DTOs + Trace Filter",
-  "staffMetric": "1-File Contract Edits · <5s OTel RCA",
+  "staffTitle": "Staff AeroClient v0.4 Envelope + Trace Filter",
+  "staffMetric": "1-File Updates · <5s Trace Triage",
   "staffPoints": [
-    "Pydantic v2 (strict=True) & Jackson Java 17 records enforce exact wire types, nullability, and extra-field rules",
-    "ApiEnvelope<T> models both 2xx T payloads and 4xx/5xx RFC 9457 ProblemDetails cleanly without exception gymnastics",
-    "Custom Filter injects W3C traceparent and emits secret-redacted cURL artifacts strictly on assertion failure"
+    "Returns ApiEnvelope[OrderDto, ProblemDetail] so 201 positive and 422 negative tests use the exact same method",
+    "Enforces strict wire types (rejects string '2500' and undocumented extra fields immediately)",
+    "Attaches W3C traceparent header and prints a secret-redacted cURL command ONLY when an assertion fails"
   ]
 }
 ```
 
-| Architectural Layer | Python 3 Staff Stack | Java 17 Staff Stack | Core Invariant Enforced |
-| :--- | :--- | :--- | :--- |
-| **Request / Response DTOs** | `pydantic.BaseModel` (`ConfigDict(strict=True, extra="forbid")`) | Java 17 `record` + Jackson `@JsonInclude(NON_NULL)` | Immediate failure on silent type coercion (`"12"` $\neq$ `12`) or undocumented field leaks |
-| **Test Fixture Builders** | `@dataclass(frozen=True)` + `dataclasses.replace()` | Fluent immutable Builder returning `OrderRequest` `record` | Zero shared mutable state across 32 parallel worker threads |
-| **Wire Specification** | `requests.Session` / `httpx.Client` event hooks | `RequestSpecBuilder` + `ResponseSpecBuilder` (thread-safe) | Centralized base URI, `Content-Type`, timeouts, and SLA latency assertions |
-| **Diagnostics & Security** | Ring-buffer response hook + `Authorization` scrubber | Custom `io.restassured.filter.Filter` | Zero credential leaks in CI logs; instant copy-paste cURL + `trace_id` on failure |
+```json poe
+{
+  "question": "If AeroClient.create_order() calls response.raise_for_status() internally and only returns an OrderReceipt, what happens when the team needs to write 45 negative validation tests (HTTP 400, 409, 422)?",
+  "options": [
+    "Pydantic v2 refuses to parse HTTP 422 JSON bodies",
+    "Engineers either wrap every negative test in messy try/except blocks or bypass AeroClient with raw requests.post() calls—breaking the single-source-of-truth client",
+    "HTTP/2 closes the TCP socket whenever raise_for_status() executes",
+    "Pytest marks caught HTTPError exceptions as XFAIL automatically"
+  ],
+  "answerIndex": 1,
+  "explanation": "A Staff Domain Client returns a dual-mode ApiEnvelope holding either the validated 2xx DTO or the 4xx/5xx ProblemDetail so positive and negative tests share identical plumbing."
+}
+```
 
 ---
 
-## 3. Dual-Language Production Blueprints: Typed Domain Clients & cURL Filters
+## 🚀 Step 4: Staff Engineer Deep-Dive — Maintenance Math, W3C `traceparent` & Production Blueprints
 
-### Python 3 Blueprint: Strict DTOs, `ApiEnvelope[T]`, W3C `traceparent` & Redacted cURL
+To quantify why a Domain API Client is mandatory at scale, compare refactoring cost across $N_{\text{tests}}$ test cases touching $E$ endpoints when a contract changes. With inline requests, maintenance work scales with total test count; with a Domain Client seam, it scales strictly with endpoint count:
+
+$$C_{\text{inline}} = \mathcal{O}(N_{\text{tests}}) \quad \gg \quad C_{\text{domain\_client}} = \mathcal{O}(E) \quad \text{where } E \ll N_{\text{tests}}$$
+
+Furthermore, when a test fails, injecting a **W3C Trace Context** header (`traceparent: 00-<32-hex-trace-id>-<16-hex-span-id>-01`) reduces mean time to resolution ($\text{MTTR}$) from $\mathcal{O}(\log N_{\text{logs}})$ timestamp grepping to an $\mathcal{O}(1)$ trace lookup in Jaeger/Datadog.
+
+| Architectural Layer | Python 3 Staff Stack | Java 17 Staff Stack | Core Guarantee Enforced |
+| :--- | :--- | :--- | :--- |
+| **Wire DTO Schema** | `pydantic.BaseModel` (`ConfigDict(strict=True, extra="forbid")`) or strict validator | Java 17 `record` + Jackson strict deserialization | Fails immediately if `"2500"` replaces `2500` or unknown fields leak |
+| **Result Container** | `ApiEnvelope[T]` (`data: Optional[T]`, `problem: Optional[ProblemDetail]`) | `ApiResult<T>` `record` with RFC 9457 `ProblemDetailDto` | Unified pipeline for both `2xx` happy paths and `4xx/5xx` negative tests |
+| **Observability & Security** | PreparedRequest scrubber + `traceparent` generator | Thread-safe `io.restassured.filter.Filter` (`ThreadLocal`) | Zero leaked tokens in CI logs; instant copy-paste redacted cURL on failure |
+
+### Python 3 Production Blueprint: `AeroClient v0.4` with Strict Validation, `ApiEnvelope` & Redacted cURL
+
 ```python
 from __future__ import annotations
 from dataclasses import asdict, dataclass, replace
-import json
-import secrets
-import shlex
-import time
+import json, secrets, shlex, time
 from typing import Any, Callable, Dict, Generic, Optional, TypeVar
 import requests
 
 T = TypeVar("T")
-SENSITIVE_HEADERS = {"authorization", "cookie", "x-api-key", "proxy-authorization"}
-
+SENSITIVE_HEADERS = {"authorization", "cookie", "x-api-key"}
 
 @dataclass(frozen=True)
 class ProblemDetail:
-    """RFC 9457 Standard Problem Details for HTTP APIs."""
+    """RFC 9457 standard error model."""
     type: str
     title: str
     status: int
     detail: str = ""
     trace_id: str = ""
 
-
 @dataclass(frozen=True)
 class CreateOrderRequest:
     tenant_id: str
-    sku: str = "SKU-MECH-KB"
+    sku: str = "SKU-CARRY-ON"
     quantity: int = 1
-    currency: str = "USD"
 
     def with_quantity(self, qty: int) -> "CreateOrderRequest":
         return replace(self, quantity=qty)
-
 
 @dataclass(frozen=True)
 class OrderDto:
@@ -150,24 +259,15 @@ class OrderDto:
     tenant_id: str
     sku: str
     quantity: int
-    status: str
 
     @classmethod
     def validate_strict(cls, raw: Dict[str, Any]) -> "OrderDto":
-        allowed = {"order_id", "tenant_id", "sku", "quantity", "status"}
-        extra = set(raw.keys()) - allowed
+        extra = set(raw.keys()) - {"order_id", "tenant_id", "sku", "quantity"}
         if extra:
-            raise AssertionError(f"Undocumented schema fields leaked: {sorted(extra)}")
-        if not isinstance(raw.get("quantity"), int) or isinstance(raw.get("quantity"), bool):
+            raise AssertionError(f"Undocumented wire fields leaked: {sorted(extra)}")
+        if type(raw.get("quantity")) is not int:
             raise AssertionError(f"Strict type mismatch on quantity: {raw.get('quantity')!r}")
-        return cls(
-            order_id=str(raw["order_id"]),
-            tenant_id=str(raw["tenant_id"]),
-            sku=str(raw["sku"]),
-            quantity=raw["quantity"],
-            status=str(raw["status"]),
-        )
-
+        return cls(str(raw["order_id"]), str(raw["tenant_id"]), str(raw["sku"]), raw["quantity"])
 
 @dataclass(frozen=True)
 class ApiEnvelope(Generic[T]):
@@ -175,70 +275,59 @@ class ApiEnvelope(Generic[T]):
     latency_ms: float
     traceparent: str
     redacted_curl: str
-    raw_text: str
     data: Optional[T]
     problem: Optional[ProblemDetail]
 
-    def expect_ok(self, expected_status: int = 200) -> T:
+    def expect_ok(self, expected_status: int = 201) -> T:
         if self.status_code != expected_status or self.data is None:
             raise AssertionError(
                 f"Expected {expected_status}, got {self.status_code} ({self.latency_ms}ms)\n"
-                f"traceparent: {self.traceparent}\nReproduce: {self.redacted_curl}\nBody: {self.raw_text}"
+                f"traceparent: {self.traceparent}\nReproduce: {self.redacted_curl}"
             )
         return self.data
 
-
-class OrdersDomainClient:
+class AeroOrdersClient:
     def __init__(self, session: requests.Session, base_url: str, token_fn: Callable[[], str]) -> None:
-        self._session = session
-        self._base = base_url.rstrip("/")
-        self._token_fn = token_fn
+        self._session, self._base, self._token_fn = session, base_url.rstrip("/"), token_fn
 
     @staticmethod
-    def _build_redacted_curl(req: requests.PreparedRequest) -> str:
+    def _redacted_curl(req: requests.PreparedRequest) -> str:
         parts = ["curl", "-i", "-X", req.method or "GET", shlex.quote(req.url or "")]
         for k, v in req.headers.items():
-            safe_val = "<REDACTED>" if k.lower() in SENSITIVE_HEADERS else v
-            parts.extend(["-H", shlex.quote(f"{k}: {safe_val}")])
+            val = "<REDACTED>" if k.lower() in SENSITIVE_HEADERS else v
+            parts.extend(["-H", shlex.quote(f"{k}: {val}")])
         if req.body:
-            body_str = req.body.decode("utf-8") if isinstance(req.body, bytes) else str(req.body)
-            parts.extend(["--data-raw", shlex.quote(body_str)])
+            body_s = req.body.decode() if isinstance(req.body, bytes) else str(req.body)
+            parts.extend(["--data-raw", shlex.quote(body_s)])
         return " ".join(parts)
 
     def create_order(self, payload: CreateOrderRequest, idem_key: str) -> ApiEnvelope[OrderDto]:
         trace_id, span_id = secrets.token_hex(16), secrets.token_hex(8)
         traceparent = f"00-{trace_id}-{span_id}-01"
-        headers = {
-            "Authorization": f"Bearer {self._token_fn()}",
-            "Content-Type": "application/json",
-            "Idempotency-Key": idem_key,
-            "traceparent": traceparent,
-        }
         t0 = time.perf_counter()
         resp = self._session.post(
             f"{self._base}/v1/orders",
             data=json.dumps(asdict(payload)),
-            headers=headers,
+            headers={
+                "Authorization": f"Bearer {self._token_fn()}",
+                "Content-Type": "application/json",
+                "Idempotency-Key": idem_key,
+                "traceparent": traceparent,
+            },
             timeout=(2.0, 5.0),
         )
-        elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
-        curl_cmd = self._build_redacted_curl(resp.request)
-
+        ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        curl = self._redacted_curl(resp.request)
         if 200 <= resp.status_code < 300:
-            return ApiEnvelope(resp.status_code, elapsed_ms, traceparent, curl_cmd, resp.text,
-                               OrderDto.validate_strict(resp.json()), None)
-        err = resp.json() if resp.headers.get("Content-Type", "").startswith("application/problem+json") else {}
-        prob = ProblemDetail(
-            type=err.get("type", "about:blank"),
-            title=err.get("title", "HTTP Error"),
-            status=resp.status_code,
-            detail=err.get("detail", resp.text[:240]),
-            trace_id=trace_id,
-        )
-        return ApiEnvelope(resp.status_code, elapsed_ms, traceparent, curl_cmd, resp.text, None, prob)
+            return ApiEnvelope(resp.status_code, ms, traceparent, curl, OrderDto.validate_strict(resp.json()), None)
+        err = resp.json() if "json" in resp.headers.get("Content-Type", "") else {}
+        prob = ProblemDetail(err.get("type", "about:blank"), err.get("title", "Error"),
+                             resp.status_code, err.get("detail", resp.text[:160]), trace_id)
+        return ApiEnvelope(resp.status_code, ms, traceparent, curl, None, prob)
 ```
 
-### Java 17 Blueprint: `record` DTOs + REST Assured `RequestSpecBuilder` & Redacted Trace Filter
+### Java 17 Production Blueprint: `record` DTOs, `RequestSpecBuilder` & Thread-Safe Trace Filter
+
 ```java
 package com.aerocart.api.client;
 
@@ -256,91 +345,66 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-public final class AeroCartOrdersClient {
-
-    public record CreateOrderDto(String tenantId, String sku, int quantity, String currency) {}
-    public record OrderResponseDto(String orderId, String tenantId, String sku, int quantity, String status) {}
+public final class AeroOrdersClient {
+    public record CreateOrderDto(String tenantId, String sku, int quantity) {}
+    public record OrderDto(String orderId, String tenantId, String sku, int quantity) {}
     public record ProblemDetailDto(String type, String title, int status, String detail, String traceId) {}
+    public record ApiResult<T>(int status, long ms, String traceparent, String curl, T data, ProblemDetailDto problem) {}
 
-    public record ApiResult<T>(
-        int statusCode, long latencyMs, String traceparent, String redactedCurl, T body, ProblemDetailDto problem
-    ) {}
-
-    /** Thread-safe REST Assured Filter: injects W3C traceparent and captures redacted cURL without stdout spam. */
     public static final class TraceAndRedactedCurlFilter implements Filter {
-        private static final Set<String> SECRET_HEADERS = Set.of("authorization", "cookie", "x-api-key");
+        private static final Set<String> SECRETS = Set.of("authorization", "cookie", "x-api-key");
         private final ThreadLocal<String> lastCurl = new ThreadLocal<>();
         private final ThreadLocal<String> lastTrace = new ThreadLocal<>();
 
         @Override
-        public Response filter(FilterableRequestSpecification req,
-                               FilterableResponseSpecification res,
-                               FilterContext ctx) {
-            byte[] tBytes = new byte[16];
-            byte[] sBytes = new byte[8];
-            ThreadLocalRandom.current().nextBytes(tBytes);
-            ThreadLocalRandom.current().nextBytes(sBytes);
-            String traceparent = "00-" + HexFormat.of().formatHex(tBytes)
-                + "-" + HexFormat.of().formatHex(sBytes) + "-01";
-            req.header("traceparent", traceparent);
-            lastTrace.set(traceparent);
+        public Response filter(FilterableRequestSpecification req, FilterableResponseSpecification res, FilterContext ctx) {
+            byte[] t = new byte[16]; byte[] s = new byte[8];
+            ThreadLocalRandom.current().nextBytes(t); ThreadLocalRandom.current().nextBytes(s);
+            String tp = "00-" + HexFormat.of().formatHex(t) + "-" + HexFormat.of().formatHex(s) + "-01";
+            req.header("traceparent", tp);
+            lastTrace.set(tp);
 
-            StringBuilder curl = new StringBuilder("curl -i -X ")
-                .append(req.getMethod()).append(" '").append(req.getURI()).append("'");
+            StringBuilder c = new StringBuilder("curl -i -X ").append(req.getMethod()).append(" '").append(req.getURI()).append("'");
             req.getHeaders().forEach(h -> {
-                String val = SECRET_HEADERS.contains(h.getName().toLowerCase()) ? "<REDACTED>" : h.getValue();
-                curl.append(" -H '").append(h.getName()).append(": ").append(val).append("'");
+                String v = SECRETS.contains(h.getName().toLowerCase()) ? "<REDACTED>" : h.getValue();
+                c.append(" -H '").append(h.getName()).append(": ").append(v).append("'");
             });
-            if (req.getBody() != null) {
-                curl.append(" --data-raw '").append(req.getBody().toString()).append("'");
-            }
-            lastCurl.set(curl.toString());
+            if (req.getBody() != null) c.append(" --data-raw '").append(req.getBody().toString()).append("'");
+            lastCurl.set(c.toString());
             return ctx.next(req, res);
         }
-
-        public String lastCurl() { return lastCurl.get(); }
-        public String lastTrace() { return lastTrace.get(); }
+        public String curl() { return lastCurl.get(); }
+        public String trace() { return lastTrace.get(); }
     }
 
     private final RequestSpecification baseSpec;
-    private final TraceAndRedactedCurlFilter diagFilter = new TraceAndRedactedCurlFilter();
+    private final TraceAndRedactedCurlFilter filter = new TraceAndRedactedCurlFilter();
 
-    public AeroCartOrdersClient(String baseUri) {
-        this.baseSpec = new RequestSpecBuilder()
-            .setBaseUri(baseUri)
-            .setContentType(ContentType.JSON)
-            .setAccept(ContentType.JSON)
-            .addFilter(diagFilter)
-            .build();
+    public AeroOrdersClient(String baseUri) {
+        this.baseSpec = new RequestSpecBuilder().setBaseUri(baseUri)
+            .setContentType(ContentType.JSON).addFilter(filter).build();
     }
 
-    public ApiResult<OrderResponseDto> createOrder(CreateOrderDto dto, String bearerToken, UUID idemKey) {
-        Response resp = RestAssured.given()
-            .spec(baseSpec)
-            .header("Authorization", "Bearer " + bearerToken)
+    public ApiResult<OrderDto> createOrder(CreateOrderDto dto, String token, UUID idemKey) {
+        Response r = RestAssured.given().spec(baseSpec)
+            .header("Authorization", "Bearer " + token)
             .header("Idempotency-Key", idemKey.toString())
-            .body(dto)
-            .when()
-            .post("/v1/orders");
-
-        int code = resp.statusCode();
+            .body(dto).when().post("/v1/orders");
+        int code = r.statusCode();
         if (code >= 200 && code < 300) {
-            return new ApiResult<>(code, resp.time(), diagFilter.lastTrace(), diagFilter.lastCurl(),
-                resp.as(OrderResponseDto.class), null);
+            return new ApiResult<>(code, r.time(), filter.trace(), filter.curl(), r.as(OrderDto.class), null);
         }
-        ProblemDetailDto problem = resp.contentType().contains("json")
-            ? resp.as(ProblemDetailDto.class)
-            : new ProblemDetailDto("about:blank", "Error", code, resp.asString(), diagFilter.lastTrace());
-        return new ApiResult<>(code, resp.time(), diagFilter.lastTrace(), diagFilter.lastCurl(), null, problem);
+        ProblemDetailDto prob = r.contentType().contains("json")
+            ? r.as(ProblemDetailDto.class)
+            : new ProblemDetailDto("about:blank", "Error", code, r.asString(), filter.trace());
+        return new ApiResult<>(code, r.time(), filter.trace(), filter.curl(), null, prob);
     }
 }
 ```
 
-> [!WARNING] **Staff Interview Gotcha — Mutating Global `RestAssured.requestSpecification` or Permissive Pydantic Coercion:** Two subtle traps break enterprise API frameworks: (1) In Java, mutating static `RestAssured.baseURI` or `RestAssured.requestSpecification` across JUnit 5 parallel threads causes cross-tenant header/URI data races—always build immutable `RequestSpecBuilder` instances passed to `given().spec(baseSpec)`. (2) In Python, default `Pydantic` lax mode silently coerces JSON string `"1999"` into `int = 1999` and `"true"` into `bool = True`, hiding breaking wire-type regressions that crash strongly-typed Swift/Kotlin mobile clients! Always enforce `ConfigDict(strict=True)` on response contract models.
+> [!WARNING] **Staff Interview Gotcha — Mutating Global `RestAssured.requestSpecification` or Lax Pydantic Coercion:** Never assign `RestAssured.requestSpecification` or `RestAssured.baseURI` inside `@BeforeEach` when running JUnit 5 tests in parallel—those are static JVM-wide globals that cause Tenant A's Bearer token to leak into Tenant B's request! Always build an instance-scoped `RequestSpecBuilder` and pass it via `given().spec(baseSpec)`. Similarly, in Python Pydantic v2, always set `model_config = ConfigDict(strict=True, extra="forbid")` on response models so string-to-int wire regressions (`"2500"` vs `2500`) fail immediately.
 
----
-
-## 4. Scenario Retrieval-Practice Mastery Gate
+**Up Next in Chapter 05:** Now that `AeroClient v0.4` can fire clean, typed requests across 32 parallel workers, what happens when our fast test suite blasts the staging server with 500 requests per second and triggers a wave of `HTTP 429 Too Many Requests` and cascading retry storms? In Chapter 05, we will upgrade to **`AeroClient v0.5`** with Token Bucket rate limiting, `Retry-After` budget-aware backoff, and twin connect/read timeouts.
 
 ```json quiz
 [

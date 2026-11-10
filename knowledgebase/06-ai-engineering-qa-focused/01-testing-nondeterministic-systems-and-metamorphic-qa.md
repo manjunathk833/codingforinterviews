@@ -4,47 +4,84 @@ course_id: 06-ai-engineering-qa-focused
 track: ai-engineering
 volume: "06. Zero to Mastery: AI Engineering — QA Focused"
 module_number: 1
-module_title: "Module 1: Deterministic Harnesses for Probabilistic Systems"
+module_title: "Module 1: Deterministic Harnesses for Probabilistic Systems (AeroEval v0.1 → v0.2)"
 chapter_number: 1
-level_tag: "Zero → AI QA Foundations"
-title: "Testing Non-Deterministic AI Systems: Hard Invariants, Pass@k Math & Metamorphic QA"
-summary: "How Staff AI QA engineers replace brittle exact-string assertions with deterministic structural contracts, binomial confidence intervals, and Oracle-Free Metamorphic Testing relations."
+level_tag: "🌱 Absolute Zero → AI QA Foundations"
+title: "Build AeroEval v0.1: Testing Non-Deterministic AI Systems, Pass@k Math & Metamorphic QA"
+summary: "Why plain assertEquals breaks on AI chatbots even at temperature=0, and how to build AeroEval v0.1 with fast structural checks, Metamorphic Testing, and pass^k reliability math."
 reading_time_minutes: 22
 visualizer_id: "ai-rag-triad-gate"
 lab_path: "ai-engineering/01-rag-triad-evaluator"
-tags: ["ai-engineering", "ai-qa", "metamorphic-testing", "determinism", "pass-at-k", "confidence-intervals", "schema-gates"]
+tags: ["ai-engineering", "ai-qa", "aeroeval", "metamorphic-testing", "determinism", "pass-at-k", "confidence-intervals", "schema-gates"]
 ---
 
-# Testing Non-Deterministic AI Systems: Hard Invariants, Pass@k Math & Metamorphic QA
+# Build AeroEval v0.1: Testing Non-Deterministic AI Systems, Pass@k Math & Metamorphic QA
+
+```json continuity
+{
+  "previously": "Welcome to Day 1 of AI Engineering (QA Focused)! Zero prior AI testing background needed—we will build our own AI evaluation harness (`AeroEval`) from a blank file to protect AeroCart's new AI support concierge (`AeroBrain`).",
+  "painPoint": "When you test a normal calculator (`2 + 2 == 4`), `assertEquals` works every time. When you test an AI flight bot with `assert reply == 'Refunds take 24 hours'`, the test fails whenever the bot says `'You have 24 hours to request a refund'`—even though the answer is 100% right!",
+  "unlock": "Build `AeroEval v0.1`: replace brittle exact-string checks with instant structural contracts (JSON + citations + zero PII), Oracle-Free Metamorphic checks, and `pass^k` vs. `pass@k` reliability math!"
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "Slide 1 / 4 · Why Plain String Asserts Break on AI",
+    "caption": "Suppose AeroBrain answers a refund question. At 10:00 AM it says 'Full refund within 24 hours [doc_14]'. At 10:05 AM it says 'Cancel within 24h for a full refund [doc_14]'. Both are 100% accurate—yet a naive string equality check fails CI!",
+    "code": "# ✗ Brittle classical test:\nassert bot_reply == \"Full refund within 24 hours [doc_14]\"\n# Fails on valid rephrasing: \"Cancel within 24h for a full refund [doc_14]\""
+  },
+  {
+    "time": "0:25",
+    "badge": "Slide 2 / 4 · Layer 1: Hard Structural Contracts (0ms)",
+    "caption": "Before spending a penny on fancy AI grading, AeroEval v0.1 checks non-negotiable structure in 1 millisecond: Is the JSON valid? Did it cite a real policy doc ID? Did it leak a customer SSN or credit card?",
+    "code": "data = json.loads(bot_json)\nassert isinstance(data[\"eligible\"], bool)\nassert set(data[\"citations\"]).issubset({\"doc_14\", \"doc_22\"})\nassert not SSN_REGEX.search(bot_json)"
+  },
+  {
+    "time": "0:52",
+    "badge": "Slide 3 / 4 · Layer 2: Metamorphic Testing Without Labels",
+    "caption": "How do you test 1,000 prompts without hand-writing 1,000 perfect answers? Transform the input! Rephrase the question or shuffle the policy chunks—the structured decision MUST stay identical!",
+    "code": "# Metamorphic Relation (MR): Shuffling chunk order must NOT flip eligibility!\nans_normal   = ask_aerobrain(query, [chunk_a, chunk_b])\nans_shuffled = ask_aerobrain(query, [chunk_b, chunk_a])\nassert ans_normal[\"eligible\"] == ans_shuffled[\"eligible\"]"
+  },
+  {
+    "time": "1:18",
+    "badge": "Slide 4 / 4 · Layer 3: pass@k vs. pass^k Reliability",
+    "caption": "A live airline passenger only asks once! We separate research `pass@k` (at least 1 of k tries worked) from production `pass^k` (ALL k tries worked consecutively) and bound true pass rates with Wilson 95% CIs.",
+    "code": "# If single-run accuracy p = 0.80 across k = 5 trials:\n# pass@5 = 1 - (0.20)^5 = 99.97% (Looks great in a paper!)\n# pass^5 = (0.80)^5     = 32.77% (Fails 2 out of 3 live flyers!)"
+  }
+]
+```
 
 ```json pretraining
 [
   {
-    "term": "Oracle Problem",
+    "term": "The Oracle Problem",
     "formula": "f(x) ∈ ValidSet(x)",
-    "meaning": "Unlike classical CRUD APIs with a single expected string, generative models map one prompt to an infinite manifold of semantically valid phrasings."
-  },
-  {
-    "term": "Metamorphic Relation (MR)",
-    "formula": "T(x) ⇒ R(f(x), f(T(x)))",
-    "meaning": "Testing a model without ground-truth labels by transforming the input (synonym swap, context shuffle, negation) and asserting a deterministic relationship between outputs."
-  },
-  {
-    "term": "Wilson Pass-Rate CI",
-    "formula": "p̂ ± z · √(p̂(1-p̂)/n)",
-    "meaning": "Bounding true capability pass rate across n evaluation prompts so random sampling noise or GPU floating-point non-determinism never triggers false CI rollbacks."
+    "meaning": "Unlike a tax calculator with one exact output string, an AI chatbot can phrase the exact same right answer in thousands of valid ways."
   },
   {
     "term": "Hard Structural Gate",
     "formula": "O(1) Deterministic Reject",
-    "meaning": "Zero-cost pre-judge assertions verifying JSON schema validity, citation ID existence, PII regex absence, and latency/token budgets before invoking any semantic evaluator."
+    "meaning": "Fast, zero-cost code checks that verify valid JSON keys, real citation IDs, and zero leaked secrets (like SSNs) before running any slow AI grader."
+  },
+  {
+    "term": "Metamorphic Relation (MR)",
+    "formula": "T(x) ⇒ R(f(x), f(T(x)))",
+    "meaning": "Testing an AI without needing a pre-written answer key by tweaking the input (rephrasing a word or shuffling documents) and checking that the decision obeys a predictable rule."
+  },
+  {
+    "term": "Wilson Pass-Rate CI & pass^k",
+    "formula": "pass^k = p^k · 95% Lower Bound",
+    "meaning": "Measuring whether the AI succeeds on ALL k repeated tries (`pass^k`) and calculating a safe statistical lower bound so lucky small test runs never fool your team."
   }
 ]
 ```
 
 ```json poe
 {
-  "question": "Even when you set temperature=0.0 and a fixed seed on a hosted frontier LLM API, two identical requests sent 10 minutes apart occasionally return slightly different token sequences. What is the hardware-level root cause, and how must your CI harness adapt?",
+  "question": "Even when you set temperature=0.0 and a fixed seed on a hosted frontier LLM API, two identical requests sent 10 minutes apart occasionally return slightly different token sequences. What is the hardware-level root cause, and how must AeroEval v0.1 adapt?",
   "options": [
     "Network routers randomly mutate UTF-8 JSON bytes inside TLS 1.3 frames",
     "Dynamic MoE/continuous batching routes requests into differently shaped GPU tensor batches where non-associative FP16/BF16 matrix reductions flip tie-breaking logits; CI must assert structural invariants and semantic equivalence rather than assertEquals(rawText)",
@@ -56,39 +93,99 @@ tags: ["ai-engineering", "ai-qa", "metamorphic-testing", "determinism", "pass-at
 }
 ```
 
-## Part I — Why `assertEquals(expected, actual)` Collapses on Generative Pipelines
+## 🌱 Step 1: Plain-English Story — Why `assertEquals` Crashes on AI (Even at `temperature=0`!)
 
-In classical software testing, a deterministic function $f(x)$ maps input $x$ to a unique canonical output $y^*$. If `calculateTax(100.00, "CA")` returns `8.26` instead of `8.25`, the build is broken.
+Welcome to **Course 06**! Across the next 10 chapters, we are going to build **`AeroEval`**—a complete, production-grade AI Quality & Security testing platform protecting **`AeroBrain`**, AeroCart's airline customer-support AI.
 
-When testing an LLM-backed system—even at `temperature=0.0`—exact string comparison fails for two orthogonal reasons:
-1. **Hardware & Batch Non-Determinism**: Modern inference engines (`vLLM`, `TensorRT-LLM`) use **Continuous Batching** and **Mixture-of-Experts (`MoE`)** routing. Because parallel `BF16`/`FP16` matrix reductions are non-associative, a prompt batched with 7 concurrent users executes a slightly different reduction tree than the same prompt batched with 31 users, flipping tie-break tokens.
-2. **Semantic Equivalence Multiplicity**: `"Refunds require cancellation within 24 hours [doc_14]"` and `"To receive a refund, cancel within 24h of booking [doc_14]"` have $0\%$ exact-string match yet $100\%$ policy equivalence.
+Imagine it's your first morning testing `AeroBrain`. A passenger asks: *"Can I cancel a Basic Economy ticket after 10 hours?"*
+According to AeroCart Policy `doc_14`, any ticket cancelled within 24 hours gets a full refund.
+So you write a classic test:
+`assert ask_aerobrain(query) == "Yes, you can cancel within 24 hours for a full refund [doc_14]."`
 
-A Staff AI QA engineer solves this by decomposing every AI assertion into a **Three-Layer Funnel**: fast deterministic structural gates first, **Metamorphic Invariants** second, and calibrated semantic entailment third.
+Ten minutes later, your test fails in CI! Why? Because `AeroBrain` replied:
+`"Yes! Cancellations within 24 hours qualify for a 100% refund [doc_14]."`
+
+Wait—you even set `temperature=0.0`! Why did the words change?
+1. **Valid Rephrasing (The Oracle Problem)**: There isn't just one right sentence in English—hundreds of sentences mean the exact same policy verdict.
+2. **GPU Batching Physics**: Modern cloud AI servers batch your request together with dozens of other users on the same GPU. Because parallel floating-point math rounds tiny decimals differently depending on batch size, two tied words (`"full"` vs. `"100%"`) can flip even at `temperature=0`!
 
 ```mermaid
 flowchart LR
-  In["Prompt + Context Fixture"] -->|Invoke SUT| Gate1["Layer 1: Hard Structural Gates (JSON Schema, Regex PII, Citations)"]
-  Gate1 -->|Pass 0ms| Gate2["Layer 2: Metamorphic Perturbation (Shuffle Chunks, Synonym, Negate)"]
-  Gate2 -->|Invariant Holds| Gate3["Layer 3: Atomic Claim Entailment + Binomial 95% CI Gate"]
-  Gate1 -.->|Schema/PII Leak| Fail["Fail Build Immediately (Zero Judge Cost)"]
+  In["Prompt + Context Docs"] -->|Invoke AeroBrain| Gate1["Layer 1: Hard Structural Gate (JSON, Citations, No PII)"]
+  Gate1 -->|Pass in 1ms| Gate2["Layer 2: Metamorphic Check (Shuffle Docs / Flip Hours)"]
+  Gate2 -->|Invariant Holds| Gate3["Layer 3: Atomic Claim Check + 95% Confidence Gate"]
+  Gate1 -.->|Broken JSON / Fake Citation| Fail["Fail Immediately ($0 Cost)"]
 ```
 
----
+To test AI without going crazy from false alarms, we never start with free-form prose matching. Instead, we ask `AeroBrain` to return **structured JSON** alongside its message, and we build **`AeroEval v0.1`** as a fast filter that checks **Hard Invariants** first!
 
-## Part II — Metamorphic Testing: Verifying AI Without a Ground-Truth Oracle
+## 🔨 Step 2: First Lines of Code — Build `AeroEval v0.1` in 16 Lines!
 
-Originally formalized by T.Y. Chen for scientific computing where exact answers are unknown, **Metamorphic Testing (`MT`)** verifies **relationships across controlled input transformations** $T(x)$:
+Let's write our very first working AI quality gate! Notice how `check_aerobrain_contract` verifies three non-negotiable rules in less than 1 millisecond at **zero API cost**:
+1. The response must contain a boolean `eligible` decision and a non-empty `answer`.
+2. Every cited document ID in `citations` must actually exist in the `allowed_docs` we gave the AI (catching invented citations!).
+3. The answer must not leak a Social Security Number (`123-45-6789`).
 
-1. **Synonym / Paraphrase Invariance ($MR_{\text{syn}}$)**:
-   - Transform query $x$: *"Can I cancel a Basic Economy ticket?"* $\to$ $T(x)$: *"Am I allowed to void a Basic Economy fare?"*
-   - **Assertion**: Extracted structured decision (`allow_cancel: false`) and cited policy document ID (`doc_basic_econ`) must remain **100% identical**.
-2. **Context Permutation Invariance ($MR_{\text{perm}}$ — Lost-in-the-Middle Detector)**:
-   - Given retrieved chunks $[C_1, C_2, C_3, C_4, C_5]$, shuffle their order to $[C_4, C_1, C_5, C_2, C_3]$ while keeping the exact same evidence set.
-   - **Assertion**: The factual verdict and citation set must not flip when the gold chunk moves from position $1$ to position $3$.
-3. **Directional Policy Shift / Negation Sensitivity ($MR_{\text{dir}}$)**:
-   - Mutate a single numeric boundary in the injected context: change `elapsed_hours = 18` ($\le 24\text{h}$) to `elapsed_hours = 36` ($> 24\text{h}$).
-   - **Assertion**: The structured eligibility boolean **must invert** (`eligible: true` $\to$ `eligible: false`). If the model still outputs `true`, it is ignoring retrieved context and relying on parametric memory!
+```python
+import re
+
+SSN_PATTERN = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
+
+
+def check_aerobrain_contract(response: dict, allowed_docs: set[str]) -> list[str]:
+    """AeroEval v0.1: Instant deterministic contract check (0ms, $0 token cost)."""
+    errors = []
+    if not isinstance(response.get("eligible"), bool) or not response.get("answer"):
+        errors.append("SCHEMA_ERROR: Missing boolean 'eligible' or 'answer'")
+    cited = set(response.get("citations", []))
+    if not cited or not cited.issubset(allowed_docs):
+        errors.append(f"HALLUCINATED_CITATION: {cited - allowed_docs}")
+    if SSN_PATTERN.search(str(response.get("answer", ""))):
+        errors.append("PII_LEAK: SSN pattern found in answer")
+    return errors
+
+
+sample = {"eligible": True, "answer": "Refund allowed within 24h.", "citations": ["doc_14"]}
+print("Errors:", check_aerobrain_contract(sample, allowed_docs={"doc_14", "doc_22"}))
+```
+
+### Java 17 Equivalent
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+public class AeroEvalV01 {
+    private static final Pattern SSN_REGEX = Pattern.compile("\\b\\d{3}-\\d{2}-\\d{4}\\b");
+
+    public record BotReply(Boolean eligible, String answer, Set<String> citations) {}
+
+    public static List<String> checkContract(BotReply reply, Set<String> allowedDocs) {
+        List<String> errors = new ArrayList<>();
+        if (reply.eligible() == null || reply.answer() == null || reply.answer().isBlank()) {
+            errors.add("SCHEMA_ERROR: Missing boolean 'eligible' or 'answer'");
+        }
+        if (reply.citations() == null || reply.citations().isEmpty() || !allowedDocs.containsAll(reply.citations())) {
+            errors.add("HALLUCINATED_CITATION");
+        }
+        if (reply.answer() != null && SSN_REGEX.matcher(reply.answer()).find()) {
+            errors.add("PII_LEAK: SSN pattern found in answer");
+        }
+        return errors;
+    }
+}
+```
+
+## ⚡ Step 3: Where It Breaks in Real Life — Testing Without an Answer Key (Metamorphic QA)
+
+`AeroEval v0.1` catches broken JSON and fake citations immediately. **But what if the JSON is valid (`"eligible": true`), yet we don't have a human-written answer key for 500 new customer questions?** Or what if the AI only gave the right answer because the right policy happened to sit in Chunk #1, and goes blind when that policy moves to Chunk #3 (*Lost-in-the-Middle*)?
+
+This is where **Metamorphic Testing (`MT`)** gives you an unfair superpower. Instead of needing a pre-labeled answer key for every prompt, you test **how the output responds when you transform the input** $T(x)$:
+1. **Paraphrase Invariance ($MR_{\text{syn}}$)**: Change *"Can I cancel a Basic Economy ticket?"* to *"Am I allowed to void a Basic Economy fare?"* $\to$ `eligible` and `citations` **must stay 100% identical**!
+2. **Context-Shuffle Invariance ($MR_{\text{perm}}$)**: Reverse the retrieved policy chunks `[C1, C2, C3]` to `[C3, C2, C1]` $\to$ `eligible` **must not flip**!
+3. **Boundary-Flip Sensitivity ($MR_{\text{dir}}$)**: Change `hours_since_booking = 18` ($\le 24\text{h}$) to `hours_since_booking = 36` ($> 24\text{h}$) in the context $\to$ `eligible` **must invert** from `True` to `False`! If it stays `True`, the AI isn't even reading your context!
 
 ```json contrast
 {
@@ -112,12 +209,24 @@ Originally formalized by T.Y. Chen for scientific computing where exact answers 
 }
 ```
 
----
+## 🚀 Step 4: Staff Engineer Deep-Dive — `pass@k` vs. `pass^k` & Wilson Confidence Bounds
 
-## Part III — `pass@k` vs. `pass^k` Reliability Math & Trade-Offs
+In academic coding benchmarks (`HumanEval`), papers report **`pass@k`**: the probability that **at least one** of $k$ sampled attempts passes unit tests:
 
-In code-generation benchmarks (`HumanEval`), researchers report **`pass@k`**: the probability that **at least one** of $k$ sampled generations passes unit tests ($1 - \binom{n-c}{k}/\binom{n}{k}$).
-However, in customer-facing QA (support agents, financial workflows), a user only sees **one** response—and expects it to succeed **every single time**! Anthropic and Sierra formalized **`pass^k`** ($p^k$): the probability that **all $k$ trials succeed consecutively**. If single-trial accuracy is $p = 0.80$, `pass@5` looks impressive at $99.97\%$, whereas `pass^5` (true consistency) collapses to $0.80^5 = 32.8\%$!
+$$\text{pass}@k = 1 - \frac{\binom{n - c}{k}}{\binom{n}{k}} \approx 1 - (1 - p)^k$$
+
+**Why is `pass@k` a dangerous trap in customer-facing QA?**
+Because a live AeroCart passenger doesn't get 5 tries with a magic unit-test filter—they see **one** response, and they expect it to work **every single time**! Anthropic and Sierra formalized **`pass^k`** (pass-to-the-$k$): the probability that **all $k$ trials succeed consecutively**:
+
+$$\text{pass}^k = p^k$$
+
+Look at the dramatic gap when single-trial accuracy is $p = 0.80$ across $k = 5$ trials:
+- $\text{pass}@5 = 1 - (0.20)^5 = 99.97\%$ (Looks ready to ship!)
+- $\text{pass}^5 = (0.80)^5 = 32.77\%$ (Fails on two-thirds of 5-run stability checks!)
+
+Furthermore, across $N$ evaluation cases with $\hat{p} = \text{successes} / N$, never gate CI on a raw point percentage without bounding sampling noise via the **95% Wilson Score Lower Confidence Bound** ($z = 1.96$):
+
+$$\text{Wilson}_{95\%}^{-}(\hat{p}, N) = \frac{\hat{p} + \frac{z^2}{2N} - z\sqrt{\frac{\hat{p}(1-\hat{p})}{N} + \frac{z^2}{4N^2}}}{1 + \frac{z^2}{N}}$$
 
 | Verification Strategy | Oracle Needed? | Execution Cost | Primary Defect Caught | Blind Spot |
 | :--- | :--- | :--- | :--- | :--- |
@@ -125,11 +234,8 @@ However, in customer-facing QA (support agents, financial workflows), a user onl
 | **Metamorphic Relations (`MR`)** | **None** (Relational) | $2\times–3\times$ SUT calls | Position bias (*Lost-in-the-Middle*), prompt brittleness, ignoring context edits | Consistently wrong baseline behavior across all permutations |
 | **Wilson Binomial Gate (`pass^k`)** | Gold Verdict Set | $N \times k$ SUT calls | Silent capability regressions and high-variance prompt instability | Requires curated stratified Golden Dataset |
 
----
+### Production Blueprint: Structural Gate + Metamorphic Harness + Wilson Lower Bound
 
-## Part IV — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Structural Gate + Metamorphic Harness + Wilson Lower Bound
 ```python
 from dataclasses import dataclass
 import json
@@ -203,7 +309,8 @@ def verify_response_and_metamorphic_invariance(
     return EvalVerdict(structural_ok, mr_ok, reasons)
 ```
 
-### Java 17 Blueprint: Deterministic `pass^k` Consistency & Wilson Gate Evaluator
+### Java 17 Equivalent
+
 ```java
 import java.util.List;
 import java.util.Set;
@@ -248,9 +355,7 @@ public final class NondeterministicQaGate {
 > **Staff Interview Gotcha — Never Gate PRs on a Point-Estimate Pass Rate Without Sample-Size Math**:
 > If a candidate says *"We block merges whenever accuracy drops from 92% to 90% on our 50-question eval set,"* call out the binomial standard error: at $N = 50$ and $p = 0.92$, a single-question flip changes the point estimate by $2.0\%$, and the $95\%$ confidence interval spans $[81.2\%, 96.8\%]$! Always size your regression suite using $n \ge \frac{z^2 p(1-p)}{E^2}$ or compare paired prompt deltas (McNemar's test) on the exact same Golden fixtures.
 
----
-
-## Part V — End-of-Chapter Mastery Check
+**Up Next in Chapter 02**: Our `AeroEval v0.1` harness can now run structural and metamorphic checks—but **which** 200 to 1,000 test cases should we feed it so rare multi-policy bugs don't hide inside easy FAQ averages? In Chapter 02, we'll build **`AeroEval v0.2`: Stratified Golden Dataset Engineering & Decontamination Guards**!
 
 ```json quiz
 [

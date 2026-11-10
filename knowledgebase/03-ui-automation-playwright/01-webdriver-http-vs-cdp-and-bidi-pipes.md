@@ -17,29 +17,166 @@ tags: ["playwright", "cdp", "webdriver-bidi", "selenium-vs-playwright", "wire-pr
 
 # W3C WebDriver HTTP vs Persistent CDP, Pipes & WebDriver BiDi
 
+```json continuity
+{
+  "previously": "Welcome to Day 1 of Course 03! Zero prior UI automation background needed. Throughout this 10-chapter course, we will build AeroBot from a 4-line browser click into a zero-flake, sharded Playwright test platform for AeroCart.",
+  "painPoint": "When teams try to automate a modern React checkout button using classic request-response tools, the button re-renders mid-click and crashes with StaleElementReferenceException.",
+  "unlock": "We will build AeroBot v0.1 over a persistent two-way browser pipe that resolves and clicks elements inside a single atomic browser frame."
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "🌱 The Walkie-Talkie Problem",
+    "caption": "Imagine directing a robot chef across a restaurant by mailing paper letters through a courier. Every time you ask 'Is the pan hot?' and wait for a reply, the kitchen state has already changed. That is classic HTTP WebDriver.",
+    "code": "Client --[HTTP POST /element]--> chromedriver --[CDP]--> Chrome"
+  },
+  {
+    "time": "0:25",
+    "badge": "🔨 AeroBot v0.1: Direct Open Phone Line",
+    "caption": "Playwright throws away the middleman courier and opens a single persistent two-way pipe directly into the browser engine. One command tells the browser to find, wait, and click all by itself.",
+    "code": "page.get_by_role('button', name='Pay Now').click()  # 1 atomic RPC!"
+  },
+  {
+    "time": "0:50",
+    "badge": "⚡ Why Two Round-Trips Break in React",
+    "caption": "If step one grabs a memory ID for a button and step two clicks that ID 20 milliseconds later, a React state update in between replaces the button node and crashes your test.",
+    "code": "findElement() -> [React re-renders DOM node] -> click(old_uuid) -> STALE!"
+  },
+  {
+    "time": "1:15",
+    "badge": "🚀 Staff Full-Duplex Telemetry",
+    "caption": "Because our pipe is two-way, the browser immediately pushes console errors and uncaught crashes to AeroBot in real time without polling.",
+    "code": "page.on('pageerror', lambda err: errors.append(str(err)))"
+  }
+]
+```
+
 ```json pretraining
 [
   {
     "term": "Classic WebDriver Double-Hop",
-    "formula": "Client --HTTP/1.1--> chromedriver --CDP--> Browser  [2x Serialization / Action]",
-    "meaning": "Every `findElement`, `isDisplayed`, and `click` in classic WebDriver is an independent synchronous HTTP request/response routed through an external driver binary."
+    "formula": "Test -> HTTP Request -> Driver Binary -> Browser Engine",
+    "meaning": "Instead of talking directly to the browser, classic Selenium sends a separate web request to a helper program (like chromedriver) for every single check and click."
   },
   {
-    "term": "Persistent Full-Duplex Pipe / WS",
-    "formula": "1 Multiplexed Connection (stdio Pipe or WebSocket) -> 0 Handshake Overhead",
-    "meaning": "Playwright holds a single persistent bidirectional stream directly into Chromium (CDP), Firefox, and WebKit, multiplexing JSON-RPC messages asynchronously by `id`."
+    "term": "Persistent Full-Duplex Pipe",
+    "formula": "1 Open Connection <-> Unlimited Two-Way Messages",
+    "meaning": "Like a live phone call instead of text messages, Playwright keeps one direct pipe open to the browser so both sides can talk and listen at the exact same time."
   },
   {
-    "term": "Server-Push Event Subscription",
-    "formula": "Browser --Push--> Client (`Network.requestWillBeSent`, `Runtime.consoleAPICalled`)",
-    "meaning": "Because the wire channel is full-duplex, the browser pushes console crashes, network traffic, and frame navigations in real time without client polling loops."
+    "term": "Server-Push Event Stream",
+    "formula": "Browser -> Instant Notification -> Test Script",
+    "meaning": "The moment a JavaScript error or network request happens inside the tab, the browser pushes that alert straight to your test without your test having to ask."
   },
   {
-    "term": "Atomic In-Browser Action Loop",
-    "formula": "1 RPC (`Frame.click(selector)`) -> Resolve + Wait + Click INSIDE Browser Engine",
-    "meaning": "Resolving a selector and dispatching pointer events inside a single browser-side loop eliminates the multi-RTT gap that causes `StaleElementReferenceException`."
+    "term": "Lazy Locator Recipe",
+    "formula": "Store 'How to Find' -> Resolve Live Inside Browser on Action",
+    "meaning": "Instead of saving a fragile memory address of a button that might get redrawn, Playwright saves the search instructions and finds the fresh button right when clicking."
   }
 ]
+```
+
+## 🌱 Step 1: Plain-English Story — Mailing Letters vs an Open Phone Line
+
+Imagine trying to guide a friend through buying a concert ticket on their phone, but you are only allowed to communicate by mailing paper postcards back and forth:
+1. You mail Card #1: *"Do you see the blue 'Pay Now' button?"*
+2. Your friend mails back: *"Yes, it is item #42 on my screen."*
+3. You mail Card #2: *"Great, tap item #42!"*
+
+By the time Card #2 arrives, the website just finished loading a discount badge and redrew the button as item #99. Your friend taps where #42 used to be, hits nothing, and panics.
+
+For over a decade, classic UI automation (`W3C WebDriver`) worked just like those postcards. Every step (`findElement`, `isDisplayed`, `click`) sent a separate HTTP request to a middleman program (`chromedriver`), which translated it for Chrome and sent a reply back.
+
+**Playwright** (and the modern **W3C WebDriver BiDi** standard) replaces postcards with a **single open phone line** (`stdio` pipe or WebSocket) wired directly into Chromium, Firefox, and WebKit. Instead of asking for an item number and mailing a second command to click it, our test bot—**`AeroBot`**—sends one instruction over the open pipe: *"When the 'Pay Now' button is ready, click it."*
+
+```mermaid
+flowchart LR
+  Test["AeroBot v0.1 Script"] <-->|Single Persistent Pipe| Server["Playwright Engine"]
+  Server <-->|Two-Way Live Stream| Browser["Browser Tab (AeroCart)"]
+  Browser -->|Instant Error Alerts| Test
+```
+
+---
+
+## 🔨 Step 2: First Lines of Code — AeroBot v0.1 First Atomic Click
+
+Let's write the very first version of **`AeroBot` (`v0.1`)**. Notice how creating a `Locator` sends **zero** network messages; only calling `.click()` sends a single instruction over the pipe, while `.on("pageerror", ...)` listens for any silent JavaScript crashes pushed back by the browser.
+
+```python
+# aerobot_v01.py — AeroBot v0.1: Persistent pipe + real-time error listener
+from playwright.sync_api import Page, expect
+
+def test_aerocart_instant_checkout(page: Page) -> None:
+    js_crashes: list[str] = []
+    page.on("pageerror", lambda err: js_crashes.append(str(err)))
+
+    page.goto("http://127.0.0.1:8090")
+    # Lazy recipe: zero wire traffic until .click() runs inside the browser!
+    pay_btn = page.get_by_role("button", name="Pay Now")
+    pay_btn.click()
+
+    expect(page.get_by_text("Booking Confirmed")).to_be_visible()
+    assert not js_crashes, f"Browser pushed JS crashes: {js_crashes}"
+```
+
+### Java 17 Equivalent
+
+```java
+// AeroBotV01.java — AeroBot v0.1: Persistent pipe + real-time error listener
+import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.AriaRole;
+import java.util.ArrayList;
+import java.util.List;
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
+public class AeroBotV01 {
+    public static void verifyInstantCheckout(Page page) {
+        List<String> jsCrashes = new ArrayList<>();
+        page.onPageError(err -> jsCrashes.add(err));
+
+        page.navigate("http://127.0.0.1:8090");
+        Locator payBtn = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Pay Now"));
+        payBtn.click(); // Resolved + checked + clicked in 1 browser-side loop
+
+        assertThat(page.getByText("Booking Confirmed")).isVisible();
+        if (!jsCrashes.isEmpty()) throw new AssertionError("JS crashes: " + jsCrashes);
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — The Stale Element Race Window
+
+Why did classic UI tests fail randomly on fast single-page apps (`React`, `Vue`, `Next.js`)? Because splitting **"find the element"** and **"click the element"** across two network round-trips creates a race window right in the middle:
+
+1. Command 1 (`POST /element`) finds `<button class="pay">` and returns an internal browser memory handle (`element-6066-uuid`).
+2. **5 milliseconds later**, AeroCart's React state updates the cart tax and replaces that `<button>` DOM node with a brand-new `<button>` node.
+3. Command 2 (`POST /element/{uuid}/click`) arrives asking to click the old UUID—and crashes with `StaleElementReferenceException`!
+
+Even worse, if an engineer migrating to Playwright accidentally uses the legacy `page.query_selector("button.pay")` (`ElementHandle`) instead of `page.get_by_role(...)` (`Locator`), they **re-create the exact same stale-handle bug** inside Playwright!
+
+```json contrast
+{
+  "title": "Classic Multi-Hop Handle vs AeroBot Persistent Pipe + Lazy Locator",
+  "naiveTitle": "Multi-Hop HTTP / Eager ElementHandle",
+  "naiveMetric": "4–6 Round-Trips · Stale UUID Crashes",
+  "naivePoints": [
+    "Requires external middleman driver binary matching exact browser version",
+    "Caches an eager DOM node memory UUID that dies if React re-renders 5ms before click()",
+    "Cannot hear console.error or network 500s without polling or external proxies"
+  ],
+  "staffTitle": "AeroBot Persistent Pipe + Lazy Locator",
+  "staffMetric": "1 Atomic RPC · 0 Stale Node Races",
+  "staffPoints": [
+    "Speaks directly over OS stdio pipes or WebSockets with pinned browser engines",
+    "Sends a stateless selector recipe; re-resolves the live DOM node inside the browser on every frame",
+    "Streams real-time pageerror, console, and network events over the same full-duplex pipe"
+  ]
+}
 ```
 
 ```json poe
@@ -56,78 +193,37 @@ tags: ["playwright", "cdp", "webdriver-bidi", "selenium-vs-playwright", "wire-pr
 }
 ```
 
-## Part I — First-Principles Mental Model: Polling Half-Duplex HTTP vs Streaming Full-Duplex Pipes
-
-To understand why UI automation was notorious for flakiness from 2010 to 2020, inspect the **network physics** on the wire.
-
-### 1. Classic W3C WebDriver (Request/Response Polling)
-Classic WebDriver was designed in the era of server-rendered multi-page apps:
-- Your test script sends an HTTP `POST /session/{s}/element` to an external OS binary (`chromedriver` / `geckodriver`).
-- `chromedriver` translates that HTTP JSON into a Chrome DevTools Protocol (`CDP`) command, waits for Chromium, and returns an opaque node reference (`{"element-6066-11e4": "f.8A92..."}`).
-- Checking visibility, enabled state, scrolling, and clicking requires **3 to 5 sequential HTTP round-trips**. Across a remote cloud Selenium Grid (`80ms` WAN RTT per command), a single 40-step test burns `40 * 4 * 80ms = 12.8 seconds` in pure wire latency—widening every race window where SPA frameworks mutate the DOM between check and click!
-- Worse, HTTP/1.1 is **client-pull only**: the browser cannot proactively push `window.onerror`, `fetch()` requests, or CORS blocks to the test client.
-
-### 2. Playwright's Persistent Pipe / WebSocket Architecture (and W3C WebDriver BiDi)
-Playwright (and the modern **W3C WebDriver BiDi** specification now converging Selenium 4/5 toward bidirectional transport) eliminates the per-command HTTP bottleneck:
-- Locally, Playwright's Node.js driver spawns Chromium/Firefox/WebKit communicating over **OS `stdio` pipes** (or a single persistent **WebSocket** when connecting remotely via `connect_over_cdp` / remote browser server).
-- Every JSON-RPC frame carries an integer `id` and `sessionId` (`BrowserContext` target), allowing hundreds of concurrent network interceptions, console listeners, and frame navigations to stream asynchronously over **one socket**.
-
-```mermaid
-flowchart LR
-  SDK["Playwright Python / Java SDK"] -->|Persistent stdio Pipe| Core["Playwright Server Core"]
-  Core <-->|Full-Duplex CDP / BiDi Stream| Blink["Browser Engine (Blink/Gecko/WebKit)"]
-  Blink -->|Real-Time Server Push| Events["Network + Console + DOM Frames"]
-```
-
-```json contrast
-{
-  "title": "Classic WebDriver Multi-Hop HTTP vs Playwright Multiplexed Pipe / CDP",
-  "naiveTitle": "Classic W3C WebDriver HTTP/JSON",
-  "naiveMetric": "4–6 HTTP RTTs/Click · Stale UUID Races",
-  "naivePoints": [
-    "Requires version-matched middleman `chromedriver` binary; browser auto-update breaks CI overnight",
-    "`findElement` caches a brittle DOM node UUID that turns stale if React/Vue re-renders 5ms before `click()`",
-    "Cannot natively intercept/modify HTTP responses or listen to `console.error` without heavy proxy sidecars (BrowserMob)"
-  ],
-  "staffTitle": "Persistent Full-Duplex Pipe + Lazy Locator",
-  "staffMetric": "1 Atomic RPC · Native Network & Event Push",
-  "staffPoints": [
-    "Pins deterministic browser builds (`npx playwright install --with-deps`) speaking directly over OS pipes/WebSockets",
-    "Evaluates all 5 actionability checks + pointer dispatch atomically inside the browser's `requestAnimationFrame` loop",
-    "Streams real-time `request`, `response`, `pageerror`, and `websocket` events over the same persistent channel"
-  ]
-}
-```
-
 ---
 
-## Part II — Wire Protocol Architecture Comparison
+## 🚀 Step 4: Staff Engineer Deep-Dive — Wire Latency Math & Telemetry Harness
 
-Explore the **`arch-playwright-vs-selenium`** interactive visualizer to compare packet counts, latency budgets, and React re-render race windows across Classic WebDriver, WebDriver BiDi, and Playwright CDP/Pipes.
+### 1. Wire-Protocol Latency Amplification Over Remote Grids
+
+When running against remote cloud browsers with network round-trip time $\text{RTT}_{\text{WAN}}$ (typically $60\text{--}100\text{ ms}$), total protocol overhead for a test with $N$ actions and $K$ polling round-trips per action is:
+
+$$T_{\text{wire}} = N \times K \times \text{RTT}_{\text{WAN}}$$
+
+In classic HTTP WebDriver ($K \approx 4$ round-trips per action: `findElement`, `isDisplayed`, `isEnabled`, `click`), a $50$-step test over an $80\text{ ms}$ link burns $50 \times 4 \times 80\text{ ms} = 16.0\text{ seconds}$ of pure network wait time, widening the React re-render race window to $\Delta t_{\text{race}} \ge \text{RTT}_{\text{WAN}}$ on every click. By co-locating the actionability loop inside the browser process ($K = 1$ RPC), Playwright collapses wire overhead by $4\times$ and shrinks $\Delta t_{\text{race}} \to 0$ (evaluated synchronously inside a single `requestAnimationFrame` tick).
 
 | Protocol Capability | W3C WebDriver Classic (HTTP) | W3C WebDriver BiDi (Selenium 4.x+) | Playwright Native (CDP + Patched Engines) |
 | :--- | :--- | :--- | :--- |
 | **Transport Layer** | Stateless HTTP/1.1 per command | Persistent WebSocket (`ws://`) | OS `stdio` Pipe (local) / Persistent WebSocket (remote) |
-| **Server-Push Events** | None (client must poll `ExpectedConditions`) | Standardized (`log.entryAdded`, `network.*`) | Full (`page.on('console')`, `page.route()`, `requestfinished`) |
-| **Element Handle Model** | Eager `WebElement` UUID (prone to `StaleElement`) | Eager or BiDi `SharedReference` | Lazy, stateless `Locator` re-evaluated per action |
-| **Cross-Browser Coverage** | Chromium, Firefox, Safari (OS-locked), Edge | Chromium, Firefox (maturing Safari/WebKit) | Chromium, Firefox, AND **WebKit on Linux/macOS/Windows** |
+| **Server-Push Events** | None (client polls `ExpectedConditions`) | Standardized (`log.entryAdded`, `network.*`) | Full (`page.on('console')`, `page.route()`, `pageerror`) |
+| **Element Handle Model** | Eager `WebElement` UUID (stale-prone) | Eager or BiDi `SharedReference` | Lazy stateless `Locator` re-evaluated per action |
+| **Cross-Browser Coverage** | Chromium, Firefox, Safari (macOS-only) | Chromium, Firefox (maturing WebKit) | Chromium, Firefox, and **WebKit on Linux/macOS/Windows** |
 
----
+### 2. Production Dual-Language Blueprint: Full-Duplex Telemetry Guard
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Full-Duplex Server-Push Guard (Zero Uncaught `pageerror` / `5xx` Leaks) + Scoped CDP
 ```python
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Generator, List
 import pytest
-from playwright.sync_api import BrowserContext, ConsoleMessage, Error, Page
-
+from playwright.sync_api import BrowserContext, ConsoleMessage, Page
 
 @dataclass
-class BrowserTelemetryGuard:
-    """Captures real-time server-pushed JS exceptions & console errors over the persistent pipe."""
+class AeroBotTelemetryGuard:
+    """Captures server-pushed JS exceptions & console errors over the persistent pipe."""
     uncaught_page_errors: List[str] = field(default_factory=list)
     severe_console_errors: List[str] = field(default_factory=list)
 
@@ -140,26 +236,24 @@ class BrowserTelemetryGuard:
             self.severe_console_errors.append(msg.text)
 
     def assert_clean(self) -> None:
-        assert not self.uncaught_page_errors, f"Uncaught JS runtime errors: {self.uncaught_page_errors}"
-        assert not self.severe_console_errors, f"Console.error emissions: {self.severe_console_errors}"
-
+        assert not self.uncaught_page_errors, f"Uncaught JS errors: {self.uncaught_page_errors}"
+        assert not self.severe_console_errors, f"Console.error logs: {self.severe_console_errors}"
 
 @pytest.fixture(scope="function")
 def monitored_page(context: BrowserContext) -> Generator[Page, None, None]:
     page = context.new_page()
-    guard = BrowserTelemetryGuard()
+    guard = AeroBotTelemetryGuard()
     guard.attach(page)
     yield page
     guard.assert_clean()
 
-
-def emulate_4x_cpu_slowdown_via_cdp(context: BrowserContext, page: Page) -> None:
-    """Drop down to raw Chromium CDP session ONLY for hardware/profiler emulation."""
-    cdp = context.new_cdp_session(page)
-    cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+def emulate_cpu_slowdown_if_chromium(context: BrowserContext, page: Page, browser_name: str) -> None:
+    """Guard raw Chromium CDP sessions so Firefox and WebKit matrices never crash."""
+    if browser_name == "chromium":
+        cdp = context.new_cdp_session(page)
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
 ```
 
-### Java 17 Blueprint: Real-Time Bidirectional Console/Error Listener & Lazy Locator Execution
 ```java
 package com.aerocart.qa.playwright;
 
@@ -169,7 +263,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class BidirectionalPageHarness implements AutoCloseable {
-
     private final BrowserContext context;
     private final Page page;
     private final List<String> uncaughtErrors = new CopyOnWriteArrayList<>();
@@ -177,10 +270,9 @@ public final class BidirectionalPageHarness implements AutoCloseable {
     public BidirectionalPageHarness(Browser sharedBrowser) {
         this.context = sharedBrowser.newContext();
         this.page = context.newPage();
-        // Zero-polling server-push subscription over Playwright's persistent pipe:
         this.page.onPageError(err -> uncaughtErrors.add(err));
         this.page.onConsoleMessage(msg -> {
-            if ("error".equals(msg.type())) {
+            if ("error".equals(msg.type()) && !msg.text().contains("favicon.ico")) {
                 uncaughtErrors.add("console.error: " + msg.text());
             }
         });
@@ -189,7 +281,6 @@ public final class BidirectionalPageHarness implements AutoCloseable {
     public Page page() { return page; }
 
     public void checkoutResiliently() {
-        // Lazy Locator: zero wire traffic on creation; atomic resolve+wait+click in 1 RPC!
         Locator payButton = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Pay Now"));
         payButton.click();
     }
@@ -208,12 +299,10 @@ public final class BidirectionalPageHarness implements AutoCloseable {
 ```
 
 > [!WARNING]
-> **Staff Interview Gotcha — Using Deprecated `ElementHandle` (`page.query_selector`) Instead of `Locator` in Playwright**:
-> Engineers migrating from Selenium often write `btn = page.query_selector("button.pay"); btn.click()` in Playwright! That **re-introduces Selenium's exact `ElementHandle` staleness bug** into Playwright because `query_selector` returns an eager point-in-time DOM node handle! Always use `page.locator(...)` / `page.get_by_role(...)` (`Locator`), and remember that `context.new_cdp_session(page)` is **Chromium-only**—gate raw CDP profiling behind `browser_name == "chromium"` so Firefox and WebKit CI matrices stay green.
+> **Staff Interview Gotcha — Using Deprecated `ElementHandle` (`page.query_selector`) Instead of `Locator`**:
+> Engineers migrating from Selenium often write `btn = page.query_selector("button.pay"); btn.click()` in Playwright. That **re-introduces Selenium's exact staleness bug** because `query_selector` returns an eager point-in-time DOM handle! Always use `page.locator(...)` / `page.get_by_role(...)` (`Locator`), and remember that `context.new_cdp_session(page)` is **Chromium-only**—always guard raw CDP calls behind `browser_name == "chromium"` so Firefox and WebKit CI matrices stay green.
 
----
-
-## Part IV — Scenario Retrieval-Practice Mastery Gate
+**Up Next in Chapter 2**: Now that **`AeroBot v0.1`** talks to the browser over a fast pipe, what happens when we run **500 tests in a row**? Launching a fresh Chrome OS process for every test burns 10 minutes of CPU boot time! In **Chapter 2**, we will upgrade **`AeroBot` to `v0.2`** using **Incognito `BrowserContext` Memory Partitioning** to isolate tests in `12ms` instead of `1,200ms`.
 
 ```json quiz
 [

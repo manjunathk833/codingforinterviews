@@ -6,9 +6,9 @@ volume: "05. Zero to Mastery: AI Engineering"
 module_number: 2
 module_title: "Module 2: Transformer Architecture & Modern LLM Internals"
 chapter_number: 5
-level_tag: "Senior → Staff AI Engineer"
+level_tag: "Beginner → Staff AI Engineer"
 title: "Modern Frontier Transformers: Pre-RMSNorm, RoPE, SwiGLU, GQA/MLA & Sparse MoE"
-summary: "Every architectural upgrade separating the 2017 Vaswani Transformer from Llama-3/4, Qwen, DeepSeek-V3 & Gemini: Pre-RMSNorm residual highways, Rotary Position Embeddings (RoPE) relative-angle math, SwiGLU 8/3d FFNs, Grouped-Query & Multi-Head Latent Attention (GQA/MLA), and Sparse Mixture-of-Experts (MoE)."
+summary: "Upgrade AeroBrain v0.5 from the 2017 Transformer to frontier Llama-3 and DeepSeek-V3 internals: clock-hand word distances with Rotary Position Embeddings (RoPE), Pre-RMSNorm highways, SwiGLU dimmer gates, Grouped-Query Attention (GQA), and Sparse Mixture-of-Experts (MoE)."
 reading_time_minutes: 24
 visualizer_id: ai-transformer-kv-cache
 lab_path: ai-engineering/03-hybrid-rag-rrf-and-attention
@@ -17,69 +17,140 @@ tags: ["ai-engineering", "rope", "rmsnorm", "swiglu", "gqa", "mixture-of-experts
 
 # Modern Frontier Transformers: Pre-RMSNorm, RoPE, SwiGLU, GQA/MLA & Sparse MoE
 
-```json pretraining
+```json continuity
+{
+  "previously": "In Chapter 04, we built AeroBrain v0.4's Multi-Head Causal Self-Attention router so tokens in a support ticket can dynamically look up earlier words without peeking into the future.",
+  "painPoint": "However, pure dot-product attention is completely blind to word order! To AeroBrain v0.4, 'Flight from Boston to Miami' and 'Flight from Miami to Boston' have identical word matches among past tokens, and storing 64 separate Key/Value heads per layer hogs massive GPU memory.",
+  "unlock": "We will upgrade AeroBrain v0.5 with modern frontier building blocks: Rotary Position Embeddings (RoPE) clock-hand angles for word order, Grouped-Query Attention (GQA) for 8x leaner memory, and Sparse Mixture-of-Experts (MoE) specialist routing."
+}
+```
+
+```json walkthrough
 [
   {
-    "term": "Pre-RMSNorm Highway",
-    "formula": "h_{l+1} = h_l + Block(RMSNorm(h_l)),  RMS(x) = sqrt(mean(x^2) + eps)",
-    "meaning": "Drops mean-centering (saving ~15% norm bandwidth) and places normalization BEFORE sublayers so unimpeded identity gradients flow across 100+ layers."
+    "time": "0:00",
+    "badge": "1. RoPE Clock-Hand Angles",
+    "caption": "Instead of pasting a static seat number onto each word only once at the entrance, Rotary Position Embeddings rotate each Query and Key like clock hands by their word position so their angle gap always equals how far apart they sit.",
+    "code": "angle = position * freq\nrot_x = x0 * math.cos(angle) - x1 * math.sin(angle)\nrot_y = x0 * math.sin(angle) + x1 * math.cos(angle)"
   },
   {
-    "term": "RoPE Relative Invariant",
-    "formula": "<R(m) q, R(n) k> = Re( sum_i q_i * conj(k_i) * e^{i (m - n) theta_i} )",
-    "meaning": "Rotates 2D coordinate pairs of Q and K by absolute angle m*theta_i so their dot product depends EXCLUSIVELY on relative distance (m - n)!"
+    "time": "0:24",
+    "badge": "2. Pre-RMSNorm Express Highway",
+    "caption": "Old 2017 Transformers placed normalization roadblocks directly on the main signal highway. Modern models normalize on the side ramp before each block using simple root-mean-square scaling.",
+    "code": "rms = math.sqrt(sum(v * v for v in x) / len(x) + 1e-6)\nh_next = x + block([v / rms for v in x])"
   },
   {
-    "term": "Grouped-Query Attn (GQA)",
-    "formula": "H_Q = 64 Query Heads share G = 8 Key/Value Heads (8:1 Ratio)",
-    "meaning": "Slashes KV-Cache VRAM and decode HBM memory-bandwidth bottleneck by 8x with <0.2% perplexity loss vs full MHA ( DeepSeek MLA compresses further!)."
+    "time": "0:48",
+    "badge": "3. Grouped-Query Attention (GQA)",
+    "caption": "Instead of forcing all 64 Query detectives to carry their own heavy Key and Value filing cabinets, 8 Query heads share 1 Key-Value cabinet, slashing memory traffic by 8x.",
+    "code": "kv_group_index = query_head_index // 8  # 64 Q heads share 8 KV heads!"
   },
   {
-    "term": "Sparse MoE Routing",
-    "formula": "y = sum_{e in TopK(Router(x))} g_e(x) * Expert_e(x)",
-    "meaning": "Decouples total knowledge capacity (e.g., 671B params in DeepSeek-V3) from per-token FLOPs (only 37B active params per token!)."
+    "time": "1:12",
+    "badge": "4. Mixture-of-Experts Specialist Desk",
+    "caption": "Why wake up all 600 billion brain cells for every single word? A fast triage router sends a baggage token only to the 2 best specialist desks out of 64.",
+    "code": "top2_experts = sorted(router_scores, reverse=True)[:2]\nout = sum(w * expert(token) for w, expert in top2_experts)"
   }
 ]
 ```
 
-```json poe
-{
-  "question": "Your infrastructure team deploys an open-weight Sparse Mixture-of-Experts (MoE) model advertised as '47B Total Parameters, 13B Active Parameters per Token' (Mixtral-8x7B class in BF16) onto a single 40GB A100 GPU, sizing VRAM for 13B * 2 bytes = 26GB. At startup, the serving engine immediately crashes with CUDA OutOfMemoryError! Why?",
-  "options": [
-    "Active parameters double when batch size = 1",
-    "Sparse MoE saves FLOPs per single token, NOT static VRAM! All 47B total expert weights (47B * 2 bytes ≈ 94GB in BF16) must reside in GPU HBM simultaneously because different tokens in a batch dynamically route to all 8 experts within microseconds!",
-    "RoPE rotation matrices consume 60GB of VRAM",
-    "RMSNorm requires FP64 precision on A100 GPUs"
-  ],
-  "answerIndex": 1,
-  "explanation": "Active parameter count governs compute FLOPs (and single-token latency), whereas TOTAL parameter count governs HBM VRAM capacity! Fitting 47B BF16 (~94GB + KV-Cache) requires either 2x 80GB GPUs (Tensor/Expert Parallelism) or INT4 quantization (~24GB weights)."
-}
+```json pretraining
+[
+  {
+    "term": "Rotary Position Embedding (RoPE)",
+    "formula": "<R(m) q, R(n) k> depends only on relative distance (m - n)",
+    "meaning": "Spins each word's Query and Key vector like a clock hand by its position m or n so when two words compare, only the angle gap (m - n) between them matters."
+  },
+  {
+    "term": "Pre-RMSNorm Highway",
+    "formula": "h_{l+1} = h_l + Block(RMSNorm(h_l))",
+    "meaning": "Keeps the main layer-to-layer signal highway completely unobstructed and scales vectors by their root-mean-square size before entering each block."
+  },
+  {
+    "term": "Grouped-Query Attention (GQA)",
+    "formula": "64 Query Heads share 8 Key/Value Heads (8:1 Ratio)",
+    "meaning": "Lets small teams of Query heads share a single Key/Value memory bank, cutting live chat memory consumption by 8x with almost zero accuracy loss."
+  },
+  {
+    "term": "Sparse Mixture-of-Experts (MoE)",
+    "formula": "y = sum_{e in TopK} gate_e(x) * Expert_e(x)",
+    "meaning": "Replaces one giant neural network layer with dozens of smaller specialist networks, waking up only 2 to 8 specialists per word to keep math fast."
+  }
+]
 ```
 
-## 1. Five Upgrades from 2017 Vaswani Transformer to Modern Frontier LLMs
+## 🌱 Step 1: Plain-English Story — Clock Hands, Shared Cabinets & Specialist Desks
 
-Almost zero frontier LLMs today use the literal 2017 *Attention Is All You Need* block (`Post-LayerNorm` + Sinusoidal additive positions + `ReLU` 2-matrix FFN + `MHA`). Five mathematical upgrades define modern Llama / Qwen / DeepSeek / Gemma architectures:
+In Chapter 04, **AeroBrain `v0.4`** learned to match words using Queries and Keys. But imagine two passengers submit very different tickets:
+- Ticket A: *"Rebook my flight **from Boston to Miami**."*
+- Ticket B: *"Rebook my flight **from Miami to Boston**."*
 
-1. **`Post-LayerNorm` $\to$ `Pre-RMSNorm`**: Post-LN normalized *on* the residual trunk (`LN(x + Sublayer(x))`), attenuating early-layer gradients and requiring fragile warmup. **Pre-RMSNorm** (`x + Sublayer(RMSNorm(x))`) keeps an untouched identity residual highway from layer `N` straight back to token embeddings, while omitting redundant mean subtraction ($\text{RMSNorm}(x) = \frac{x}{\sqrt{\frac{1}{d}\sum x_i^2 + \epsilon}} \odot \gamma$).
-2. **Additive Sinusoids $\to$ Rotary Position Embeddings (`RoPE`)**: Instead of adding position vectors once at layer `0` (where positional signal washes out by layer `60`), **RoPE** (Su et al., 2021) groups every `Q` and `K` head vector into `d_head / 2` 2D complex planes and rotates position $m$ by angle $m \theta_j$ ($\theta_j = \text{base}^{-2j/d}$, e.g. `base = 500,000` for `128k` context). Because 2D rotation matrices are orthogonal, $(R_m q)^\top (R_n k) = q^\top R_{n-m} k$—encoding **exact relative token distance $(m - n)$** at every single layer while preserving `KV-Cache` immutability (already-rotated keys never need recomputation when new tokens append!).
-3. **`ReLU` FFN $\to$ `SwiGLU` Gated FFN**: Replaces $\max(0, xW_1)W_2$ with three bias-free matrices (`W_gate`, `W_up`, `W_down`):
-   $$\text{SwiGLU}(x) = \big(\text{SiLU}(x W_{\text{gate}}) \odot (x W_{\text{up}})\big) W_{\text{down}}, \qquad \text{SiLU}(z) = \frac{z}{1 + e^{-z}}$$
-   To keep parameter count equal (`2 * d * 4d = 8d^2`) with 3 matrices instead of 2, hidden width shrinks from $4d$ to **$\frac{8}{3}d$** (rounded to a multiple of `256` for Tensor Core alignment!).
-4. **`MHA` $\to$ `GQA` (Grouped-Query Attention) & `MLA` (Multi-Head Latent Attention)**: During autoregressive decode, reading `K` and `V` caches from HBM is the #1 latency wall. **GQA** shares `1` Key/Value head across `4` or `8` Query heads (cutting `KV-Cache` by `8x`); **DeepSeek MLA** goes even further by projecting `K, V` into a low-rank compressed latent vector $c_t^{KV}$ cached in HBM!
-5. **Dense FFN $\to$ Sparse Mixture-of-Experts (`MoE`)**: Replaces one giant FFN with $E$ routed experts (e.g., `64` or `256` fine-grained experts + `1` always-on **Shared Expert**), activating only `Top-K` (`K=2..8`) per token plus auxiliary load-balancing so no single GPU expert collapses into a bottleneck.
+Because multiplication doesn't care what order words arrive in, pure Self-Attention treats both sentences like an unordered bag of words! Even worse, as we stack 80 layers to make AeroBrain smarter, the original 2017 Transformer design hits four walls—and modern models like Llama-3 and DeepSeek-V3 replace all of them:
+
+1. **The Word-Order Clock (`RoPE` — Rotary Position Embeddings)**: Instead of taping a faded seat number onto a word at Layer 1, we treat every pair of numbers in a word's Query and Key badge like a **clock hand**. Word #1 rotates its hand by 1 tick, Word #2 by 2 ticks, and Word #5 by 5 ticks. When Word #5 compares its clock hand with Word #2, the angle between their hands is always **3 ticks (`5 - 2`)**—giving AeroBrain an unbreakable sense of relative distance at every layer!
+2. **The Unobstructed Express Highway (`Pre-RMSNorm`)**: Instead of placing volume-control checkpoints directly on the main highway between layers (which muffles learning across 80+ layers), we keep the main highway clear and only adjust volume on the exit ramp entering each block.
+3. **Shared Filing Cabinets (`GQA` — Grouped-Query Attention)**: Instead of giving all 64 Query detectives their own heavy Key/Value filing cabinet, groups of 8 detectives share 1 cabinet—cutting memory storage by `8x`.
+4. **Specialist Triage Desks (`SwiGLU` & `MoE` — Mixture-of-Experts)**: Instead of forcing one giant generalist brain to process every word, a smart triage receptionist routes `"baggage"` tokens to the Baggage Specialist desk and `"refund"` tokens to the Billing Specialist desk!
 
 ```mermaid
 flowchart LR
-  In["Residual Stream h_l"] -->|Pre-RMSNorm| QKV["GQA Proj (64 Q, 8 KV Heads)"]
-  QKV -->|2D Rotation m*theta| RoPE["RoPE Causal FlashAttention"]
-  RoPE -->|Add Residual h_l| Mid["h_mid = h_l + AttnOut"]
-  Mid -->|Pre-RMSNorm + Router| MoE["Shared SwiGLU + Top-K Sparse SwiGLU Experts"]
-  MoE -->|Add Residual h_mid| Out["Next Layer Stream h_{l+1}"]
+  In["Ticket Vector Highway"] --> Norm["Pre-RMSNorm Side Ramp"]
+  Norm --> RoPE["GQA + RoPE Clock-Hand Attention"]
+  RoPE --> Gate["Triage Router (Top-2 Specialists)"]
+  Gate --> Out["SwiGLU Specialist Experts -> Highway"]
 ```
 
 ---
 
-## 2. 2017 Vaswani Architecture vs. 2025/2026 Frontier LLM Architecture
+## 🔨 Step 2: First Lines of Code — AeroBrain `v0.5` RoPE Clock Rotation & Top-2 MoE Router
+
+Let's write a 16-line **AeroBrain `v0.5`** snippet that rotates a 2D Query/Key vector by its word position (`RoPE`) and proves that shifting both words forward by 100 positions keeps their match score 100% identical!
+
+```python
+import math
+
+def rope_rotate(vec: list[float], pos: int, theta: float = 0.25) -> list[float]:
+    c, s = math.cos(pos * theta), math.sin(pos * theta)
+    return [vec[0] * c - vec[1] * s, vec[0] * s + vec[1] * c]
+
+q, k = [1.2, -0.5], [0.8, 0.4]
+# Compare words at positions (m=5, n=2) vs shifted positions (m=105, n=102)
+q5, k2 = rope_rotate(q, 5), rope_rotate(k, 2)
+q105, k102 = rope_rotate(q, 105), rope_rotate(k, 102)
+
+score_early = sum(a * b for a, b in zip(q5, k2))
+score_shifted = sum(a * b for a, b in zip(q105, k102))
+print(f"Gap=3 at pos (5,2): {score_early:.6f} | at pos (105,102): {score_shifted:.6f}")
+```
+
+### Java 17 Equivalent
+
+```java
+public class AeroBrainRoPE {
+    static double[] ropeRotate(double[] v, int pos, double theta) {
+        double c = Math.cos(pos * theta), s = Math.sin(pos * theta);
+        return new double[]{v[0] * c - v[1] * s, v[0] * s + v[1] * c};
+    }
+
+    public static void main(String[] args) {
+        double[] q = {1.2, -0.5}, k = {0.8, 0.4};
+        double[] q5 = ropeRotate(q, 5, 0.25), k2 = ropeRotate(k, 2, 0.25);
+        double[] q105 = ropeRotate(q, 105, 0.25), k102 = ropeRotate(k, 102, 0.25);
+        double early = q5[0] * k2[0] + q5[1] * k2[1];
+        double shifted = q105[0] * k102[0] + q105[1] * k102[1];
+        System.out.printf("Gap=3 at (5,2): %.6f | at (105,102): %.6f%n", early, shifted);
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — The MoE VRAM Trap & Expert Routing Collapse
+
+When teams upgrade `AeroBrain v0.5` to a Sparse **Mixture-of-Experts (`MoE`)** architecture in production, two brutal operational surprises catch engineers off guard:
+
+1. **The "Active Parameter" GPU Memory Trap**: Suppose an open-weight `MoE` model advertises *"47 Billion Total Parameters, but only 13 Billion Active per word!"* A team rents a single `40 GB` GPU thinking `13B × 2 bytes = 26 GB` will easily fit. **It immediately crashes with Out-Of-Memory!** Why? Because while each single word only visits 2 specialist desks (`13B` math operations), **all 8 specialist desks (`47B` total weights = `94 GB`) must stay loaded in GPU memory at the same time** so any desk can answer on the next millisecond!
+2. **Routing Collapse ("The Rich Get Richer")**: During training, if Specialist Desk #1 happens to start slightly smarter than Desks #2–#8, the triage router sends more words to Desk #1. Desk #1 gets more practice, becomes even smarter, and soon receives `99%` of all traffic while the other 7 desks sit completely brain-dead unless we enforce a **Load-Balancing Penalty**!
 
 ```json contrast
 {
@@ -101,6 +172,35 @@ flowchart LR
 }
 ```
 
+```json poe
+{
+  "question": "Your infrastructure team deploys an open-weight Sparse Mixture-of-Experts (MoE) model advertised as '47B Total Parameters, 13B Active Parameters per Token' (Mixtral-8x7B class in BF16) onto a single 40GB A100 GPU, sizing VRAM for 13B * 2 bytes = 26GB. At startup, the serving engine immediately crashes with CUDA OutOfMemoryError! Why?",
+  "options": [
+    "Active parameters double when batch size = 1",
+    "Sparse MoE saves FLOPs per single token, NOT static VRAM! All 47B total expert weights (47B * 2 bytes ≈ 94GB in BF16) must reside in GPU HBM simultaneously because different tokens in a batch dynamically route to all 8 experts within microseconds!",
+    "RoPE rotation matrices consume 60GB of VRAM",
+    "RMSNorm requires FP64 precision on A100 GPUs"
+  ],
+  "answerIndex": 1,
+  "explanation": "Active parameter count governs compute FLOPs (and single-token latency), whereas TOTAL parameter count governs HBM VRAM capacity! Fitting 47B BF16 (~94GB + KV-Cache) requires either 2x 80GB GPUs (Tensor/Expert Parallelism) or INT4 quantization (~24GB weights)."
+}
+```
+
+---
+
+## 🚀 Step 4: Staff Engineer Deep-Dive — `RMSNorm`, `RoPE` Complex Math, `SwiGLU` & `MoE`
+
+### 1. The Five Mathematical Equations of Frontier LLMs
+
+1. **`Pre-RMSNorm` Residual Stream**: Keeps an untouched identity highway from layer $L$ straight back to token embeddings while dropping redundant mean-centering:
+   $$h_{l+1} = h_l + \text{Sublayer}\!\left(\text{RMSNorm}(h_l)\right), \qquad \text{RMSNorm}(x) = \frac{x}{\sqrt{\frac{1}{d}\sum_{i=1}^d x_i^2 + \epsilon}} \odot \gamma$$
+2. **Rotary Position Embeddings (`RoPE`)**: Groups every `Q` and `K` head vector into $d_{\text{head}}/2$ 2D complex planes and rotates position $m$ by angle $m \theta_j$ ($\theta_j = \text{base}^{-2j/d}$, e.g. `base = 500,000`). Because 2D rotation matrices are orthogonal, $(R_m q)^\top (R_n k) = q^\top R_{n-m} k$—encoding exact relative distance $(m - n)$ while preserving `KV-Cache` immutability.
+3. **`SwiGLU` Gated FFN ($8/3 d$ Hidden Width)**: Replaces $\max(0, xW_1)W_2$ with three bias-free matrices (`W_gate`, `W_up`, `W_down`):
+   $$\text{SwiGLU}(x) = \big(\text{SiLU}(x W_{\text{gate}}) \odot (x W_{\text{up}})\big) W_{\text{down}}, \qquad \text{SiLU}(z) = \frac{z}{1 + e^{-z}}$$
+   To hold parameter count equal (`2 * d * 4d = 8d^2`) with 3 matrices instead of 2, hidden width shrinks from $4d$ to **$\frac{8}{3}d$** (rounded to a multiple of `256` for Tensor Core alignment).
+4. **`GQA` & `MLA` (`Multi-Head Latent Attention`)**: `GQA` shares `1` Key/Value head across $G$ Query heads; DeepSeek `MLA` projects `K, V` into a low-rank compressed latent vector $c_t^{KV}$ cached in HBM.
+5. **Sparse `MoE` (`Top-K` Routing)**: Activates only `Top-K` out of $E$ routed experts per token alongside `1` always-on Shared Expert.
+
 | Architectural Component | Parameter / Memory Formula | Primary Bottleneck Solved | Production Serving Implication |
 | :--- | :--- | :--- | :--- |
 | **`RMSNorm`** | $d$ scale parameters ($\gamma$ only, no $\beta$) | Elementwise HBM memory bandwidth | Fused into single Triton/CUDA kernel with residual add |
@@ -109,11 +209,8 @@ flowchart LR
 | **`GQA` (`G` KV groups)** | KV-Cache scales with **`G`**, NOT **`H_Q`** | Decode HBM memory-bandwidth wall | `G = 8` allows `8x` larger concurrent batch size on `80GB` H100 |
 | **Sparse `MoE` (`Top-K / E`)** | Total VRAM $= E$, Compute/Token $= K$ | Pretraining & single-batch FLOP cost | At large batch sizes ($B \ge 64$), almost ALL $E$ experts get touched per batch—still HBM-bound! |
 
----
+### 2. Dual-Language Production Blueprints: `RMSNorm`, `RoPE`, `SwiGLU` & `Top-K MoE`
 
-## 3. Dual-Language Production Blueprints: `RMSNorm`, `RoPE`, `SwiGLU` & `Top-K MoE`
-
-### Python 3 Blueprint: Exact `RMSNorm`, `RoPE` Relative-Angle Proof, `SwiGLU` & `Top-K MoE` Router
 ```python
 from __future__ import annotations
 import math
@@ -129,10 +226,7 @@ def rms_norm(x: Sequence[float], weight: Sequence[float], eps: float = 1e-6) -> 
 def apply_rope_1d(
     vec: Sequence[float], position: int, rope_theta: float = 500_000.0
 ) -> List[float]:
-    """
-    Applies Rotary Position Embedding (RoPE) to an even-dimensional head vector:
-    Each 2D pair (x_{2j}, x_{2j+1}) is rotated by angle m * theta^{-2j / d}.
-    """
+    """Applies Rotary Position Embedding (RoPE) to an even-dimensional head vector."""
     d = len(vec)
     if d % 2 != 0:
         raise ValueError("RoPE head dimension must be even")
@@ -199,7 +293,8 @@ def sparse_moe_topk_route(
     return out
 ```
 
-### Java 17 Blueprint: `RMSNorm`, `RoPE` Kernel & Grouped-Query Attention (`GQA`) Head Mapper
+### Java 17 Equivalent
+
 ```java
 package com.hub.ai.modern;
 
@@ -232,25 +327,18 @@ public final class FrontierTransformerOps {
         }
     }
 
-    /**
-     * Maps Query Head index [0 .. numQueryHeads-1] to its shared Key/Value Group index [0 .. numKvHeads-1]
-     * in Grouped-Query Attention (GQA). E.g., 64 Q heads / 8 KV heads -> groupSize = 8.
-     */
     public static int mapQueryHeadToKvGroup(int queryHeadIdx, int numQueryHeads, int numKvHeads) {
         if (numQueryHeads % numKvHeads != 0) {
             throw new IllegalArgumentException("numQueryHeads must be an exact multiple of numKvHeads");
         }
-        int groupSize = numQueryHeads / numKvHeads;
-        return queryHeadIdx / groupSize;
+        return queryHeadIdx / (numQueryHeads / numKvHeads);
     }
 }
 ```
 
 > [!WARNING] **Staff Interview Gotcha — Sparse `MoE` Batch-Size Throughput Illusion:** Product teams often assume a `235B` total / `22B` active `MoE` model will serve high-concurrency `batch_size = 128` production traffic as cheaply as a dense `22B` model. **At `batch_size = 1`**, `1` token activates `Top-2` out of `64` experts (reading only `22B` weights from HBM—super fast!). **At `batch_size = 128`**, `128` diverse user tokens statistically activate **nearly `100%` of all `64` experts on every single decode step!** Because single-node GPU decode is HBM memory-bandwidth bound, streaming all `235B` weights from HBM per step slows batched throughput unless you deploy across large multi-node **Expert Parallelism (`EP` + `DeepEP` RDMA)** clusters where each GPU holds only `1–2` experts in local SRAM/HBM!
 
----
-
-## 4. Scenario Retrieval-Practice Mastery Gate
+**Up Next in Chapter 06:** Now that **AeroBrain `v0.5`** has a modern Transformer architecture (`RoPE` + `GQA` + `SwiGLU` + `MoE`), how do we serve 1,000 live passengers chatting simultaneously without running out of GPU memory or recomputing past tokens on every word? In **Chapter 06**, we build **AeroBrain `v0.6`'s Inference Engine** with **`KV-Cache` Mechanics**, **`PagedAttention` Virtual Memory**, **Continuous Batching**, **`AWQ`/`FP8` Quantization**, and **Speculative Decoding**.
 
 ```json quiz
 [

@@ -17,29 +17,172 @@ tags: ["browser-context", "memory-isolation", "process-architecture", "cookies",
 
 # Browser OS Processes vs BrowserContext Incognito Sandboxes
 
+```json continuity
+{
+  "previously": "In Chapter 1, we built AeroBot v0.1 using a persistent two-way browser pipe that finds and clicks elements in a single atomic browser loop.",
+  "painPoint": "When we run 500 AeroBot v0.1 tests in a row, launching a brand-new Chrome process for every test wastes 8+ minutes of CPU boot time—while reusing a single browser leaks login cookies and cart items between tests!",
+  "unlock": "We will upgrade AeroBot to v0.2 by booting one Browser process per worker and isolating every test inside a 12ms, 4MB incognito BrowserContext sandbox."
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "🌱 The Hotel Building vs Room Keycards",
+    "caption": "Demolishing and rebuilding an entire hotel building between every guest takes months. Handing each new guest a fresh, wiped room inside the same building takes 12 milliseconds. That is Browser vs BrowserContext.",
+    "code": "1 Worker Browser (~180MB) -> 500 Fresh BrowserContexts (~12ms, ~4MB each)"
+  },
+  {
+    "time": "0:25",
+    "badge": "🔨 AeroBot v0.2: Instant Incognito Sandboxes",
+    "caption": "Instead of calling chromium.launch() in every test, AeroBot v0.2 calls browser.new_context(). Each context gets its own private cookie jar, localStorage, and timezone.",
+    "code": "ctx = browser.new_context(locale='en-US', timezone_id='UTC')"
+  },
+  {
+    "time": "0:50",
+    "badge": "⚡ Why Two Tabs in One Context Collide",
+    "caption": "If you test Alice and Bob trading a flight ticket by opening two Page tabs inside the same BrowserContext, Bob's login overwrites Alice's session cookie! Multi-user tests need two BrowserContexts.",
+    "code": "alice_ctx = browser.new_context(); bob_ctx = browser.new_context()"
+  },
+  {
+    "time": "1:15",
+    "badge": "🚀 Staff Resource Math & JVM Thread Safety",
+    "caption": "Scoping Browser to the worker session and BrowserContext to each test cuts startup overhead by 70x while guaranteeing zero IndexedDB or Service Worker leaks.",
+    "code": "stack.callback(ctx.close)  # LIFO teardown in < 5ms"
+  }
+]
+```
+
 ```json pretraining
 [
   {
-    "term": "Heavy `Browser` OS Process Tree",
-    "formula": "chromium.launch() -> ~850ms Cold Boot | ~180–260MB RSS (Browser + GPU + Net)",
-    "meaning": "Spawning a brand-new OS browser binary initializes V8 isolates, GPU compositors, font caches, and network services—expensive if repeated per test."
+    "term": "Heavy Browser OS Process",
+    "formula": "chromium.launch() -> ~850ms Cold Boot | ~180MB RAM",
+    "meaning": "Starting the main browser program boots the graphics engine, JavaScript compiler, and network stack—expensive if you do it before every single test."
   },
   {
-    "term": "Lightweight `BrowserContext` Sandbox",
-    "formula": "browser.new_context() -> ~8–15ms | ~3–5MB Incremental Heap",
-    "meaning": "An isolated incognito profile inside an already-running Browser: zero shared cookies, localStorage, sessionStorage, IndexedDB, cache, or permissions."
+    "term": "Lightweight BrowserContext Sandbox",
+    "formula": "browser.new_context() -> ~12ms Creation | ~4MB RAM",
+    "meaning": "Like opening a brand-new Incognito window inside an already-running browser: completely private cookies and storage, created in a blink."
   },
   {
-    "term": "Suite Latency & RAM Math",
-    "formula": "500 Tests * 850ms = 425s Boot Overhead vs 1 Browser + 500 * 12ms = 6.85s",
-    "meaning": "Lifecycle scoping (`Browser` = worker-session, `BrowserContext` = per-test function) saves >7 minutes of pure process-spawn overhead on a 500-test shard."
+    "term": "Page (Tab / Popup Window)",
+    "formula": "context.new_page() -> Shares Context Cookie Jar",
+    "meaning": "A single browser tab inside a BrowserContext. Two tabs in the same context share login cookies (great for OAuth popups), while two different contexts share nothing."
   },
   {
-    "term": "Multi-Context Single-Test Topology",
-    "formula": "ctx_buyer != ctx_seller -> 2 Independent Sessions in 1 Process (<10MB)",
-    "meaning": "Testing live chat, auction bidding, or RBAC approval between two concurrent users requires two `BrowserContext`s, NOT two `Page` tabs in the same context!"
+    "term": "Multi-Persona Context Isolation",
+    "formula": "Buyer Context != Admin Context -> 2 Users in 1 Browser",
+    "meaning": "To test two users interacting live (like a buyer and a fraud admin), create two BrowserContexts inside one Browser process for total cookie separation."
   }
 ]
+```
+
+## 🌱 Step 1: Plain-English Story — The Hotel Building vs Fresh Room Keycards
+
+Imagine managing a hotel where every time a guest checks out, you **dynamically demolish the entire concrete building** and construct a brand-new hotel from scratch for the next guest. Sure, the next guest gets clean sheets—but they have to wait six months on the sidewalk before checking in!
+
+On the other hand, what if you never cleaned the room at all and just let Guest #2 sleep in Guest #1's unmade bed? That is fast, but Guest #2 finds Guest #1's leftover luggage and wallet on the nightstand.
+
+In UI automation, teams used to face this exact trap:
+- **Rebuilding the hotel per test (`chromium.launch()`)**: 100% clean state, but booting Chrome from cold disk takes nearly **1 full second (`~850ms`)** and `~180MB` of RAM per test. Across 500 tests, you waste over **7 minutes** just watching browser windows boot!
+- **Letting guests share a room (`deleteAllCookies()`)**: Fast, but wiping cookies forgets to clear `localStorage`, `IndexedDB`, and cached Service Workers—causing Test #2 to mysteriously log in as Test #1's user!
+
+Playwright solves this with a 3-tier hierarchy:
+1. **`Browser` (The Hotel Building)**: Booted **once per worker** (`~850ms`).
+2. **`BrowserContext` (A Fresh Incognito Room)**: Created before every test in **`12 milliseconds`** (`~4MB` RAM). It has its own isolated cookies, `localStorage`, timezone, and permissions, and vanishes completely when closed.
+3. **`Page` (A Tab Inside That Room)**: Tabs inside the *same* `BrowserContext` share cookies (just like an OAuth login popup), while tabs in *different* `BrowserContext`s cannot see a single byte of each other's data.
+
+```mermaid
+flowchart LR
+  Proc["1 Worker Browser (~180MB)"] -->|12ms Sandbox| CtxA["BrowserContext A: Buyer"]
+  Proc -->|12ms Sandbox| CtxB["BrowserContext B: Admin"]
+  CtxA --> PageA["Buyer Tab (Private Cookies)"]
+  CtxB --> PageB["Admin Tab (Private Cookies)"]
+```
+
+---
+
+## 🔨 Step 2: First Lines of Code — AeroBot v0.2 Multi-Persona Sandboxes
+
+Let's upgrade **`AeroBot` to `v0.2`**. Using a single running `Browser`, we spin up two completely isolated incognito `BrowserContext`s in `24ms` total—one for a shopper in Tokyo and one for a flight admin in London—without leaking a single cookie between them.
+
+```python
+# aerobot_v02.py — AeroBot v0.2: Two isolated incognito personas in 1 Browser
+from playwright.sync_api import Browser, expect
+
+def test_buyer_and_admin_isolated_sessions(browser: Browser) -> None:
+    buyer_ctx = browser.new_context(locale="ja-JP", timezone_id="Asia/Tokyo")
+    admin_ctx = browser.new_context(locale="en-GB", timezone_id="Europe/London")
+    try:
+        buyer_page = buyer_ctx.new_page()
+        admin_page = admin_ctx.new_page()
+        buyer_page.goto("http://127.0.0.1:8090")
+        admin_page.goto("http://127.0.0.1:8090")
+        assert buyer_ctx.cookies() == [] and admin_ctx.cookies() == []
+    finally:
+        admin_ctx.close()
+        buyer_ctx.close()
+```
+
+### Java 17 Equivalent
+
+```java
+// AeroBotV02.java — AeroBot v0.2: Two isolated incognito personas in 1 Browser
+import com.microsoft.playwright.*;
+
+public class AeroBotV02 {
+    public static void verifyIsolatedPersonas(Browser browser) {
+        try (BrowserContext buyerCtx = browser.newContext(
+                 new Browser.NewContextOptions().setLocale("ja-JP").setTimezoneId("Asia/Tokyo"));
+             BrowserContext adminCtx = browser.newContext(
+                 new Browser.NewContextOptions().setLocale("en-GB").setTimezoneId("Europe/London"))) {
+            Page buyerPage = buyerCtx.newPage();
+            Page adminPage = adminCtx.newPage();
+            buyerPage.navigate("http://127.0.0.1:8090");
+            adminPage.navigate("http://127.0.0.1:8090");
+        }
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — The Two-Tab Cookie Collision
+
+What happens when an engineer wants to test Alice transferring a flight ticket to Bob, and writes this?
+
+```python
+# BUG: Both pages are created inside the SAME BrowserContext!
+alice_page = context.new_page()
+bob_page = context.new_page()
+```
+
+When Alice logs in on `alice_page`, AeroCart sets a `session_id=alice` cookie inside `context`. Five lines later, when Bob logs in on `bob_page`, AeroCart overwrites that exact same cookie jar with `session_id=bob`! When the test switches back to `alice_page` and clicks **"Transfer Ticket"**, Alice's tab secretly sends Bob's cookie—and the test explodes!
+
+Remember the golden rule:
+- **Multiple `Page`s inside 1 `BrowserContext`** = Multiple tabs in the **same** browser window (shared cookies & `localStorage`, used for `target="_blank"` popups).
+- **Multiple `BrowserContext`s inside 1 `Browser`** = Completely separate incognito users (`alice_ctx` vs `bob_ctx`).
+
+```json contrast
+{
+  "title": "Per-Test Browser Launch or Shared-Context Tabs vs AeroBot v0.2 Per-Test BrowserContext",
+  "naiveTitle": "launch() Per Test OR Shared-Context Tabs",
+  "naiveMetric": "850ms/Test Boot OR Cookie Overwrites",
+  "naivePoints": [
+    "Calling chromium.launch() inside every test burns 7+ minutes of OS process boot per 500 tests",
+    "Reusing one context with clear_cookies() leaks localStorage JWTs, IndexedDB carts, and Service Workers",
+    "Opening two Page tabs in the same context for Alice & Bob overwrites their session cookies"
+  ],
+  "staffTitle": "AeroBot v0.2 Worker Browser + Context Sandbox",
+  "staffMetric": "12ms/Test Isolation · 100% Storage Wipe",
+  "staffPoints": [
+    "Boots 1 Browser process per worker and creates a fresh BrowserContext per test in ~12ms",
+    "Closing a BrowserContext atomically wipes cookies, localStorage, IndexedDB, and permissions",
+    "Spawns buyer_ctx + admin_ctx in the same Browser using <8MB extra RAM for multi-actor tests"
+  ]
+}
 ```
 
 ```json poe
@@ -56,75 +199,38 @@ tags: ["browser-context", "memory-isolation", "process-architecture", "cookies",
 }
 ```
 
-## Part I — First-Principles Mental Model: The Three-Tier Browser Hierarchy
-
-In legacy Selenium suites, achieving clean state isolation between Test #1 and Test #2 forced an agonizing choice:
-1. **Call `driver.quit()` and spawn a fresh browser binary per test**: 100% clean state, but `850ms–1,400ms` process startup penalty on every single test (`1,000 tests = 20 minutes` spent purely waiting for Chrome windows to boot!).
-2. **Reuse one browser and manually call `driver.manage().deleteAllCookies()`**: Fast, but **fundamentally leaky**—`deleteAllCookies()` leaves behind `localStorage`, `sessionStorage`, `IndexedDB`, Service Workers, HTTP disk cache, geolocation grants, and in-flight `fetch` keep-alive state, triggering Heisenbugs across test ordering!
-
-Playwright solves this at the **browser engine storage-partition layer** via a strict 3-tier object hierarchy:
-- **Tier 1 — `Browser` (Worker/Session Scope)**: The heavy OS process tree (`Browser Main` + `GPU` + `Network Service`). Launched **once per parallel worker** (`~850ms`, `~180MB` RSS). Holds **zero** user cookies or origin state.
-- **Tier 2 — `BrowserContext` (Test Function Scope)**: Created via `browser.new_context()` (`~12ms`, `~4MB` RAM) via a single CDP `Target.createBrowserContext` frame. Allocates a brand-new, hermetically isolated in-memory `StoragePartition` (cookies, `localStorage`, `IndexedDB`, Service Workers, TLS client certs, viewport, timezone, locale). Destroyed in `<5ms` via `context.close()` at test teardown!
-- **Tier 3 — `Page` (Tab / Popup Window inside a Context)**: Created via `context.new_page()`. Multiple `Page`s inside the **same** `BrowserContext` share cookies/storage (ideal for `target="_blank"` SSO popups), while `Page`s in **different** `BrowserContext`s cannot see a single byte of each other's state.
-
-```mermaid
-flowchart LR
-  Proc["1 Worker Browser Process (~180MB)"] -->|12ms CDP Partition| CtxA["BrowserContext A: Buyer (~4MB)"]
-  Proc -->|12ms CDP Partition| CtxB["BrowserContext B: Admin (~4MB)"]
-  CtxA -->|Shared Origin Jar| TabA1["Page 1: Storefront"] & TabA2["Page 2: OAuth Popup"]
-  CtxB -->|Isolated Origin Jar| TabB1["Page 1: Fraud Console"]
-```
-
-```json contrast
-{
-  "title": "Per-Test `chromium.launch()` or Shared-Context Cookie Clearing vs Per-Test `BrowserContext`",
-  "naiveTitle": "`launch()` Per Test OR `clearCookies()`",
-  "naiveMetric": "850ms/Test Boot OR IndexedDB State Leaks",
-  "naivePoints": [
-    "Calling `playwright.chromium.launch()` inside every test function burns 14+ minutes of OS process fork/boot per 1,000 tests",
-    "Reusing one context with `clear_cookies()` leaks `localStorage` JWTs, Service Workers, and `IndexedDB` offline carts",
-    "Launching 2 full Chrome binaries per worker for two-actor chat tests doubles CI container RAM and triggers Linux OOMKills"
-  ],
-  "staffTitle": "Session `Browser` + Function `BrowserContext`",
-  "staffMetric": "12ms/Test Isolation · 100% Storage Wipe",
-  "staffPoints": [
-    "Boots `Browser` once per worker process and creates/destroys a fresh `BrowserContext` per test in ~12ms",
-    "Destroying `BrowserContext` atomically frees cookies, `localStorage`, `IndexedDB`, Service Workers, and permissions",
-    "Spawns `buyer_ctx` + `admin_ctx` inside the same `Browser` process using <8MB extra RAM for multi-actor tests"
-  ]
-}
-```
-
 ---
 
-## Part II — Storage & Configuration Boundary Matrix
+## 🚀 Step 4: Staff Engineer Deep-Dive — Amortized Boot Math & Thread-Local Lifecycles
 
-Step through the **`arch-playwright-vs-selenium`** visualizer to compare memory allocation curves and state isolation boundaries across `Browser`, `BrowserContext`, and `Page`.
+### 1. Worker Process & Storage Partition Mathematics
 
-| Resource / Emulation Property | Owned By Tier | Shared Across Tabs in Same `BrowserContext`? | Shared Across Different `BrowserContext`s? |
+Let $T_{\text{launch}} \approx 850\text{ ms}$ ($M_{\text{browser}} \approx 180\text{ MB}$ RSS) be the cost of spawning a cold Chromium process tree, and $T_{\text{ctx}} \approx 12\text{ ms}$ ($M_{\text{ctx}} \approx 4\text{ MB}$) be the cost of allocating an in-memory `StoragePartition` via CDP `Target.createBrowserContext`. Across $N$ tests on a single worker:
+
+$$\Delta T_{\text{saved}} = N \cdot T_{\text{launch}} - \left(T_{\text{launch}} + N \cdot T_{\text{ctx}}\right) = (N - 1)\left(T_{\text{launch}} - T_{\text{ctx}}\right)$$
+
+For $N = 500$ tests, a worker-scoped `Browser` + function-scoped `BrowserContext` saves $499 \times (850 - 12)\text{ ms} \approx 418.2\text{ seconds}$ ($6.97\text{ minutes}$) of pure process initialization overhead per worker, while reducing concurrent memory for $P$ actors inside a single test from $P \cdot M_{\text{browser}}$ down to $M_{\text{browser}} + P \cdot M_{\text{ctx}}$.
+
+| Resource / Emulation Property | Owned By Tier | Shared Across `Page` Tabs in Same `BrowserContext`? | Shared Across Different `BrowserContext`s? |
 | :--- | :--- | :--- | :--- |
-| **OS PID, GPU & Font Engine** | `Browser` | Yes | Yes (huge RAM & startup savings!) |
-| **Cookies (`HttpOnly` & Session)** | `BrowserContext` | **Yes** | **No (100% Isolated)** |
+| **OS PID, GPU & Font Engine** | `Browser` | Yes | Yes ($45\times$ RAM savings) |
+| **Cookies (`HttpOnly` & Session)** | `BrowserContext` | **Yes** (enables OAuth popups) | **No (100% Isolated)** |
 | **`localStorage` & `IndexedDB`** | `BrowserContext` | **Yes** (per origin) | **No (100% Isolated)** |
-| **Viewport, Locale, Timezone, Geo** | `BrowserContext` | Yes (default per context) | **No** (`ctx_jp` in `Asia/Tokyo`, `ctx_us` in `UTC`) |
+| **Viewport, Locale, Timezone, Geo** | `BrowserContext` | Yes (default per context) | **No** (`Asia/Tokyo` vs `UTC`) |
 | **DOM Tree, JS Heap & URL History** | `Page` | No (each tab has its own document) | No |
 
----
+### 2. Production Dual-Language Blueprint: LIFO Multi-Persona Context Factory
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Worker-Scoped `Browser` + Function-Scoped Multi-Persona `BrowserContext` Factory
 ```python
 from __future__ import annotations
 from contextlib import ExitStack
 from typing import Callable, Generator
 import pytest
-from playwright.sync_api import Browser, BrowserContext, Playwright, sync_playwright
-
+from playwright.sync_api import Browser, BrowserContext, sync_playwright
 
 @pytest.fixture(scope="session")
 def shared_browser() -> Generator[Browser, None, None]:
-    """Launched ONCE per parallel xdist worker (~850ms amortized across hundreds of tests)."""
+    """Booted ONCE per parallel worker (~850ms amortized across hundreds of tests)."""
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True)
         try:
@@ -132,15 +238,11 @@ def shared_browser() -> Generator[Browser, None, None]:
         finally:
             browser.close()
 
-
 @pytest.fixture(scope="function")
 def persona_context_factory(
     shared_browser: Browser,
 ) -> Generator[Callable[..., BrowserContext], None, None]:
-    """
-    Creates 1..K hermetically isolated BrowserContexts (~12ms, ~4MB each) inside one test
-    and tears them all down in strict LIFO order via ExitStack.
-    """
+    """Allocates 1..K isolated BrowserContexts (~12ms each) and closes them in LIFO order."""
     with ExitStack() as stack:
         def _new_persona(*, locale: str = "en-US", timezone_id: str = "UTC") -> BrowserContext:
             ctx = shared_browser.new_context(
@@ -152,18 +254,8 @@ def persona_context_factory(
             return ctx
 
         yield _new_persona
-
-
-def test_live_seat_lock_between_two_isolated_buyers(
-    persona_context_factory: Callable[..., BrowserContext],
-) -> None:
-    tokyo_buyer = persona_context_factory(locale="ja-JP", timezone_id="Asia/Tokyo").new_page()
-    london_buyer = persona_context_factory(locale="en-GB", timezone_id="Europe/London").new_page()
-    # Both pages share 1 Chromium binary (~188MB total) with ZERO shared cookies or localStorage!
-    assert tokyo_buyer.context is not london_buyer.context
 ```
 
-### Java 17 Blueprint: Thread-Safe JUnit 5 Per-Worker `Browser` & Per-Test `BrowserContext`
 ```java
 package com.aerocart.qa.isolation;
 
@@ -172,7 +264,6 @@ import org.junit.jupiter.api.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class IsolatedPlaywrightTestBase {
-
     private Playwright playwright;
     protected Browser browser;
     protected BrowserContext context;
@@ -180,14 +271,12 @@ public abstract class IsolatedPlaywrightTestBase {
 
     @BeforeAll
     void launchWorkerBrowserOnce() {
-        // 1 Browser OS process per test class / worker lifecycle
         playwright = Playwright.create();
         browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
     }
 
     @BeforeEach
     void createHermeticContext() {
-        // ~12ms incognito StoragePartition per @Test method
         context = browser.newContext(new Browser.NewContextOptions()
                 .setViewportSize(1440, 900)
                 .setLocale("en-US")
@@ -197,7 +286,7 @@ public abstract class IsolatedPlaywrightTestBase {
 
     @AfterEach
     void destroyHermeticContext() {
-        if (context != null) context.close(); // Instantly wipes cookies, localStorage, IndexedDB, SW
+        if (context != null) context.close();
     }
 
     @AfterAll
@@ -210,11 +299,9 @@ public abstract class IsolatedPlaywrightTestBase {
 
 > [!WARNING]
 > **Staff Interview Gotcha — Sharing Playwright Java Objects Across JVM Threads**:
-> Playwright's Java `Playwright`, `Browser`, `BrowserContext`, and `Page` instances are **NOT thread-safe** (`PlaywrightException: Object cannot be accessed from multiple threads`)! In JUnit 5 parallel mode (`concurrent`), never share a single `static Browser` across multiple Java threads—instead store a **per-thread `Playwright` + `Browser` pair inside a `ThreadLocal`** (closed when the worker thread exits via `LauncherSessionListener`), and create a fresh `BrowserContext` on that thread before each `@Test`!
+> Playwright's Java `Playwright`, `Browser`, `BrowserContext`, and `Page` instances are **NOT thread-safe** (`PlaywrightException: Object cannot be accessed from multiple threads`)! In JUnit 5 parallel execution (`concurrent`), never share a single `static Browser` across multiple Java threads—instead store a **per-thread `Playwright` + `Browser` pair inside a `ThreadLocal`** and create a fresh `BrowserContext` on that thread before each `@Test`!
 
----
-
-## Part IV — Scenario Retrieval-Practice Mastery Gate
+**Up Next in Chapter 3**: Now that **`AeroBot v0.2`** creates isolated contexts in `12ms`, what happens when AeroCart embeds a **Shadow DOM** promo widget, a **cross-origin Stripe `<iframe>`**, and **Next.js SSR Hydration** where buttons appear on screen 400ms *before* React attaches their click listeners? In **Chapter 3**, we upgrade **`AeroBot` to `v0.3`** to conquer Shadow DOM, IFrames, and Hydration Races.
 
 ```json quiz
 [

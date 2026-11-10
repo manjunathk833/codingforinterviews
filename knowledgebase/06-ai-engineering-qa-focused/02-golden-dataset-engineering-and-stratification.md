@@ -4,40 +4,77 @@ course_id: 06-ai-engineering-qa-focused
 track: ai-engineering
 volume: "06. Zero to Mastery: AI Engineering — QA Focused"
 module_number: 1
-module_title: "Module 1: Deterministic Harnesses for Probabilistic Systems"
+module_title: "Module 1: Deterministic Harnesses for Probabilistic Systems (AeroEval v0.1 → v0.2)"
 chapter_number: 2
-level_tag: "Foundations → Senior"
-title: "Golden Dataset Engineering: Stratified Taxonomies, Failure Mining & Contamination Guards"
-summary: "Architecting 200-to-1,000-tuple Golden Evaluation Datasets from production failure logs, Evol-Instruct perturbations, and strict train/prompt-example decontamination."
+level_tag: "🌱 Foundations → Senior AI QA"
+title: "Build AeroEval v0.2: Golden Dataset Engineering, Stratified Taxonomies & Contamination Guards"
+summary: "Why random production sampling hides catastrophic edge-case bugs (Simpson's Paradox), and how to build AeroEval v0.2 with decomposed Golden Tuples, Stratified SLAs, and 5-gram Jaccard Decontamination."
 reading_time_minutes: 21
 visualizer_id: "ai-rag-triad-gate"
 lab_path: "ai-engineering/01-rag-triad-evaluator"
-tags: ["ai-engineering", "ai-qa", "golden-dataset", "stratification", "evol-instruct", "data-contamination", "evals"]
+tags: ["ai-engineering", "ai-qa", "aeroeval", "golden-dataset", "stratification", "evol-instruct", "data-contamination", "evals"]
 ---
 
-# Golden Dataset Engineering: Stratified Taxonomies, Failure Mining & Contamination Guards
+# Build AeroEval v0.2: Golden Dataset Engineering, Stratified Taxonomies & Contamination Guards
+
+```json continuity
+{
+  "previously": "In Chapter 01, we built `AeroEval v0.1` with instant structural contracts (JSON + citations + zero PII), Metamorphic Context-Shuffle checks, and `pass^k` / Wilson confidence bounds.",
+  "painPoint": "Our team ran `AeroEval v0.1` on 500 randomly sampled production chat logs and celebrated a 96.4% pass rate! Yet the next morning, enterprise flyers hit a 80% failure rate on multi-policy international refunds—because 470 of our 500 random logs were trivial 'How much is a carry-on?' FAQs!",
+  "unlock": "Upgrade to `AeroEval v0.2`: design decomposed Golden Evaluation Tuples (`gold_chunk_ids`, `must_include_claims`, `must_not_claim`), enforce per-slice Stratified SLAs, and block developers from leaking Golden test cases into few-shot prompts!"
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "Slide 1 / 4 · The Random Sampling Trap (Simpson's Paradox)",
+    "caption": "Real airline chat traffic follows a steep power law: 85% are easy single-sentence FAQs, while <2% are high-stakes multi-hop refund overrides. A random 500-item sample buries a 20% pass rate on hard edge cases inside a 96.4% overall average!",
+    "code": "# 470 Easy FAQs (99% pass) + 10 Multi-Hop Refunds (20% pass)\n# Aggregate Score = 97.4% PASS! -> Ships broken refund bot to prod!"
+  },
+  {
+    "time": "0:25",
+    "badge": "Slide 2 / 4 · Anatomy of a Decomposed Golden Tuple",
+    "caption": "Never store a 3-paragraph 'ideal essay' as your expected answer! Instead, AeroEval v0.2 decomposes every Golden test case into expected retrieval doc IDs, mandatory atomic facts, and forbidden claims.",
+    "code": "golden_case = {\n    \"id\": \"gold_042\", \"stratum\": \"multi_hop_refund\",\n    \"gold_chunk_ids\": [\"doc_14\", \"doc_eu261\"],\n    \"must_include_claims\": [\"24-hour window\", \"€600 EU compensation\"],\n    \"must_not_claim\": [\"non-refundable under EU261\"]\n}"
+  },
+  {
+    "time": "0:54",
+    "badge": "Slide 3 / 4 · Stratified Quotas & Per-Slice Blocking Gates",
+    "caption": "We partition our 500-case Golden Suite into 5 intentional risk slices (Happy Path, Multi-Hop, Boundary/Negation, Unanswerable Abstention, Adversarial) and require EACH slice to pass its own floor!",
+    "code": "stratum_slas = {\n    \"happy_path\": 0.95,\n    \"multi_hop_temporal\": 0.88,\n    \"unanswerable_abstention\": 0.95  # Cannot be masked by easy FAQs!\n}"
+  },
+  {
+    "time": "1:20",
+    "badge": "Slide 4 / 4 · Catching Prompt Contamination in CI",
+    "caption": "What if a developer fixes a failing Golden test by copy-pasting that exact question into AeroBrain's system prompt as a few-shot example? AeroEval v0.2 runs a 5-gram Jaccard decontamination scan to block benchmark cheating!",
+    "code": "if five_gram_jaccard(golden_query, system_prompt_example) >= 0.35:\n    raise AssertionError(\"BENCHMARK_CONTAMINATION: Golden case leaked into prompt!\")"
+  }
+]
+```
 
 ```json pretraining
 [
   {
     "term": "Golden Eval Tuple",
     "formula": "(Q, Persona, C_gold, Claims+, Claims-)",
-    "meaning": "A versioned test fixture pairing input query and persona with expected retrieval chunk IDs, mandatory atomic facts, and forbidden hallucinated claims."
+    "meaning": "A structured test case that lists which documents should be retrieved, which key facts must appear, and which false claims must never appear—rather than one rigid paragraph."
   },
   {
     "term": "Stratified Variance Reduction",
     "formula": "Var(p̂_strat) ≤ Var(p̂_SRS)",
-    "meaning": "Partitioning eval cases across explicit risk strata (multi-hop, negation, adversarial, unanswerable) guarantees tail-risk coverage and tighter confidence intervals."
+    "meaning": "Grouping test cases into specific risk buckets (like tricky negations or missing-policy questions) and grading each bucket separately so easy questions cannot hide severe bugs."
   },
   {
-    "term": "MinHash Decontamination",
-    "formula": "Jaccard(n-grams) < τ_leak",
-    "meaning": "Ensuring zero n-gram or semantic leakage between Golden Eval queries and few-shot prompt examples or fine-tuning corpora."
+    "term": "MinHash / n-Gram Decontamination",
+    "formula": "Jaccard(5-grams) < 0.35",
+    "meaning": "An automated CI check that makes sure no one accidentally copied test questions from your Golden exam into the AI's system prompt or training data."
   },
   {
     "term": "Evol-Instruct Perturbation",
     "formula": "Q_0 → Constrain / Multi-Hop / Noise(Q_0)",
-    "meaning": "Controlled synthetic evolution of seed queries to stress-test reasoning depth, distracting context, and ambiguous user phrasing, verified by human review."
+    "meaning": "Starting from a simple seed question and systematically adding realistic constraints or multi-document twists (verified by a human expert) to test hard edge cases before launch."
   }
 ]
 ```
@@ -56,39 +93,85 @@ tags: ["ai-engineering", "ai-qa", "golden-dataset", "stratification", "evol-inst
 }
 ```
 
-## Part I — Anatomy of a Production-Grade Golden Tuple
+## 🌱 Step 1: Plain-English Story — Why a Spreadsheet of 30 Happy Prompts Always Fails
 
-Most teams fail at AI QA before writing a single evaluator because their "eval set" is a spreadsheet of 30 happy-path prompts written by the same engineer who wrote the system prompt. When that engineer leaves, nobody knows *why* a verbose reference paragraph was marked "gold."
+Imagine studying for a pilot's license exam where 95 out of 100 questions ask *"What color is the sky?"* and only 2 questions ask *"How do you land in a crosswind?"* You could fail every single crosswind landing and still score a **98% A+**!
 
-Instead of storing a monolithic "ideal essay" (which penalizes valid alternative phrasings), a Staff-grade **Golden Evaluation Tuple** decomposes expectations across retrieval, positive entailment, and negative safety rails:
-- `id` & `stratum`: Immutable UUID + risk slice (`"multi_hop_temporal"`, `"unanswerable_abstention"`, `"adversarial_injection"`).
-- `query` & `tenant_context`: Raw user prompt (including realistic typos/slang) + RBAC/region metadata (`tier="Basic"`, `jurisdiction="EU"`).
-- `gold_chunk_ids`: Canonical document chunk IDs that **must** appear in top-$K$ retrieval (`Recall@K` oracle).
-- `must_include_claims`: Atomic facts that **must** be entailed by the answer (`["24-hour window", "7-day advance purchase"]`).
-- `must_not_claim`: Explicit forbidden hallucinations or cross-tier leaks (`["full refund after 48 hours", "waived fee for Basic"]`).
+That is the exact trap teams fall into when they build an AI evaluation dataset by grabbing random chat logs—or worse, letting the engineer who wrote the prompt type 30 clean questions into a spreadsheet:
+1. **Easy Volume Masks Rare Disasters**: In production, 85% of customer questions are basic FAQs (*"Where is my boarding pass?"*). If you only track one overall pass rate, a 99% score on FAQs completely hides a 0% score on international cancellation overrides!
+2. **The "Ideal Essay" Trap**: If your spreadsheet stores one long reference paragraph as the "expected answer," your test fails whenever `AeroBrain` gives a shorter, clearer answer.
+3. **Teaching to the Test (Contamination)**: When Test #14 fails in CI, a busy developer often copies Test #14 directly into the system prompt's few-shot examples! Now the test passes, but only because the AI memorized that specific sentence.
 
 ```mermaid
 flowchart LR
-  Logs["Prod Telemetry (Thumbs-Down, Retry Loops, Escalations)"] -->|PII Scrub + Cluster| Mine["Failure Taxonomy Mining"]
-  Mine -->|Stratified Quotas| Draft["Candidate Tuple + Evol-Instruct Variants"]
-  Draft -->|Dual-SME Adjudication| Decon["MinHash / Embedding Decontamination Gate"]
-  Decon -->|Zero Few-Shot Overlap| Gold["Versioned Golden JSONL (200-1,000 Cases)"]
+  Logs["Prod Failures (Thumbs-Down & Escalations)"] -->|PII Scrub + Bucket| Mine["5 Risk Strata (Multi-Hop, Negation, Abstain...)"]
+  Mine -->|Decompose Facts| Tuple["Golden Tuple (Gold Docs + Must-Include + Must-Not)"]
+  Tuple -->|5-Gram Jaccard Check| Decon["Decontamination Gate vs Few-Shot Prompts"]
+  Decon -->|Per-Slice SLAs| Gate["AeroEval v0.2 Stratified Release Gate"]
 ```
 
----
+Let's upgrade **`AeroEval v0.2`** with decomposed **Golden Tuples** and **Per-Stratum Gates** so no edge case can ever hide behind easy questions again!
 
-## Part II — Stratified Allocation, `Evol-Instruct` & Decontamination
+## 🔨 Step 2: First Lines of Code — Decomposed Golden Tuples & Per-Slice Gates
 
-A high-signal **200-to-1,000 case Golden Suite** balances five intentional strata rather than mirroring raw traffic volume:
-1. **Core Happy-Path Single-Hop ($25\%$)** — Baseline factual lookup sanity check.
-2. **Multi-Hop & Temporal Versioning ($25\%$)** — Combining two policy docs or resolving a `2026` policy superseding a deprecated `2024` doc.
-3. **Boundary, Numeric & Negation Traps ($20\%$)** — Exact threshold cutoffs (`$99.99` vs `$100.00`, `non-refundable` exceptions).
-4. **Unanswerable / Out-of-Scope Abstention ($15\%$)** — Missing evidence where the model **must abstain** rather than extrapolate.
-5. **Adversarial / Messy User Input ($15\%$)** — Typos, conflicting premises, and indirect prompt injection payloads.
+Instead of comparing against a rigid paragraph, look how `AeroEval v0.2` checks a **Golden Tuple** (`must_include` facts + `must_not_claim` forbidden hallucinations) and gates each **risk stratum** independently:
 
-When cold-starting a new feature before production logs exist, use **Controlled `Evol-Instruct` Synthesis**: take seed policy chunks, systematically apply transformation operators (*Add Constraint*, *Require 2-Doc Join*, *Remove Critical Premise*), and **mandate human SME verification** on every synthetic tuple (never let the same unverified LLM invent both the question and the gold answer!).
+```python
+def verify_golden_tuple(answer: str, must_include: list[str], must_not_claim: list[str]) -> bool:
+    """Checks that required facts are present and forbidden claims are absent."""
+    low = answer.lower()
+    has_all_required = all(fact.lower() in low for fact in must_include)
+    has_no_forbidden = all(bad.lower() not in low for bad in must_not_claim)
+    return has_all_required and has_no_forbidden
 
-Finally, enforce **Strict Benchmark Decontamination**: if an engineer copies a failing Golden Eval example into the system prompt's few-shot examples (or fine-tuning JSONL), the benchmark is **contaminated** (Goodhart's Law). Run an automated `n`-gram Jaccard (`5`-gram $> 0.35$) and cosine similarity ($> 0.92$) gate in CI between `prompts/few_shot/*` and `evals/golden.jsonl`.
+
+def check_stratum_slas(slice_passes: dict[str, list[bool]], min_sla: dict[str, float]) -> dict[str, bool]:
+    """Gates EACH risk slice separately so 99% on FAQs cannot hide 20% on Multi-Hop!"""
+    return {
+        stratum: (sum(outcomes) / len(outcomes)) >= min_sla[stratum]
+        for stratum, outcomes in slice_passes.items()
+    }
+
+
+print(verify_golden_tuple("Cancel within 24 hours for $0 fee.", ["24 hours", "$0"], ["non-refundable"]))
+print(check_stratum_slas({"faq": [True] * 10, "multi_hop": [True, False]}, {"faq": 0.95, "multi_hop": 0.85}))
+```
+
+### Java 17 Equivalent
+
+```java
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+public class AeroEvalV02 {
+    public static boolean verifyGoldenTuple(String answer, List<String> mustInclude, List<String> mustNotClaim) {
+        String low = answer.toLowerCase(Locale.ROOT);
+        boolean allReq = mustInclude.stream().allMatch(f -> low.contains(f.toLowerCase(Locale.ROOT)));
+        boolean noBad = mustNotClaim.stream().noneMatch(b -> low.contains(b.toLowerCase(Locale.ROOT)));
+        return allReq && noBad;
+    }
+
+    public static boolean allStrataMeetSla(Map<String, List<Boolean>> sliceOutcomes, Map<String, Double> minSla) {
+        for (var entry : minSla.entrySet()) {
+            List<Boolean> results = sliceOutcomes.getOrDefault(entry.getKey(), List.of());
+            long passed = results.stream().filter(Boolean::booleanValue).count();
+            double rate = results.isEmpty() ? 0.0 : (double) passed / results.size();
+            if (rate < entry.getValue()) return false; // Fails build if ANY slice drops below floor!
+        }
+        return true;
+    }
+}
+```
+
+## ⚡ Step 3: Where It Breaks in Real Life — Circular Synthetic Data & Prompt Contamination
+
+As your team scales `AeroEval v0.2` from 20 test cases to **500 stratified Golden Tuples**, two real-world pitfalls appear:
+
+1. **Pitfall 1: Circular LLM Hallucinations in Synthetic Data**
+   When launching a brand-new airline feature before real customer logs exist, teams use **`Evol-Instruct`** (taking a simple seed question and asking an LLM to add constraints or multi-doc hops). **Where it breaks**: If you let an unverified LLM generate *both* the tricky question *and* the "ground-truth" answer without a human expert checking the policy document, any hallucination the generator makes gets baked into your test suite—punishing `AeroBrain` when `AeroBrain` is actually right!
+2. **Pitfall 2: Goodhart's Law & Few-Shot Contamination**
+   During a sprint crunch, an engineer sees 6 failing Golden cases and pastes them into `system_prompt.txt` under `Here are examples of how to answer:`. Offline accuracy jumps from `88%` to `96%`, while live customer accuracy stays flat!
 
 ```json contrast
 {
@@ -112,9 +195,23 @@ Finally, enforce **Strict Benchmark Decontamination**: if an engineer copies a f
 }
 ```
 
----
+## 🚀 Step 4: Staff Engineer Deep-Dive — Neyman Stratification & MinHash Decontamination Math
 
-## Part III — Trade-Off Matrix: Golden Dataset Sizing & Sourcing
+Why does **Stratified Sampling** mathematically outperform Simple Random Sampling (`SRS`) across $H$ risk strata with population weights $W_h = N_h / N$ and stratum variances $S_h^2 = p_h(1 - p_h)$?
+Under **Neyman Optimal Allocation**, we allocate sample size $n_h \propto W_h S_h$ (oversampling high-variance, high-risk edge strata where $p_h \approx 0.50$ rather than easy FAQs where $p_h \approx 0.99$), shrinking estimator variance to:
+
+$$\text{Var}(\hat{p}_{\text{strat}}) = \sum_{h=1}^{H} W_h^2 \frac{p_h(1 - p_h)}{n_h} \ll \text{Var}(\hat{p}_{\text{SRS}})$$
+
+In practice, a high-signal **500-case Golden Suite** allocates dedicated quotas across five intentional risk strata:
+1. **Core Happy-Path Single-Hop ($25\%$)** — Baseline factual lookup sanity check.
+2. **Multi-Hop & Temporal Versioning ($25\%$)** — Combining two policy docs or resolving a `2026` policy superseding a deprecated `2024` doc.
+3. **Boundary, Numeric & Negation Traps ($20\%$)** — Exact threshold cutoffs (`$99.99` vs `$100.00`, `non-refundable` exceptions).
+4. **Unanswerable / Out-of-Scope Abstention ($15\%$)** — Missing evidence where the model **must abstain** rather than guess.
+5. **Adversarial / Messy User Input ($15\%$)** — Typos, conflicting premises, and indirect prompt injection payloads.
+
+To guarantee **Zero Benchmark Contamination**, every PR runs an $n$-gram Jaccard similarity gate ($n = 5$) between every Golden query $G_i$ and every few-shot exemplar or fine-tuning record $T_j$:
+
+$$J_5(G_i, T_j) = \frac{|\text{ngrams}_5(G_i) \cap \text{ngrams}_5(T_j)|}{|\text{ngrams}_5(G_i) \cup \text{ngrams}_5(T_j)|} < \tau_{\text{leak}} \quad (\tau_{\text{leak}} = 0.35)$$
 
 | Sourcing Method | Realism | Labeling Cost | Primary Strength | Failure Mode to Mitigate |
 | :--- | :--- | :--- | :--- | :--- |
@@ -122,11 +219,8 @@ Finally, enforce **Strict Benchmark Decontamination**: if an engineer copies a f
 | **`Evol-Instruct` Synthetic Perturbation** | Medium–High | Low draft cost + Mandatory SME sign-off | Rapidly populates rare strata (multi-hop, abstention) pre-launch | **Circular LLM Bias** if synthetic answers aren't verified against source docs |
 | **Uniform Production Reservoir Sample** | High | Medium | Measures true traffic-weighted user experience | **Power-law dilution**: rare catastrophic bugs represent $<0.5\%$ of samples |
 
----
+### Production Blueprint: Stratified Gate Evaluator + 5-Gram Jaccard Decontamination Verifier
 
-## Part IV — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Stratified Sampler + 5-Gram Jaccard Decontamination Verifier
 ```python
 from collections import defaultdict
 from dataclasses import dataclass
@@ -201,7 +295,8 @@ def evaluate_stratified_gates(
     return {"releaseApproved": all_gates_passed, "strata": slice_report}
 ```
 
-### Java 17 Blueprint: Golden Tuple Schema Validator & Decontamination Gate
+### Java 17 Equivalent
+
 ```java
 import java.util.*;
 
@@ -271,9 +366,7 @@ public final class GoldenDatasetValidator {
 > **Staff Interview Gotcha — Never Let an Unverified LLM Generate Both Question and Ground-Truth Answer**:
 > If you ask `GPT-4o` to generate 500 synthetic QA pairs from your docs without human adjudication or deterministic programmatic extraction, any hallucination or misinterpretation made by the generator becomes **baked into your Golden Oracle**—causing your CI pipeline to penalize models that actually read the policy accurately! Synthetic generation is for **query diversity (`Evol-Instruct`)**; ground-truth claims must trace back to verified document spans and SME sign-off.
 
----
-
-## Part V — End-of-Chapter Mastery Check
+**Up Next in Chapter 03**: Now that `AeroEval v0.2` has a clean, stratified Golden Dataset with `gold_chunk_ids` and atomic claims, how do we tell instantly whether a failed test was caused by **bad document retrieval** or **LLM hallucination**? In Chapter 03, we'll build **`AeroEval v0.3`: The RAG Evaluation Triad & Atomic Claim Entailment**!
 
 ```json quiz
 [

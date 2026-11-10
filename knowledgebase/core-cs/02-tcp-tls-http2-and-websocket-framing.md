@@ -17,29 +17,151 @@ tags: ["core-cs", "networking", "tcp", "tls-1.3", "http/2", "websockets", "playw
 
 # Computer Networks: TCP SYN Backlogs, TLS 1.3, HTTP/2 & CDP WebSockets
 
+```json continuity
+{
+  "previously": "In Chapter 01, we launched python3 apps/aerocart/server.py and learned how the Linux kernel manages its Virtual Memory, Physical RSS pages, and File Descriptor table.",
+  "painPoint": "Now flyers open their browsers to connect to python3 apps/aerocart/server.py over HTTPS. Under a 2,000-RPS load test that opens a fresh connection per request, latencies spike by 180 milliseconds and after 14 seconds our client crashes with Cannot assign requested address!",
+  "unlock": "We will trace the packet-by-packet TCP 3-Way Handshake, TLS 1.3 1-RTT encryption, HTTP/2 stream multiplexing, and persistent WebSockets so AeroCart handles thousands of flyers over a handful of warm sockets."
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "1. TCP Handshake",
+    "caption": "Before a single byte of flight data travels to python3 apps/aerocart/server.py, the browser and OS kernel exchange a 3-step greeting: SYN, SYN-ACK, and ACK.",
+    "code": "Client --SYN--> Server --SYN-ACK--> Client --ACK--> Established"
+  },
+  {
+    "time": "0:25",
+    "badge": "2. TLS 1.3 (1-RTT)",
+    "caption": "Next, TLS 1.3 locks the pipe in just 1 extra round trip by sending the client's public key share inside the very first hello message.",
+    "code": "ClientHello + key_share -> ServerHello + Finished (1 RTT!)"
+  },
+  {
+    "time": "0:50",
+    "badge": "3. HTTP/2 Streams",
+    "caption": "Instead of opening 6 separate pipes per browser tab, HTTP/2 interleaves dozens of numbered streams over one shared connection—unless a lost TCP packet stalls the whole pipe.",
+    "code": "Stream 1 + Stream 3 + Stream 5 -> 1 Shared TCP Socket"
+  },
+  {
+    "time": "1:15",
+    "badge": "4. Port Exhaustion",
+    "caption": "If a client closes connections after every call, sockets sit in TIME_WAIT for 60 seconds and exhaust all 28,232 local ports in 14 seconds. Connection pooling fixes it instantly!",
+    "code": "2000 RPS * 60s TIME_WAIT = 120,000 sockets > 28,232 ports!"
+  }
+]
+```
+
 ```json pretraining
 [
   {
     "term": "TCP Dual Listen Queues",
-    "formula": "SYN Queue (SYN_RCVD) → Accept Queue (ESTABLISHED)",
-    "meaning": "Linux splits incoming handshakes into half-open SYN slots and completed-handshake slots awaiting user-space accept(); overflowing somaxconn drops packets silently."
+    "formula": "Half-Open Waiting Room -> Ready-to-Accept Line",
+    "meaning": "The Linux kernel keeps two waiting lines for incoming connections: one for callers still finishing their initial greeting (SYN Queue) and one for finished callers waiting for Python or Java to pick up the phone (Accept Queue)."
   },
   {
     "term": "TLS 1.3 1-RTT Handshake",
-    "formula": "ClientHello + X25519 key_share ⇒ 1 RTT Saved",
-    "meaning": "Embedding ephemeral ECDHE key shares in the very first ClientHello cuts TLS negotiation from 2 RTTs (TLS 1.2) to 1 RTT with mandatory Forward Secrecy."
+    "formula": "Key Share Sent in First Hello -> 1 Round Trip Saved",
+    "meaning": "Modern HTTPS encryption where the browser sends its lock key right inside its very first greeting, cutting security setup time in half compared to older TLS 1.2."
   },
   {
-    "term": "HTTP/2 TCP HoL Paradox",
-    "formula": "1 Dropped TCP Segment ⇒ Stalls All M Streams",
-    "meaning": "HTTP/2 solves application-layer Head-of-Line blocking via binary stream frames, but a single lost packet still stalls the entire underlying kernel TCP receive buffer."
+    "term": "HTTP/2 TCP Head-of-Line Paradox",
+    "formula": "1 Lost Packet -> Freezes All Shared Streams",
+    "meaning": "HTTP/2 lets many requests share one TCP pipe, but because the operating system delivers TCP bytes in strict order, a single lost packet pauses every request in that pipe until it is resent."
   },
   {
     "term": "WebSocket Upgrade (RFC 6455)",
-    "formula": "HTTP 101 Switching Protocols → Full-Duplex Frames",
-    "meaning": "Eliminates per-command HTTP request/header overhead so Playwright CDP can stream hundreds of bidirectional DOM/network events over 1 persistent socket."
+    "formula": "HTTP 101 Handshake -> Persistent Two-Way Pipe",
+    "meaning": "Upgrading a normal HTTP connection into a lightweight, always-open two-way channel so tools like Playwright and live flight boards can stream instant messages without header overhead."
   }
 ]
+```
+
+## 🌱 Step 1: Plain-English Story — The Certified Mail & Armored Truck Ritual
+
+What actually happens on the wire when a flyer clicks `"Book Flight"` and their browser talks to `python3 apps/aerocart/server.py`?
+
+Before a single character of JSON can leave the browser, two rituals must happen across the internet:
+1. **The TCP 3-Way Handshake (1 Round Trip)**: Think of TCP like two air-traffic controllers verifying their headsets work. The browser says *"Can you hear me?"* (`SYN`), the `AeroCart` kernel replies *"Loud and clear, can you hear me?"* (`SYN-ACK`), and the browser replies *"Yes, let's talk!"* (`ACK`). Only after step 3 does the Linux kernel place the connection into `AeroCart`'s **Accept Queue** so our Python server can read it.
+2. **The TLS 1.3 Security Handshake (1 Round Trip)**: To keep credit cards private, both sides agree on a secret encryption key. Older TLS 1.2 took **2 full round trips** to chat back and forth before agreeing on a key. **TLS 1.3** cuts that in half (to **1 round trip**) by packing the browser's key material right inside its first hello message!
+3. **Why Connection Reuse Matters**: If Jakarta and New York are 80 milliseconds apart (`1 RTT = 80ms`), opening a brand-new connection costs `2 RTTs = 160ms` of pure waiting before your request even starts! Keeping a warm **Connection Pool** (or multiplexing streams with **HTTP/2** and **WebSockets**) drops setup latency to **0 milliseconds**.
+
+```mermaid
+sequenceDiagram
+  participant C as Flyer Browser
+  participant S as AeroCart Kernel + TLS 1.3
+  C->>S: 1. TCP SYN (Can you hear me?)
+  S-->>C: 2. TCP SYN-ACK (Loud and clear!)
+  C->>S: 3. TCP ACK + TLS 1.3 ClientHello
+  S-->>C: 4. TLS 1.3 ServerHello + Finished (1-RTT!)
+  C->>S: 5. HTTP/2 Multiplexed Flight Streams
+```
+
+---
+
+## 🔨 Step 2: First Lines of Code — Handshake Latency & Port Exhaustion Calculator
+
+Let's write an 18-line network budget calculator for `apps/aerocart/server.py` in Python 3 and Java 17 that measures how much latency TLS 1.3 and connection pooling save, and checks if unpooled traffic will exhaust local OS ports.
+
+```python
+def aerocart_wire_budget(rtt_ms: float, reused: bool, unpooled_rps: int) -> dict:
+    # Cold TCP (1 RTT) + TLS 1.3 (1 RTT) = 2 RTTs; warm pool = 0 RTTs!
+    handshake_rtts = 0 if reused else 2
+    total_rpc_ms = (handshake_rtts + 1) * rtt_ms
+    # Linux holds closed client sockets in TIME_WAIT for 60s across ~28,232 ports
+    time_wait_sockets = 0 if reused else unpooled_rps * 60
+    return {
+        "totalRpcMs": round(total_rpc_ms, 1),
+        "timeWaitSockets": time_wait_sockets,
+        "portExhausted": time_wait_sockets > 28232,
+    }
+```
+
+### Java 17 Equivalent
+```java
+public class AeroCartWireBudget {
+    public record BudgetResult(double totalRpcMs, int timeWaitSockets, boolean portExhausted) {}
+
+    public static BudgetResult evaluate(double rttMs, boolean reused, int unpooledRps) {
+        int handshakeRtts = reused ? 0 : 2; // 1 TCP + 1 TLS 1.3
+        double totalRpcMs = (handshakeRtts + 1) * rttMs;
+        int timeWaitSockets = reused ? 0 : unpooledRps * 60;
+        return new BudgetResult(totalRpcMs, timeWaitSockets, timeWaitSockets > 28232);
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — Ephemeral Port Exhaustion & TCP Head-of-Line Blocking
+
+When `AeroCart` scales to thousands of requests per second, two subtle networking bugs break production:
+
+1. **Ephemeral Port Exhaustion (`Cannot assign requested address`)**: If an internal service calls `AeroCart` at `2,000 RPS` without connection pooling (`Connection: close`), every closed socket sits in the kernel's `TIME_WAIT` table for `60 seconds` to catch stray packets. At `2,000 sockets/sec * 60s = 120,000 sockets`, the client blows past Linux's `28,232` ephemeral port limit (`ip_local_port_range`) in **14.1 seconds**!
+2. **The HTTP/2 TCP Head-of-Line (HoL) Paradox**: HTTP/2 multiplexes 100 streams over 1 TCP connection. That works great inside a clean datacenter—but on a spotty `2%` packet-loss mobile connection, if packet `#42` (belonging to `Stream 1`) drops, the OS kernel freezes packets `#43..#90` (belonging to `Streams 3..99`) until `#42` is retransmitted! **HTTP/3 (`QUIC` over UDP)** solves this by isolating packet loss to a single stream.
+
+```json contrast
+{
+  "title": "AeroCart High-Concurrency RPC & Browser Automation Transport",
+  "naiveTitle": "Unpooled HTTP/1.1 over TLS 1.2",
+  "naiveMetric": "3 RTT Setup per Call · Port Exhaustion in 14s",
+  "naivePoints": [
+    "Pays 1 TCP RTT + 2 TLS 1.2 RTTs (180ms+ cross-region) before sending a single payload byte",
+    "Exhausts all 28,232 ephemeral client ports in TIME_WAIT under bursty load tests",
+    "Sends uncompressed repetitive Authorization & Cookie ASCII headers on every request",
+    "Legacy WebDriver pays full HTTP request/response overhead on every browser click"
+  ],
+  "staffTitle": "Pooled HTTP/2 + TLS 1.3 / Persistent BiDi WebSockets",
+  "staffMetric": "0 RTT Warm Reuse · Multiplexed Binary Framing",
+  "staffPoints": [
+    "Negotiates TLS 1.3 + ALPN h2 in 2 total RTTs once, then runs 0-RTT warm streams across thousands of calls",
+    "Compresses repetitive HTTP headers via stateful HPACK/QPACK tables",
+    "Uses HTTP/3 (QUIC) or multi-socket HTTP/2 pools when WAN packet loss exceeds 1.5%",
+    "Streams Playwright CDP commands and live flight events over 1 persistent full-duplex WebSocket"
+  ]
+}
 ```
 
 ```json poe
@@ -56,70 +178,31 @@ tags: ["core-cs", "networking", "tcp", "tls-1.3", "http/2", "websockets", "playw
 }
 ```
 
-## Part I — Packet-Level Handshake Math & Kernel Listen Queues
-
-Every time an unpooled API client or browser opens a new `https://` connection, the OS kernel and cryptographic stack must negotiate transport state and forward-secret session keys before a single byte of JSON travels:
-
-- **TCP 3-Way Handshake ($1\text{ RTT}$)**: Client sends `SYN` $\to$ Server places entry in **SYN Queue** and replies `SYN-ACK` $\to$ Client sends `ACK` $\to$ Kernel moves connection to **Accept Queue (`net.core.somaxconn`)** until the app thread calls `accept()`. If a GC pause stalls `accept()`, the Accept Queue overflows (`ListenOverflows` in `nstat`) and clients suffer `1,000ms` TCP `SYN` retransmission stalls!
-- **TLS 1.2 ($+2\text{ RTT}$) vs. TLS 1.3 ($+1\text{ RTT}$)**: TLS 1.3 removes legacy RSA key transport and embeds the client's `X25519` ephemeral Diffie-Hellman `key_share` + `ALPN (h2)` **inside the very first `ClientHello`**, cutting cryptographic setup latency in half!
-
-```mermaid
-sequenceDiagram
-  participant C as Client Socket
-  participant S as Server Kernel + TLS 1.3
-
-  C->>S: 1. TCP SYN (seq=x)
-  S-->>C: 2. TCP SYN-ACK (seq=y, ack=x+1)
-  C->>S: 3. TCP ACK + TLS 1.3 ClientHello (X25519 key_share + ALPN=h2)
-  S-->>C: 4. TLS 1.3 ServerHello + Cert + Finished (1-RTT TLS!)
-  C->>S: 5. HTTP/2 Binary HEADERS + DATA Frames (Stream 1, 3, 5)
-```
-
 ---
 
-## Part II — HTTP/1.1 vs. HTTP/2 vs. HTTP/3 (`QUIC`) & CDP WebSockets
+## 🚀 Step 4: Staff Engineer Deep-Dive — BDP Throughput Math, Protocol Matrix & Blueprints
 
-- **HTTP/1.1 Application HoL Blocking**: Only 1 request can be in-flight per TCP socket without fragile pipelining, forcing browsers to open 6 parallel sockets per origin.
-- **HTTP/2 Binary Framing & HPACK**: Multiplexes hundreds of concurrent logical **Streams** (`Stream IDs 1, 3, 5...`) over **a single TCP connection** with HPACK header compression.
-- **The Hidden Catch — Kernel TCP Head-of-Line Blocking**: Because the OS kernel TCP stack treats the connection as **one strictly ordered byte stream**, if packet `#42` carrying 10 bytes of `Stream 1` drops on a lossy $2\%$ cellular link, the kernel withholds already-arrived packets `#43..#90` belonging to `Streams 3..99` until `#42` retransmits! **HTTP/3 (`QUIC` over UDP)** eliminates this by moving stream framing and TLS 1.3 into user-space UDP so packet loss on Stream 1 never stalls Stream 3.
-- **WebSockets (`ws://` / `wss://`)**: Upgraded via `HTTP/1.1 101 Switching Protocols`, stripping HTTP request-response framing down to a $2\text{–}14\text{ byte}$ binary frame header (`FIN`, `opcode`, `mask`, `payload_len`)—the exact wire transport powering **Playwright's Chrome DevTools Protocol (`CDP`)**.
+### 1. Mathematical Laws of Bandwidth-Delay Product (BDP) & `TIME_WAIT` Occupancy
 
-```json contrast
-{
-  "title": "High-Concurrency RPC & Automation Wire Transport",
-  "naiveTitle": "Unpooled HTTP/1.1 over TLS 1.2",
-  "naiveMetric": "3 RTT Setup per Call · Ephemeral Port Exhaustion",
-  "naivePoints": [
-    "Pays 1 TCP RTT + 2 TLS 1.2 RTTs (180ms+ on cross-region links) before sending a single payload byte",
-    "Exhausts 28,232 ephemeral client ports in TIME_WAIT under bursty load tests",
-    "Sends uncompressed repetitive Authorization & Cookie ASCII headers on every single request",
-    "Selenium WebDriver Classic pays full HTTP request/response serialization on every click/find call"
-  ],
-  "staffTitle": "Pooled HTTP/2 + TLS 1.3 / Persistent BiDi WebSockets",
-  "staffMetric": "0 RTT Warm Reuse · Multiplexed Binary Framing",
-  "staffPoints": [
-    "Negotiates TLS 1.3 + ALPN h2 in 2 total RTTs once, then amortizes 0-RTT warm streams across thousands of RPCs",
-    "Compresses repetitive headers via stateful HPACK/QPACK tables",
-    "Switches to HTTP/3 (QUIC) or multi-connection HTTP/2 pools when WAN packet loss exceeds ~1.5%",
-    "Streams Playwright CDP commands & real-time network interception events over 1 persistent full-duplex WebSocket"
-  ]
-}
-```
+By Little's Law, the number of client sockets trapped in `TIME_WAIT` under unpooled rate $\lambda_{\text{unpooled}}$ and kernel timer $T_{\text{tw}} = 2 \cdot \text{MSL} \approx 60\text{ s}$ is:
 
-### Protocol Trade-Off Matrix
+$$N_{\text{TIME\_WAIT}} = \lambda_{\text{unpooled}} \times T_{\text{tw}} \le P_{\text{ephemeral}} \approx 28,232 \implies \lambda_{\max} \approx 470\text{ unpooled RPS}$$
+
+Furthermore, the maximum throughput $B_{\max}$ achievable on a single TCP connection with receive window $W_{\text{rcv}}$ across round-trip time $\text{RTT}$ is governed by the **Bandwidth-Delay Product (BDP)** and the **Mathis Equation** under packet loss rate $p$:
+
+$$B_{\max} = \min\left(\frac{W_{\text{rcv}}}{\text{RTT}}, \; \frac{\text{MSS}}{\text{RTT} \cdot \sqrt{p}}\right)$$
+
+### 2. Architectural Trade-Off Matrix: Wire Protocols
 
 | Protocol | Cold Setup (`TCP+TLS`) | Multiplexing | Lossy-Link (`2%` Loss) Behavior | Ideal Production Workload |
 | :--- | :--- | :--- | :--- | :--- |
-| **HTTP/1.1 (`Keep-Alive`)** | $2\text{ RTT}$ (w/ TLS 1.3) | None ($1$ active req/socket) | Independent across 6 sockets | Legacy REST proxies, simple low-concurrency webhooks |
-| **HTTP/2 (`h2` / `gRPC`)** | $2\text{ RTT}$ (ALPN inside TLS 1.3) | $100+$ streams / 1 TCP socket | **Degrades** due to TCP-layer HoL blocking | Internal datacenter `gRPC` & microservice meshes (`<0.01%` loss) |
-| **HTTP/3 (`QUIC` / UDP)** | **$1\text{ RTT}$** ($0\text{-RTT}$ resumption) | Independent per-stream QUIC frames | **Excels** (Loss isolated to 1 stream + connection migration across Wi-Fi $\to$ 5G) | Mobile apps, global CDN edges, lossy last-mile networks |
-| **WebSockets (`RFC 6455`)** | $2\text{ RTT}$ + `101 Upgrade` | App-level correlation IDs (`id: 42`) | Subject to TCP HoL on single socket | Playwright CDP/BiDi, live collaborative editors, market tickers |
+| **HTTP/1.1 (`Keep-Alive`)** | $2\text{ RTT}$ (w/ TLS 1.3) | None ($1$ active req/socket) | Independent across 6 sockets | Simple REST webhooks, low-concurrency proxies |
+| **HTTP/2 (`h2` / `gRPC`)** | $2\text{ RTT}$ (ALPN inside TLS 1.3) | $100+$ streams / 1 TCP socket | **Degrades** due to kernel TCP HoL blocking | Internal datacenter `gRPC` & microservice meshes (`<0.01%` loss) |
+| **HTTP/3 (`QUIC` / UDP)** | **$1\text{ RTT}$** ($0\text{-RTT}$ resumption) | Independent per-stream QUIC frames | **Excels** (Loss isolated to 1 stream + Wi-Fi $\to$ 5G migration) | Mobile apps, global CDN edges, lossy cellular networks |
+| **WebSockets (`RFC 6455`)** | $2\text{ RTT}$ + `101 Upgrade` | App correlation IDs (`id: 42`) | Subject to TCP HoL on single socket | Playwright CDP/BiDi, live seat maps, real-time tickers |
 
----
+### 3. Production Blueprints (Python 3 & Java 17)
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Handshake Latency & Ephemeral `TIME_WAIT` Saturation Calculator
 ```python
 def calculate_request_latency_ms(
     rtt_ms: float,
@@ -161,7 +244,7 @@ def evaluate_ephemeral_port_budget(
     }
 ```
 
-### Java 17 Blueprint: Ephemeral Port & `TCP_NODELAY` Wire Budget Analyzer
+### Java 17 Equivalent
 ```java
 public final class EphemeralPortAnalyzer {
     public static boolean isPortExhaustionRisk(int rps, int timeWaitSeconds, int ephemeralRangeSize) {
@@ -181,12 +264,10 @@ public final class EphemeralPortAnalyzer {
 
 > [!WARNING]
 > **Staff Interview Gotcha — Nagle's Algorithm + Delayed ACK `40ms` Latency Cliff & TLS 1.3 `0-RTT` Replay Attacks**:
-> 1. If a microservice sees mysterious **`40ms` ($200\text{ms}$ on older BSDs) latency floors** on tiny RPC payloads despite `<0.2ms` ping, **Nagle's Algorithm** (`waiting for unACKed bytes before sending small segments`) is deadlocking with the peer kernel's **Delayed ACK** (`waiting up to 40ms to piggyback ACK on a response`)! Always verify **`TCP_NODELAY = true`** on RPC/HTTP/CDP sockets.
-> 2. Never enable **TLS 1.3 `0-RTT` Early Data** on non-idempotent `POST /transfer` endpoints: if a middlebox or attacker replays the captured `ClientHello + EarlyData` packet, the server has no fresh server-nonce freshness guarantee yet and will execute the mutation twice!
+> 1. If `AeroCart` sees mysterious **`40ms` latency floors** on tiny RPC payloads despite `<0.2ms` ping, **Nagle's Algorithm** (`waiting for unACKed bytes before sending small segments`) is deadlocking with the peer kernel's **Delayed ACK** (`waiting up to 40ms to piggyback ACK on a response`)! Always set **`TCP_NODELAY = true`** on RPC/HTTP/CDP sockets.
+> 2. Never enable **TLS 1.3 `0-RTT` Early Data** on non-idempotent `POST /checkout` endpoints: if a middlebox or attacker replays the captured `ClientHello + EarlyData` packet, the server has no fresh server-nonce guarantee yet and will execute the payment twice!
 
----
-
-## Part IV — End-of-Chapter Mastery Check
+**Up Next in Chapter 03**: Once a flyer's HTTP/2 request arrives inside `python3 apps/aerocart/server.py` and hits our database, how do the bytes actually land on disk without slowing down or corrupting on power loss? In Chapter 03, we will compare **B+Trees vs. LSM-Trees, Write-Ahead Logs (`WAL`), `fsync` Durability, and Bloom-Backed Compaction**.
 
 ```json quiz
 [

@@ -6,97 +6,216 @@ volume: "05. Zero to Mastery: AI Engineering"
 module_number: 3
 module_title: "Module 3: Decoding Physics, Context Architecture & Latency"
 chapter_number: 7
-level_tag: "Mid → Staff"
-title: "Decoding Physics, GPU Batch Non-Determinism & Grammar-Constrained Structured Outputs"
-summary: "Exact logit-to-token pipeline (repetition penalty -> temperature -> top-k -> top-p nucleus sampling), why temperature=0 greedy decoding STILL flips tokens across dynamic GPU batch sizes due to IEEE-754 non-associativity, and FSM/PDA logit masking guaranteeing 100% valid JSON schemas."
+level_tag: "🌱 Lead-In → Staff AI Engineer"
+title: "AeroBrain v0.7: Decoding Physics, GPU Batch Non-Determinism & Grammar-Constrained Structured Outputs"
+summary: "Why does AeroBrain v0.6 return valid JSON 95% of the time and crash AeroCart's checkout parser the other 5%? Master the logit-to-token pipeline (Temperature -> Top-K -> Top-P -> Min-P), why temperature=0 still flips tokens across GPU batch sizes, and how FSM grammar bitmasking guarantees 100.00% valid JSON."
 reading_time_minutes: 22
 visualizer_id: ai-agentic-mcp-guardrails
 lab_path: ai-engineering/01-rag-triad-evaluator
 tags: ["ai-engineering", "sampling", "top-p", "non-determinism", "structured-outputs", "constrained-decoding", "fsm"]
 ---
 
-# Decoding Physics, GPU Batch Non-Determinism & Grammar-Constrained Structured Outputs
+# AeroBrain v0.7: Decoding Physics, GPU Batch Non-Determinism & Grammar-Constrained Structured Outputs
+
+```json continuity
+{
+  "previously": "In Chapter 06, we scaled AeroBrain v0.6 onto quantized GPU kernels with Continuous Batching so our Transformer can generate tokens fast and cheaply for thousands of flyers.",
+  "painPoint": "When AeroCart's Java checkout service asks AeroBrain v0.6 to return a refund decision as JSON, the model occasionally wraps the JSON in 'Here is your JSON:' markdown fences or misspells a field—crashing our parser in production! Even worse, setting `temperature=0` still produces slightly different answers under heavy GPU traffic!",
+  "unlock": "We will upgrade to AeroBrain v0.7 by mastering the exact logit-to-token sampling pipeline (`Temperature`, `Top-K`, `Top-P`, `Min-P`), uncovering why GPU batching breaks `temperature=0` determinism, and building a Finite-State Machine (FSM) token mask that makes broken JSON mathematically impossible!"
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "Slide 1 / 4 · From Raw Scores to Next-Word Dice",
+    "caption": "At the end of every Transformer step, AeroBrain outputs 128,000 raw scores ('logits')—one for every token in its vocabulary. Temperature acts like a contrast dial before we roll the dice!",
+    "code": "# Low Temperature (T=0.1): Sharpens top choice -> predictable\n# High Temperature (T=1.2): Flattens choices -> creative (or wild!)"
+  },
+  {
+    "time": "0:25",
+    "badge": "Slide 2 / 4 · Trimming the Long Tail with Top-P",
+    "caption": "Even if 100,000 weird words each have a tiny 0.00003% chance, together they add up to a 3% risk of picking total nonsense! Top-P (Nucleus Sampling) keeps only the top words whose probabilities add up to 90-95%.",
+    "code": "# Top-P = 0.90:\n# On '2 + 2 = ' -> keeps 1 token ('4' = 99%)\n# On 'Fly to sunny ' -> keeps ~15 plausible city tokens"
+  },
+  {
+    "time": "0:52",
+    "badge": "Slide 3 / 4 · Why Begging for JSON in Prompts Fails",
+    "caption": "Writing 'PLEASE RETURN ONLY VALID JSON' in a system prompt still fails 3-8% of the time when the model chats politely or forgets a closing brace.",
+    "code": "// Prompt-begging failure in production:\n\"Sure! Here is the refund payload:\\n{\\\"verdict\\\": \\\"APROVED\\\"\" // <-- Crash!"
+  },
+  {
+    "time": "1:18",
+    "badge": "Slide 4 / 4 · FSM Grammar Masking: 0% Syntax Errors!",
+    "caption": "In AeroBrain v0.7, we compile our JSON Schema into a state machine that sets every illegal token's score to -infinity BEFORE rolling the dice—making invalid JSON impossible!",
+    "code": "for tok_id in range(vocab_size):\n    if tok_id not in fsm.allowed_tokens(current_state):\n        logits[tok_id] = -float('inf')  # 0.00% chance of selection!"
+  }
+]
+```
 
 ```json pretraining
 [
   {
     "term": "Logit Sampling Pipeline",
-    "formula": "z -> z / T -> Softmax -> Top-K Filter -> Top-P (Nucleus) Renorm",
-    "meaning": "Order matters! Applying Temperature BEFORE Top-P reshapes probability concentration, dynamically shrinking or expanding the nucleus set."
+    "formula": "Mask -> Temperature -> Softmax -> Top-K -> Min-P -> Top-P",
+    "meaning": "The step-by-step filter that turns 128,000 raw model scores into one clean chosen next token without accidentally picking gibberish words."
   },
   {
-    "term": "Float Non-Associativity",
-    "formula": "(a + b) + c != a + (b + c)  in IEEE-754 FP16 / BF16 / FP32",
-    "meaning": "Dynamic continuous batching changes CUDA tile reduction split sizes per millisecond, shifting tied logits by ~1e-3 and flipping argmax at T=0!"
+    "term": "Floating-Point Non-Associativity",
+    "formula": "(a + b) + c != a + (b + c) on GPU floats",
+    "meaning": "Adding decimals in a different order on a GPU changes the last tiny digit—which is why changing how many users share a GPU batch can flip a tied `temperature=0` token!"
   },
   {
-    "term": "FSM Constrained Mask",
-    "formula": "z'_v = z_v if v in ValidTransitions(State_s) else -infinity",
-    "meaning": "Compiles JSON Schema / Regex / CFG into token-level bitmasks applied BEFORE Softmax, guaranteeing 0.00% JSON syntax errors in 1 pass!"
+    "term": "Grammar-Constrained Masking (FSM)",
+    "formula": "Illegal Schema Token Score -> -infinity",
+    "meaning": "Checking which tokens are legal next characters in your JSON schema and zeroing out every other token before the model picks one."
   },
   {
     "term": "Jump-Forward Decoding",
-    "formula": "|ValidTransitions(State_s)| == 1  ==>  Append Deterministic Bytes Free",
-    "meaning": "When schema syntax forces deterministic characters (e.g. '\": \"' or closing '}}'), engines emit tokens without running extra decode steps!"
+    "formula": "Only 1 Legal Next String -> Append Automatically",
+    "meaning": "When a JSON schema forces the exact next characters (like `\"verdict\": \"`), the engine inserts them immediately without wasting a GPU step!"
   }
 ]
 ```
 
 ```json poe
 {
-  "question": "An SDET configures an LLM API client with temperature=0.0, top_p=1.0, and seed=42, expecting 100% bit-for-bit identical string assertions across CI runs. Under variable multi-tenant GPU server load (Continuous Batching + MoE), 4% of CI runs produce a different phrasing starting at token #19! Why?",
+  "question": "You set `temperature=0.0` and `seed=42` on AeroBrain v0.7 so your CI test can check `assert response == expected_text`. At 3 AM (when the GPU server is idle), the test passes 100% of the time. At noon (when 30 other users hit the GPU simultaneously), 4% of runs return a slightly different sentence starting at word #19! Why?",
   "options": [
-    "seed=42 is ignored whenever temperature equals 0.0",
-    "IEEE-754 floating-point addition is NOT associative ((a+b)+c != a+(b+c)): as concurrent server batch size fluctuates (e.g., B=3 vs B=29), CUDA/Triton kernels switch GEMM tile reduction orders (and MoE expert capacities), nudging close top-2 logits (e.g. 14.2104 vs 14.2101) across each other so greedy argmax flips at token #19 and cascades autoregressively!",
-    "BPE tokenizers randomize subword splits on multicore CPUs",
-    "TLS 1.3 flips bits in streaming SSE chunks"
+    "The `seed=42` parameter expires after 6 hours",
+    "Decimal math on GPUs is not associative (`(a+b)+c != a+(b+c)`): when Continuous Batching combines 1 request vs. 30 requests, the GPU groups matrix additions differently, nudging two nearly tied token scores (like `14.2104` vs `14.2101`) past each other so `temperature=0` picks the other word at token #19!",
+    "The tokenizer shuffles letters when CPU usage is high",
+    "HTTPS encrypts words in a random order"
   ],
   "answerIndex": 1,
-  "explanation": "Batch-size-invariant CUDA kernels carry a throughput penalty, so standard continuous-batching GPU servers change parallel reduction tree shapes depending on how many other users are in the current millisecond's batch—flipping near-tied greedy argmax tokens and diverging every subsequent token."
+  "explanation": "Even at temperature=0, GPU matrix kernels split parallel reductions differently depending on the current millisecond's batch size. A 0.0003 rounding shift flips a near-tie at token #19, which changes every word generated after it!"
 }
 ```
 
-## 1. The Exact Decoding Pipeline: Temperature, `Top-K`, `Top-P` & `Min-P`
+## 🌱 Step 1: Plain-English Story — The Restaurant Menu & The Guardrail Stencil
 
-At the end of the final Transformer `RMSNorm`, multiplying hidden vector $h_t \in \mathbb{R}^d$ by the unembedding matrix $W_U \in \mathbb{R}^{d \times V}$ yields raw unnormalized **logits** $z \in \mathbb{R}^V$. Pure multinomial sampling directly from $\text{softmax}(z)$ fails on long generations because $128,000$ low-probability tail tokens (`p = 1e-6` each) collectively sum to `2–5%` probability mass—eventually sampling a nonsensical token that derails the entire autoregressive trajectory!
+Imagine AeroBrain is a super-fast travel concierge helping AeroCart's checkout system decide whether a delayed flight qualifies for an instant refund.
 
-Modern inference engines transform logits in a strict canonical sequence:
-1. **Grammar / Schema Bitmasking (`z[invalid] = -inf`)**: Masks out any token violating the active JSON Schema / Regex state.
-2. **Temperature Scaling (`z' = z / T`)**: As $T \to 0^+$, $\text{softmax}(z/T)$ approaches deterministic `argmax(z)` (Greedy); $T > 1$ flattens entropy for creative brainstorming.
-3. **`Top-K` Truncation**: Keeps at most the $K$ highest-logit tokens (safety rail against flat uniform distributions, though rigid when only `1` token is valid vs `20` plausible synonyms).
-4. **`Top-P` (Nucleus Sampling, Holtzman et al.) & `Min-P`**: `Top-P` (`p = 0.90` or `0.95`) sorts tokens descending and retains the **smallest prefix whose cumulative probability $\ge p$**, adapting dynamically (`1` token kept on `"2 + 2 = "` vs `40` tokens kept on `"Write a story about "`). **`Min-P`** (`min_p = 0.05`) filters out any token with $p_i < \text{min\_p} \times p_{\max}$, scaling cleanly even at high temperatures $T = 1.5$!
+Every time AeroBrain picks the next word (token), its neural network prints a giant menu of **128,000 possible pieces of text**, each with a raw preference score (called a **logit**). How do we pick from that menu?
+1. **Temperature (`T`) is the "Spice Dial"**: Turning Temperature down toward `0` makes AeroBrain always pick the #1 safest choice on the menu. Turning Temperature up (`T = 1.0+`) flattens the menu so quirky, creative words get a chance.
+2. **Top-P (`Nucleus Sampling`) is the "Weird-Word Bouncer"**: Even if 100,000 random dictionary words each have a tiny `0.00003%` chance, together they add up to a `3%` chance of blurting out a totally bizarre word mid-sentence! **Top-P (`p = 0.90`)** sorts the menu from best to worst and keeps *only* the top words that add up to `90%` probability—throwing the 100,000 weird tail words in the trash!
+3. **FSM Grammar Masking is the "Plastic Stencil"**: What if AeroCart's Java backend needs the answer in strict JSON (`{"verdict":"PASS"}`)? If you merely *ask* politely in the prompt, the model will eventually reply `"Sure! Here is your JSON..."` and crash your parser. Instead, **Grammar-Constrained Decoding** places a physical stencil over the 128,000-word menu at every step: if the next character *must* be `"PASS"` or `"FAIL"`, every other token in the vocabulary is crossed out (`-infinity`) **before** the model chooses!
 
 ```mermaid
 flowchart LR
-  Logits["Raw Vocab Logits z [V=128k]"] -->|Apply FSM Schema Bitmask| Mask["Invalid Schema Tokens = -inf"]
-  Mask -->|Scale z / Temperature| Soft["Stable Softmax Probabilities"]
-  Soft -->|Sort + Nucleus Sum <= top_p| Renorm["Renormalize Retained Nucleus"]
-  Renorm -->|Sample Token t_next| Adv["Advance FSM / PDA State Machine"]
+  Logits["128k Raw Menu Scores (Logits)"] -->|1. Stencil Mask| Mask["Cross Out Invalid JSON Tokens (-inf)"]
+  Mask -->|2. Spice Dial| Temp["Scale by Temperature & Softmax"]
+  Temp -->|3. Bouncer Filter| TopP["Keep Top-P Nucleus & Roll Dice"]
+  TopP -->|4. Next Token| State["Advance JSON Stencil State"]
 ```
 
----
+Let's build a working 18-line **Temperature + Stencil Token Picker** for `AeroBrain v0.7` right now!
 
-## 2. Prompted `"Return JSON Only"` Retry Loops vs. FSM/CFG Constrained Decoding
+## 🔨 Step 2: First Lines of Code — Build `AeroBrain v0.7`'s Stencil Sampler in 18 Lines!
+
+Watch how clean this is: given raw scores for 5 tokens (`"Sure!"`, `'{"verdict":'`, `'"PASS"}'`, `'"FAIL"}'`, `"maybe"`), a plain sampler might pick `"Sure!"` or `"maybe"` and break our JSON parser. By passing `allowed_tokens` from our JSON stencil, invalid tokens get `-inf` and have a **0.00% chance** of ever being picked!
+
+```python
+import math
+
+vocab = {0: "Sure! ", 1: '{"verdict":', 2: '"PASS"}', 3: '"FAIL"}', 4: '"MAYBE"}'}
+raw_logits = [4.5, 2.1, 3.8, 3.6, 4.9]  # Notice "MAYBE" (4.9) & "Sure!" (4.5) have highest raw scores!
+
+
+def pick_next_token(logits: list[float], allowed_ids: set[int], temperature: float = 0.5) -> str:
+    # 1. STENCIL MASK: Cross out any token that violates our JSON schema (-inf)
+    masked = [z if i in allowed_ids else -float("inf") for i, z in enumerate(logits)]
+    if temperature == 0.0:
+        return vocab[max(allowed_ids, key=lambda i: masked[i])]
+    # 2. TEMPERATURE + SOFTMAX: Convert remaining valid scores into probabilities
+    probs = [math.exp(z / temperature) if math.isfinite(z) else 0.0 for z in masked]
+    best_id = max(range(len(probs)), key=lambda i: probs[i])
+    return vocab[best_id]
+
+
+# Step A: At start of JSON, ONLY token 1 ('{"verdict":') is legal!
+# Step B: For the enum value, ONLY tokens {2, 3} ('"PASS"}' or '"FAIL"}') are legal!
+step_a = pick_next_token(raw_logits, allowed_ids={1}, temperature=0.0)
+step_b = pick_next_token(raw_logits, allowed_ids={2, 3}, temperature=0.2)
+print(f"AeroBrain v0.7 Output: {step_a}{step_b}")  # -> {"verdict":"PASS"} (100% valid JSON!)
+```
+
+### Java 17 Equivalent
+
+```java
+import java.util.Set;
+
+public class AeroBrainStencilDemo {
+    static final String[] VOCAB = {"Sure! ", "{\"verdict\":", "\"PASS\"}", "\"FAIL\"}", "\"MAYBE\"}"};
+    static final double[] RAW_LOGITS = {4.5, 2.1, 3.8, 3.6, 4.9};
+
+    public static String pickNextToken(double[] logits, Set<Integer> allowedIds) {
+        int bestId = -1;
+        double bestScore = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < logits.length; i++) {
+            // STENCIL MASK: Ignore any token not permitted by the current JSON grammar state
+            double maskedScore = allowedIds.contains(i) ? logits[i] : Double.NEGATIVE_INFINITY;
+            if (maskedScore > bestScore) {
+                bestScore = maskedScore;
+                bestId = i;
+            }
+        }
+        return VOCAB[bestId];
+    }
+
+    public static void main(String[] args) {
+        String stepA = pickNextToken(RAW_LOGITS, Set.of(1));
+        String stepB = pickNextToken(RAW_LOGITS, Set.of(2, 3));
+        System.out.println("AeroBrain v0.7 Output: " + stepA + stepB);
+    }
+}
+```
+
+Even though `"MAYBE"}"` (`4.9`) and `"Sure! "` (`4.5`) had higher raw scores than `"PASS"}"` (`3.8`), our stencil mask guaranteed that `AeroBrain v0.7` could **only** emit valid schema tokens!
+
+## ⚡ Step 3: Where It Breaks in Real Life — Prompt-Begging Loops & GPU Batch Flips
+
+What happens when teams skip constrained decoding and rely on `"Please return valid JSON"` in their prompt, or write tests with `assert output == expected_string` assuming `temperature=0` is 100% identical forever?
+
+1. **The Prompt-Begging Retry Spiral**: Under long conversation histories, prompted JSON fails `3–8%` of the time (markdown code fences, trailing commas, or invented enum values like `"APROVED"`). Wrapping LLM calls in a `3x` retry loop on `JSONDecodeError` triples your p99 latency and token bill right when traffic spikes!
+2. **Why `temperature=0` Still Flips Across GPU Batch Sizes**: In IEEE-754 floating-point math, `(a + b) + c != a + (b + c)`. When a GPU server runs Continuous Batching, the number of concurrent requests in a batch changes every millisecond (`batch=2` vs. `batch=27`), causing CUDA/Triton kernels to pick different tile reduction orders. That tiny `~1e-3` rounding shift flips two nearly tied tokens at `temperature=0`, changing word #19 and every word after it!
 
 ```json contrast
 {
-  "title": "Prompt-Begging JSON + Regex Parsing vs Grammar-Masked Structured Outputs",
+  "title": "Prompt-Begging JSON + Retry Loops vs. Pre-Compiled FSM Grammar Masking",
   "naiveTitle": "System Prompt 'Output Valid JSON Only'",
-  "naiveMetric": "3-8% Parse Crashes · Retry Latency Spikes",
+  "naiveMetric": "3-8% Parse Crashes · 3x Retry Latency Spikes",
   "naivePoints": [
-    "Model wraps JSON in fenced markdown code blocks, adds trailing conversational commentary, or emits unescaped quotes",
-    "Hallucinates misspelled enum keys ('status': 'APROVED') or omits required Pydantic fields under long context pressure",
-    "Wraps LLM calls in 3x retry loops on JSONDecodeError, tripling p99 latency and token spend when complex schemas fail"
+    "Model wraps JSON in markdown blocks, adds polite commentary, or emits unescaped quotes",
+    "Hallucinates misspelled enum keys ('status': 'APROVED') or drops required fields under long context pressure",
+    "Wraps LLM calls in 3x retry loops on JSONDecodeError, tripling p99 latency and token spend"
   ],
   "staffTitle": "Pre-Compiled FSM / Pushdown Automaton Mask",
   "staffMetric": "100.00% Schema Valid · Faster Jump-Forward",
   "staffPoints": [
-    "Compiles Pydantic / JSON Schema into an indexed vocabulary bitmask (Outlines / XGrammar / OpenAI Structured Outputs)",
-    "Sets invalid vocabulary tokens to -inf BEFORE sampling—syntactically impossible to emit a broken bracket or invalid enum!",
-    "Pre-caches compiled grammar bitmasks per schema hash (<50us/step overhead) and skips deterministic boilerplate tokens"
+    "Compiles Pydantic / JSON Schema into an indexed vocabulary bitmask (Outlines / XGrammar / Strict Structured Outputs)",
+    "Sets invalid vocabulary tokens to -inf BEFORE sampling—syntactically impossible to emit broken JSON or bad enums!",
+    "Uses Jump-Forward Decoding to append deterministic schema boilerplate ('{\"verdict\":\"') without extra GPU decode steps"
   ]
 }
 ```
+
+Use the **Interactive Guardrails & Decoding Simulator** below to test how FSM token masks and sampling parameters behave under edge cases.
+
+## 🚀 Step 4: Staff Engineer Deep-Dive — Exact Logit Math, `Min-P` & Schema Field-Order Physics
+
+At the end of the final Transformer `RMSNorm`, multiplying hidden vector $h_t \in \mathbb{R}^d$ by the unembedding matrix $W_U \in \mathbb{R}^{d \times V}$ yields raw unnormalized **logits** $z \in \mathbb{R}^V$. Given a Finite-State Machine (FSM) or Pushdown Automaton (PDA) in grammar state $s_t$ with valid vocabulary subset $\mathcal{V}_{\text{valid}}(s_t) \subseteq \{1, \dots, V\}$, the masked temperature-scaled probability distribution is:
+
+$$z'_i = \begin{cases} \frac{z_i}{T} & \text{if } i \in \mathcal{V}_{\text{valid}}(s_t) \\ -\infty & \text{otherwise} \end{cases}, \qquad P(w_i \mid w_{<t}) = \frac{\exp(z'_i - \max_k z'_k)}{\sum_{j=1}^{V} \exp(z'_j - \max_k z'_k)}$$
+
+Modern inference engines then apply tail truncation before multinomial sampling:
+- **`Top-K` Truncation**: Keeps at most the $K$ highest-probability tokens.
+- **`Top-P` (Nucleus Sampling, Holtzman et al.)**: Sorts tokens descending $p_{(1)} \ge p_{(2)} \ge \dots$ and retains the smallest prefix $\mathcal{N}_p = \{ (1), \dots, (m) \}$ such that:
+
+$$\sum_{j=1}^{m} p_{(j)} \ge p_{\text{top\_p}}$$
+
+- **`Min-P` Sampling**: Retains only tokens whose probability is at least a fraction $\text{min\_p}$ (e.g., `0.05`) of the top token's probability ($p_i \ge \text{min\_p} \times p_{(1)}$), scaling cleanly even at high creative temperatures ($T = 1.3$).
 
 | Decoding Strategy | Typical Hyperparameters | Best Production Use Case | Critical Failure Mode |
 | :--- | :--- | :--- | :--- |
@@ -104,16 +223,13 @@ flowchart LR
 | **Balanced Nucleus / `Min-P`** | `T = 0.6–0.7, top_p = 0.90` (or `min_p = 0.05`) | RAG synthesis, code explanation, multi-step reasoning (`Pass@k`) | Setting **both** aggressive `T = 1.2` AND `top_p = 1.0` leaks tail-token gibberish |
 | **Constrained `FSM` / `CFG`** | Pydantic `response_format` + `T <= 0.3` | Production APIs, agent tool arguments, entity extraction | **"Reasoning Starvation"**: forcing JSON field `"verdict": true` *before* `"reasoning": "..."` degrades accuracy by `15–25%`! |
 
----
+### Python 3 Production Blueprint: Exact Temperature + `Top-K` + `Min-P` + `Top-P` + FSM Schema Bitmask Engine
 
-## 3. Dual-Language Production Blueprints: Nucleus/`Min-P` Sampler & FSM Constrained Decoder
-
-### Python 3 Blueprint: Exact Temperature + `Top-K` + `Top-P` + `Min-P` + FSM Schema Bitmask Engine
 ```python
 from __future__ import annotations
 import math
 import random
-from typing import Dict, List, Mapping, Sequence, Set
+from typing import List, Mapping, Sequence, Set
 
 
 def sample_token_with_constraints_and_nucleus(
@@ -126,7 +242,7 @@ def sample_token_with_constraints_and_nucleus(
     rng: random.Random | None = None,
 ) -> int:
     """
-    Production-ordered constrained decoding & nucleus sampler:
+    Production-ordered constrained decoding & nucleus sampler for AeroBrain v0.7:
     1. Apply FSM/Grammar allowed-token mask (-inf on disallowed tokens)
     2. Handle greedy T == 0.0 deterministically over valid tokens
     3. Scale by Temperature -> Stable Softmax -> Top-K -> Min-P -> Top-P -> Renormalize
@@ -146,7 +262,6 @@ def sample_token_with_constraints_and_nucleus(
     z_max = max(scaled[i] for i in valid_indices)
     indexed_probs = [(i, math.exp(scaled[i] - z_max)) for i in valid_indices]
     total_exp = sum(w for _, w in indexed_probs)
-    # Sort descending by probability (tie-break by token ID for deterministic CPU behavior)
     ranked = sorted(((i, w / total_exp) for i, w in indexed_probs), key=lambda x: (-x[1], x[0]))
 
     if top_k > 0:
@@ -185,18 +300,19 @@ class JsonEnumFsmConstraint:
 
     def __init__(self, vocab: Mapping[int, str]) -> None:
         self._vocab = vocab
-        self._valid_Targets = ('{"verdict":"PASS"}', '{"verdict":"FAIL"}')
+        self._valid_targets = ('{"verdict":"PASS"}', '{"verdict":"FAIL"}')
 
     def allowed_tokens_for_prefix(self, generated_so_far: str) -> Set[int]:
         allowed: Set[int] = set()
         for tok_id, piece in self._vocab.items():
             candidate = generated_so_far + piece
-            if any(t.startswith(candidate) for t in self._valid_Targets):
+            if any(t.startswith(candidate) for t in self._valid_targets):
                 allowed.add(tok_id)
         return allowed
 ```
 
-### Java 17 Blueprint: Compact BitSet FSM Vocabulary Mask & Nucleus (`Top-P`) Decoder
+### Java 17 Equivalent
+
 ```java
 package com.hub.ai.decoding;
 
@@ -284,13 +400,11 @@ public final class ConstrainedNucleusDecoder {
 }
 ```
 
-> [!WARNING] **Staff Interview Gotcha — Key Ordering in Constrained JSON Schemas Makes or Breaks Reasoning Accuracy!** Because Transformers are strictly **causal (`left-to-right`)**, field declaration order inside your Pydantic / JSON Schema literally controls the model's causal computation budget! If you define:
-> `class FraudDecision(BaseModel): is_fraud: bool; step_by_step_analysis: str`
-> Constrained decoding forces the model to commit to `"is_fraud": true` at **token #5**—*before* it has had any tokens to reason! On subsequent tokens, `step_by_step_analysis` merely rationalizes its hasty guess, dropping accuracy by **`15–30%`**! **Invariant:** Always place `chain_of_thought_evidence: list[str]` or `rationale: str` as the **very first key** in every structured output schema, and place `verdict` / `score` / `action` **last**!
+> [!WARNING]
+> **Staff Interview Gotcha — Key Ordering in Constrained JSON Schemas Makes or Breaks Reasoning Accuracy!**
+> Because Transformers generate strictly **left-to-right**, field declaration order inside your Pydantic / JSON Schema literally controls the model's thinking budget! If you define `class RefundDecision(BaseModel): approve_refund: bool; step_by_step_reasoning: str`, constrained decoding forces AeroBrain to commit to `"approve_refund": true` at **token #5**—*before* it has generated a single word of reasoning! On subsequent tokens, `step_by_step_reasoning` merely rationalizes its blind guess, dropping accuracy by **`15–30%`**! **Fix:** Always place `reasoning_steps: list[str]` as the **very first key** in every structured output schema, and place `verdict` / `approve_refund` **last**!
 
----
-
-## 4. Scenario Retrieval-Practice Mastery Gate
+**Up Next in Chapter 08 (`AeroBrain v0.8`)**: Now that `AeroBrain v0.7` emits 100% valid JSON, why is our cloud bill spiking to `$48 per 1,000 requests` and why is Time-To-First-Token (`TTFT`) dragging past `2.4 seconds` whenever we include AeroCart's 18,000-token Refund Policy manual? In Chapter 08, we'll unlock **85%+ KV Prefix Cache Hits & Sandwich Context Packing**!
 
 ```json quiz
 [
@@ -304,11 +418,11 @@ public final class ConstrainedNucleusDecoder {
       "Temperature=0.0 switches to uniform random sampling on ties"
     ],
     "answerIndex": 1,
-    "explanation": "Horace He / Thinking Machines Lab demonstrated definitively that batch-size variance in parallel GPU reductions is the primary root cause of temperature=0 LLM non-determinism in production."
+    "explanation": "Batch-size variance in parallel GPU reductions is the primary root cause of temperature=0 LLM non-determinism in production."
   },
   {
     "id": "aie-07-q2",
-    "question": "Does Grammar-Constrained Decoding (e.g., Outlines / XGrammar / OpenAI Strict Structured Outputs) guarantee BOTH 0% JSON syntax errors AND 0% semantic hallucinations?",
+    "question": "Does Grammar-Constrained Decoding (e.g., Outlines / XGrammar / Strict Structured Outputs) guarantee BOTH 0% JSON syntax errors AND 0% semantic hallucinations?",
     "options": [
       "Yes, FSM bitmasks verify factual database truth at each token",
       "NO! Constrained decoding guarantees 100% syntactic & structural compliance (valid JSON, exact keys, valid enum strings, required types), NOT factual accuracy—an FSM happily lets the model emit {\"orderId\": \"ORD-HALLUCINATED-999\", \"refundCents\": 9999999} unless paired with Pydantic domain validators & RAG grounding checks!",

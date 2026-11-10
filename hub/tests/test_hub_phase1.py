@@ -699,11 +699,12 @@ class TestHubAndArchitectureCI(unittest.TestCase):
         self.assertEqual(wt_search["status_code"], 200)
         self.assertGreaterEqual(wt_search["data"]["count"], 1)
 
-        # Enforce Rule 03 True-Zero Pedagogy & Udemy Continuity Linter Gate
+        # Enforce Rule 03 True-Zero Pedagogy & Udemy Continuity Linter Gate across ALL 74/74 chapters
         from tools.safety import pedagogy_lint
         self.assertEqual(pedagogy_lint.audit_rule_budget(), [])
+        self.assertEqual(len(pedagogy_lint.REQUIRED_TRUE_ZERO_RELPATHS), 74)
         upgraded_count, total_count, violations = pedagogy_lint.audit_all_upgraded_chapters()
-        self.assertGreaterEqual(upgraded_count, 22)
+        self.assertEqual(upgraded_count, 74)
         self.assertEqual(total_count, 74)
         self.assertEqual(violations, {})
 
@@ -753,28 +754,45 @@ class TestHubAndArchitectureCI(unittest.TestCase):
                 pass
 
     def test_20_course_compendium_single_page_revise_mode(self):
-        """Verify Course-Level Single-Page Master Compendium ('Revise / In-Single-Page' Mode) API & UI."""
-        comp_01 = hub_server.dispatch_request("GET", "/api/kb/course-compendium?course=01-zero-to-staff-sdet")
-        self.assertEqual(comp_01["status_code"], 200)
-        d01 = comp_01["data"]
-        self.assertEqual(d01["course"]["courseId"], "01-zero-to-staff-sdet")
-        self.assertEqual(d01["stats"]["chapterCount"], 12)
-        self.assertGreater(d01["stats"]["totalWords"], 20000)
-        self.assertGreaterEqual(d01["stats"]["totalCodeBlocks"], 40)
-        self.assertEqual(d01["stats"]["totalMermaidDiagrams"], 12)
-        self.assertEqual(len(d01["redThreadMap"]), 12)
-        self.assertGreaterEqual(len(d01["masterGlossary"]), 30)
-        self.assertEqual(len(d01["chapters"]), 12)
-        for ch in d01["chapters"]:
-            self.assertEqual(len(ch["steps"]), 4)
-            self.assertGreater(len(ch["markdownBody"]), 500)
-            self.assertGreaterEqual(len(ch["selfCheckKey"]), 3)
-            self.assertNotIn("walkthrough", ch)
+        """Verify Course-Level Single-Page Master Compendium ('Revise / In-Single-Page' Mode) API & UI across all 8 courses (74/74 4-Step chapters)."""
+        expected_courses = (
+            ("01-zero-to-staff-sdet", 12),
+            ("02-building-testing-frameworks", 10),
+            ("03-ui-automation-playwright", 10),
+            ("04-api-and-api-automation", 10),
+            ("05-ai-engineering", 12),
+            ("06-ai-engineering-qa-focused", 10),
+            ("07-distributed-system-design", 5),
+            ("08-core-cs-internals", 5),
+        )
+        total_verified_chapters = 0
+        for course_id, exp_chapters in expected_courses:
+            comp_res = hub_server.dispatch_request(f"GET", f"/api/kb/course-compendium?course={course_id}")
+            self.assertEqual(comp_res["status_code"], 200, f"Failed compendium for {course_id}")
+            d = comp_res["data"]
+            self.assertEqual(d["course"]["courseId"], course_id)
+            self.assertEqual(d["stats"]["chapterCount"], exp_chapters)
+            self.assertGreater(d["stats"]["totalWords"], exp_chapters * 1000)
+            self.assertGreaterEqual(d["stats"]["totalCodeBlocks"], exp_chapters * 3)
+            self.assertGreaterEqual(d["stats"]["totalMermaidDiagrams"], exp_chapters)
+            self.assertEqual(len(d["redThreadMap"]), exp_chapters)
+            self.assertGreaterEqual(len(d["masterGlossary"]), exp_chapters * 2)
+            self.assertEqual(len(d["chapters"]), exp_chapters)
+            for ch in d["chapters"]:
+                self.assertEqual(
+                    len(ch["steps"]),
+                    4,
+                    f"Course {course_id} chapter {ch.get('slug')} has {len(ch['steps'])} steps instead of 4",
+                )
+                self.assertTrue(ch["continuity"]["previously"], f"{ch.get('slug')} missing continuity.previously")
+                self.assertTrue(ch["continuity"]["painPoint"], f"{ch.get('slug')} missing continuity.painPoint")
+                self.assertTrue(ch["continuity"]["unlock"], f"{ch.get('slug')} missing continuity.unlock")
+                self.assertGreater(len(ch["markdownBody"]), 500)
+                self.assertGreaterEqual(len(ch["selfCheckKey"]), 3)
+                self.assertNotIn("walkthrough", ch)
+                total_verified_chapters += 1
 
-        comp_02 = hub_server.dispatch_request("GET", "/api/kb/course-compendium?course=02-building-testing-frameworks")
-        self.assertEqual(comp_02["status_code"], 200)
-        self.assertEqual(comp_02["data"]["stats"]["chapterCount"], 10)
-        self.assertGreater(comp_02["data"]["stats"]["totalWords"], 15000)
+        self.assertEqual(total_verified_chapters, 74)
 
         missing = hub_server.dispatch_request("GET", "/api/kb/course-compendium?course=does-not-exist")
         self.assertEqual(missing["status_code"], 404)

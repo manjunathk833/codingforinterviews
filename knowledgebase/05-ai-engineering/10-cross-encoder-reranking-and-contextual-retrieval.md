@@ -17,101 +17,196 @@ tags: ["ai-engineering", "cross-encoder", "reranking", "contextual-retrieval", "
 
 # Two-Stage Reranking: Cross-Encoders, Late Interaction (ColBERT) & Contextual Retrieval
 
-```json pretraining
+```json continuity
+{
+  "previously": "In Chapter 09, we upgraded AeroBrain v0.9 with Hybrid Search (combining exact keyword search with semantic vector search via Reciprocal Rank Fusion) so flyers could find both exact flight numbers and conversational baggage rules.",
+  "painPoint": "When a flyer asks 'Can I bring a lithium battery that is NOT installed inside a device?', AeroBrain v0.9's fast search returns 20 chunks where 'installed' and 'NOT installed' look almost identical, and chunks saying 'The policy prohibits it' have lost which airline or year 'the policy' refers to!",
+  "unlock": "We will upgrade AeroBrain to v0.10 by adding a Two-Stage Reranking Funnel (a fast 75-candidate first pass followed by a sharp Cross-Encoder judge that reads query and document side-by-side) plus Contextual Retrieval headers that stamp every chunk with its parent document identity."
+}
+```
+
+```json walkthrough
 [
   {
-    "term": "Bi-Encoder Bottleneck",
-    "formula": "Score(q, d) = E(q) . E(d)  (Zero Token-to-Token Cross-Attention)",
-    "meaning": "Compresses 400 tokens into 1 static vector BEFORE seeing the query—fast (O(log N) ANN), but blind to subtle negation or relational binding!"
+    "time": "0:00",
+    "badge": "1. The Speed-Daters",
+    "caption": "Our Chapter 9 vector search summarizes each paragraph into a single fingerprint before ever seeing the user's question. That makes searching millions of chunks blazingly fast, but it blurs tiny words like NOT, EXCEPT, or version numbers.",
+    "code": "bi_encoder(doc) -> 1 summary vector (fast, blurs 'NOT')"
   },
   {
-    "term": "Cross-Encoder Joint Attn",
-    "formula": "Score(q, d) = W_cls * Transformer([CLS] || q || [SEP] || d)",
-    "meaning": "Every query token attends to every document token across all layers—superb precision, O(K) forward passes (feasible ONLY on top-50/100!)."
+    "time": "0:22",
+    "badge": "2. Two-Stage Funnel",
+    "caption": "Instead of asking a slow, careful judge to read all five million chunks, we use a Two-Stage Funnel: Stage 1 grabs the top 75 suspects in 12 milliseconds, and Stage 2 lets a Cross-Encoder read those 75 pairs word-by-word.",
+    "code": "5,000,000 docs -> Stage 1 (Top 75) -> Cross-Encoder (Top 5)"
   },
   {
-    "term": "ColBERT MaxSim",
-    "formula": "Score(q, d) = sum_{i in |q|} max_{j in |d|} (q_i . d_j)",
-    "meaning": "Late Interaction: pre-computes per-token document vectors offline and computes fast token-level MaxSim without online Transformer passes."
+    "time": "0:48",
+    "badge": "3. Orphaned Chunks",
+    "caption": "Even a smart reranker fails if a chunk says 'The fee increased by $25' without saying which airline or year. Contextual Retrieval prepends a short summary header to every chunk once when we index the document.",
+    "code": "[AeroCart 2026 Domestic Policy] The fee increased by $25..."
   },
   {
-    "term": "Contextual Retrieval",
-    "formula": "Chunk' = LLM_Situate(CachedFullDoc, RawChunk) + \"\\n\" + RawChunk",
-    "meaning": "Resolves coreferences ('Revenue grew 3%...' -> '[ACME Corp Q2-2026 SEC 10-Q] Revenue grew 3%...') ONCE at ingest using 90%-discounted prefix caching!"
+    "time": "1:12",
+    "badge": "4. Safe Abstention",
+    "caption": "Finally, if even the number-one reranked chunk scores below our confidence threshold, AeroBrain v0.10 safely abstains instead of guessing from weak evidence.",
+    "code": "if top_rerank_score < 0.35: return 'Insufficient evidence'"
   }
 ]
 ```
 
-```json poe
-{
-  "question": "A corporate financial RAG corpus contains 40 quarterly 10-Q filings (ACME, Globex, Initech across 2023–2026). Every single 10-Q has an identical chunk reading: 'The company's operating margin expanded by 240 bps over the prior quarter.' When a user asks 'Did Globex's operating margin expand in Q3 2025?', Hybrid BM25 + Bi-Encoder returns 10 nearly identical chunks from the wrong companies/quarters! What ingest-time technique cuts retrieval failure rate by ~49–67% without slowing query latency?",
-  "options": [
-    "Switch from Cosine similarity to Manhattan L1 distance",
-    "Anthropic-style Contextual Retrieval (+ Reranking): at ingest time, pass the cached full document + chunk to a fast LLM to prepend a 50-token disambiguating header ('This chunk is from Globex Corp's Q3 2025 10-Q filing...') BEFORE computing BOTH the Dense Embedding AND the Contextual BM25 index!",
-    "Increase HNSW efSearch to 1000",
-    "Lower BM25 k1 to 0.01"
-  ],
-  "answerIndex": 1,
-  "explanation": "Orphaned chunks lacking entity and temporal anchors look identical to both BM25 and Bi-Encoders. Prepending situated context at index time (made pennies-per-million-tokens via full-document KV prefix caching!) makes both lexical and vector retrieval entity-exact, cutting top-20 failure rates by up to 67% when paired with reranking."
-}
+```json pretraining
+[
+  {
+    "term": "Bi-Encoder (Stage-1 Retriever)",
+    "formula": "Score(q, d) = Embed(q) · Embed(d)",
+    "meaning": "A fast model that turns the question and the document into separate summary vectors independently—great for narrowing 5 million chunks down to 75, but blind to subtle word-by-word interactions."
+  },
+  {
+    "term": "Cross-Encoder (Stage-2 Reranker)",
+    "formula": "Score(q, d) = Judge([q, d] side-by-side)",
+    "meaning": "A careful reading model that puts the user's question and a candidate chunk side-by-side so every word in the question can inspect every word in the chunk, catching negations like 'never' or 'except'."
+  },
+  {
+    "term": "Contextual Retrieval",
+    "formula": "Chunk' = ParentContextHeader + RawChunk",
+    "meaning": "Stamping each sliced paragraph with a one-sentence 'who, what, and when' header from its parent document before indexing so pronouns like 'it' or 'the company' are never ambiguous."
+  },
+  {
+    "term": "ColBERT (Late Interaction)",
+    "formula": "Score(q, d) = Sum of best token-to-token matches",
+    "meaning": "A middle-ground architecture that saves one tiny vector per word instead of one vector per paragraph, giving near-Cross-Encoder accuracy at near-Bi-Encoder speed."
+  }
+]
 ```
 
-## 1. The Two-Stage Retrieval Funnel (`Recall@100` $\to$ `NDCG@5`)
+## 🌱 Step 1: Plain-English Story — The Speed-Dater vs. The Panel Interview (`AeroBrain v0.10`)
 
-Why not run a **Cross-Encoder** over your entire `5,000,000`-chunk knowledgebase? Because a Cross-Encoder concatenates `[CLS] query [SEP] chunk` and executes full bidirectional self-attention across every pair—scoring `5M` chunks at `0.8ms/pair` would take **`4,000` GPU-seconds (`66 minutes`) per user query**! Conversely, why not pass `Top-100` raw Bi-Encoder hits straight to your generation LLM? Doing so burns `50,000` prompt tokens (`$$$`), spikes `TTFT` past `3s`, and buries real answers inside noisy `"Lost in the Middle"` distractors.
-
-Production RAG mirrors Web Search & Ads Ranking via a **Two-Stage Funnel**:
-1. **Stage 1 — Fast Candidate Generation (`~12ms`, optimizes `Recall@100`)**: Metadata ACL pre-filter $\to$ Parallel **Contextual Dense HNSW** (`top-75`) + **Contextual BM25** (`top-75`) $\to$ **RRF Fusion** (`top-75` unique candidates).
-2. **Stage 2 — High-Precision Cross-Encoder Reranking (`~38ms` batched on GPU, optimizes `NDCG@5` / `MRR`)**: Feeds all `75` `(query, candidate_i)` pairs as a single padded mini-batch `[75, 512]` into a distilled `110M–560M` Cross-Encoder (`bge-reranker-v2-m3`, Cohere Rerank, Voyage Rerank), applies a **minimum relevance score gate** (abstaining with `"Insufficient documented evidence"` if even Rank #1 scores below calibrated threshold $\tau_{\text{abstain}}$!), and passes only **`Top-5`** crisp chunks to the LLM!
+Imagine hiring a pilot for **AeroCart Airlines** from a pool of `5,000,000` applicants.
+You cannot conduct a 45-minute technical interview with all `5,000,000` people—that would take centuries! Instead, every hiring pipeline uses a **Two-Stage Funnel**:
+1. **Stage 1: Resume Screening (`Bi-Encoder + Keyword Search`)**: A fast recruiter scans resumes in milliseconds and picks the **Top 75 candidates** who broadly match the job description. Because each resume was summarized into a single checklist *before* the recruiter knew your exact follow-up questions, a few look-alike candidates slip through—for instance, someone whose resume says *"Trained on Boeing 737, **NOT** certified on Airbus A320"* still matches the word *"Airbus A320"*.
+2. **Stage 2: The Sit-Down Interview (`Cross-Encoder Reranker`)**: Now a senior captain sits down with only those **75 finalists** and compares your exact question against every sentence of their background side-by-side. In `38 milliseconds` on a GPU, the Cross-Encoder spots the word **"NOT"**, drops the uncertified candidates, and hands only the **Top 5 golden matches** to **`AeroBrain`**.
 
 ```mermaid
 flowchart LR
-  UserQ["Complex Query"] -->|Decompose Sub-Queries + ACL| Stage1["Stage 1: Contextual BM25 + HNSW (12ms)"]
-  Stage1 -->|RRF Top-75 Candidates| Rerank["Stage 2: Batched Cross-Encoder [75 x L] (38ms)"]
-  Rerank -->|Max Score < tau_abstain| Abstain["Deterministic Safe Abstention"]
-  Rerank -->|Top-5 High NDCG Chunks| Gen["Prefix-Cached Grounded Synthesis"]
+  Query["Flyer Question"] --> Stage1["1. Fast Search (5M -> Top 75)"]
+  Stage1 --> Rerank["2. Cross-Encoder Judge (75 -> Top 5)"]
+  Rerank --> Gate{"3. Score >= 0.35?"}
+  Gate -->|Yes| Answer["4. Grounded AeroBrain Answer"]
+  Gate -->|No| Abstain["5. Safe Abstention"]
 ```
 
 ---
 
-## 2. Bi-Encoder vs. Late Interaction (`ColBERT`) vs. Cross-Encoder Architecture
+## 🔨 Step 2: First Lines of Code — Adding a Stage-2 Reranker to `AeroBrain v0.10`
+
+Let's evolve **`AeroBrain`** from Chapter 9 (`v0.9` Hybrid Search) into **`AeroBrain v0.10`**. After our fast Stage-1 search hands us candidate chunks, we pair each chunk side-by-side with the user's question, score them with a reranker, and keep only the top hits above our confidence floor:
+
+```python
+# AeroBrain v0.10 — Two-Stage Reranking with a Confidence Floor
+def rerank_candidates(query: str, candidates: list[str], score_pair_fn) -> list[tuple[float, str]]:
+    # Pair the user's exact query side-by-side with each Stage-1 candidate
+    scored = [(score_pair_fn(query, chunk), chunk) for chunk in candidates]
+    scored.sort(key=lambda item: item[0], reverse=True)
+    # Safe abstention gate: if the best chunk is still weak (< 0.35), return empty!
+    return scored[:3] if scored and scored[0][0] >= 0.35 else []
+
+hits = ["Batteries NOT in a device are banned.", "Batteries inside a device are allowed."]
+print(rerank_candidates("Are loose batteries banned?", hits, lambda q, d: 0.92 if "NOT" in d else 0.18))
+```
+
+### Java 17 Equivalent
+
+```java
+// AeroBrain v0.10 — Two-Stage Reranking with a Confidence Floor (Java 17)
+import java.util.*;
+import java.util.function.BiFunction;
+
+public class AeroBrainReranker {
+    public record ScoredChunk(double score, String text) {}
+
+    public static List<ScoredChunk> rerank(String query, List<String> candidates,
+                                           BiFunction<String, String, Double> pairScorer) {
+        var ranked = candidates.stream()
+            .map(c -> new ScoredChunk(pairScorer.apply(query, c), c))
+            .sorted(Comparator.comparingDouble(ScoredChunk::score).reversed())
+            .toList();
+        return (ranked.isEmpty() || ranked.get(0).score() < 0.35) ? List.of() : ranked.subList(0, Math.min(3, ranked.size()));
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — Orphaned Chunks & Multi-Hop Blind Spots
+
+Even with a Cross-Encoder in `AeroBrain v0.10`, two real-world failure modes appear in production:
+1. **The "Orphaned Chunk" Problem**: When we slice a 40-page PDF manual into 300-word chunks in Chapter 8, Chunk #42 might just say: *"The baggage fee increased by $25 over the prior quarter."* Neither our Stage-1 search nor our Stage-2 Cross-Encoder can tell whether Chunk #42 came from the **2023 Domestic Manual** or the **2026 International Manual**!
+   - **The Fix (Contextual Retrieval)**: At indexing time, we prepend a short one-sentence header (`"[AeroCart 2026 International Manual, Section 4]"` ) to every chunk *before* computing both keyword and vector indexes.
+2. **The Multi-Hop Blind Spot**: If a flyer asks *"Did AeroCart's baggage fee change between 2024 and 2026?"*, a Cross-Encoder **cannot rescue a document that missed Stage-1 Recall**. We must decompose comparative questions into sub-queries (`"baggage fee 2024"` and `"baggage fee 2026"`) before Stage 1 runs.
 
 ```json contrast
 {
-  "title": "Single-Stage Bi-Encoder Top-20 Dump vs Contextual Retrieval + Cross-Encoder Funnel",
+  "title": "Single-Stage Raw Chunk Dump vs. Contextual Retrieval + Cross-Encoder Funnel",
   "naiveTitle": "Orphaned Chunks + Raw Bi-Encoder Top-20",
   "naiveMetric": "61% Multi-Entity Recall · Negation Blind",
   "naivePoints": [
-    "Single-vector pooling blurs negation: 'Drug X cures Y' and 'Drug X NEVER cures Y' score 0.96 cosine similarity!",
-    "Pronoun-heavy chunks ('The service must restart...') lose parent service identity when detached from page title",
-    "Feeds all 20 noisy chunks (12k tokens) to frontier LLM, inflating token cost 4x while lowering answer accuracy"
+    "Single-vector summary blurs negation: 'Battery allowed' and 'Battery NEVER allowed' score 0.96 cosine similarity",
+    "Pronoun-heavy chunks ('The fee increased by $25...') lose their parent airline and year when sliced out of a PDF",
+    "Feeds all 20 noisy chunks (12,000 tokens) to the LLM, inflating generation cost 4x while lowering accuracy"
   ],
   "staffTitle": "Contextual Ingest + Hybrid RRF + Cross-Encoder",
-  "staffMetric": "94% NDCG@5 · +45ms Latency · 4x Cheaper Gen",
+  "staffMetric": "94% NDCG@5 · +38ms Latency · 4x Cheaper Gen",
   "staffPoints": [
-    "Ingest pipeline prepends Prefix-Cached Contextual headers resolving 'it/the company/last quarter' before indexing",
-    "Cross-Encoder runs full token-to-token attention across [query, chunk], catching 'NOT / EXCEPT / v1-vs-v2' nuances cleanly",
-    "Decomposes multi-hop comparative queries ('Compare AeroCart v1 vs v2 SLA') into parallel deterministic sub-retrievals"
+    "Ingest pipeline prepends prefix-cached contextual headers resolving 'it / the airline / last quarter' before indexing",
+    "Cross-Encoder runs full word-to-word attention across [query, chunk], catching 'NOT / EXCEPT / v1-vs-v2' nuances",
+    "Decomposes multi-hop comparative queries into parallel Stage-1 sub-retrievals before reranking"
   ]
 }
 ```
 
-| Architecture | Offline Document Storage | Online Query Compute | Negation & Fine Entity Precision | Ideal Funnel Stage |
-| :--- | :--- | :--- | :--- | :--- |
-| **Bi-Encoder (`Dense`)** | `1` vector / chunk (`1–3 KB`) | `1` query embed + $O(\log N)$ HNSW | Moderate (single-vector bottleneck) | **Stage 1 Recall (`Top-100`)** |
-| **Late Interaction (`ColBERTv2`)** | `N_tok` compressed 2-bit residual vectors / chunk (`~10–25 KB`) | `1` query encode + fast `MaxSim` PLAID | High (preserves per-token interaction!) | **Stage 1.5 / High-Precision Recall** |
-| **Cross-Encoder (`Reranker`)** | Raw text only (`0` vector storage) | **`K` full Transformer passes** (`[K, L_q+L_d]`) | **Highest** (full cross-attention all layers) | **Stage 2 Rerank (`Top-75 -> Top-5`)** |
+```json poe
+{
+  "question": "AeroBrain's financial knowledgebase contains 40 quarterly filings across four airlines (2023–2026). Every single filing has an identical sentence: 'Operating margin expanded by 240 bps over the prior quarter.' When a user asks 'Did Globex Air's margin expand in Q3 2025?', Hybrid Search returns 10 identical chunks from the wrong airlines! What ingest-time technique cuts retrieval failure by ~67% without slowing down live queries?",
+  "options": [
+    "Switch from Cosine similarity to Manhattan L1 distance",
+    "Anthropic-style Contextual Retrieval (+ Reranking): at ingest time, pass the prefix-cached full document + chunk to a fast LLM to prepend a disambiguating header ('This chunk is from Globex Air Q3 2025 filing...') BEFORE computing both the Dense Embedding and the BM25 index",
+    "Increase HNSW efSearch to 1000",
+    "Lower BM25 k1 to 0.01"
+  ],
+  "answerIndex": 1,
+  "explanation": "Orphaned chunks lacking entity and date anchors look identical to both BM25 and Bi-Encoders. Prepending situated context at index time (made pennies per million tokens via full-document KV prefix caching!) makes both lexical and vector search entity-exact."
+}
+```
 
 ---
 
-## 3. Dual-Language Production Blueprints: `NDCG@K` Evaluator, Contextualizer & Rerank Funnel
+## 🚀 Step 4: Staff Engineer Deep-Dive — `ColBERT MaxSim`, `NDCG@K` Math & Prefix-Cached Ingest
 
-### Python 3 Blueprint: Prefix-Cached Contextual Ingest Prompt, `ColBERT MaxSim` & `NDCG@K` Gate
+### 1. Formal Math: Bi-Encoder vs. Late Interaction (`ColBERT`) vs. Cross-Encoder & `NDCG@K`
+
+Why is a Cross-Encoder so much more expressive than a Bi-Encoder, and how does **Late Interaction (`ColBERTv2`)** bridge the gap?
+
+$$\text{Bi-Encoder}(q, d) = \langle E_{\text{pool}}(q),\, E_{\text{pool}}(d) \rangle, \qquad \text{Cross-Encoder}(q, d) = \sigma\!\left(\mathbf{w}_{\text{cls}}^{\top}\,\text{Transformer}\big([\text{CLS}] \;\|\; q \;\|\; [\text{SEP}] \;\|\; d\big)\right)$$
+
+$$\text{ColBERT MaxSim}(q, d) = \sum_{i=1}^{|q|} \max_{j \in \{1,\dots,|d|\}} \left\langle \mathbf{q}_i,\, \mathbf{d}_j \right\rangle$$
+
+To measure whether our Stage-2 Reranker promotes the highest-grade evidence (`rel` $\in \{0, 1, 2, 3\}$) into slots `1..K`, we evaluate **Normalized Discounted Cumulative Gain (`NDCG@K`)**:
+
+$$\text{DCG}@K = \sum_{i=1}^{K} \frac{2^{\text{rel}_i} - 1}{\log_2(i + 1)}, \qquad \text{NDCG}@K = \frac{\text{DCG}@K}{\text{IDCG}@K}$$
+
+| Architecture | Offline Document Storage | Online Query Compute | Negation & Fine Entity Precision | Ideal Funnel Stage |
+| :--- | :--- | :--- | :--- | :--- |
+| **Bi-Encoder (`Dense`)** | `1` vector / chunk (`1–3 KB`) | `1` query embed + $O(\log N)$ HNSW | Moderate (single-vector bottleneck) | **Stage 1 Recall (`Top-75`)** |
+| **Late Interaction (`ColBERTv2`)** | `N_tok` compressed 2-bit residual vectors (`~15 KB`) | `1` query encode + fast `MaxSim` PLAID | High (preserves per-token interaction) | **Stage 1.5 High-Precision Recall** |
+| **Cross-Encoder (`Reranker`)** | Raw text only (`0` vector storage) | **`K` full Transformer passes** (`[K, L_q+L_d]`) | **Highest** (full cross-attention all layers) | **Stage 2 Rerank (`Top-75 -> Top-5`)** |
+
+### 2. Dual-Language Production Blueprints: Contextual Ingest, `ColBERT MaxSim` & `NDCG@K`
+
 ```python
 from __future__ import annotations
 from dataclasses import dataclass
 import math
-from typing import Callable, Dict, List, Sequence, Tuple
+from typing import Callable, List, Sequence, Tuple
 
 
 def build_contextual_retrieval_ingest_prompts(
@@ -139,32 +234,22 @@ def colbert_late_interaction_maxsim(
     query_token_vecs: Sequence[Sequence[float]],
     doc_token_vecs: Sequence[Sequence[float]],
 ) -> float:
-    """
-    Computes exact ColBERT MaxSim(Q, D) = sum_{i in Q} max_{j in D} (q_i · d_j).
-    Preserves token-by-token alignment without running joint Cross-Encoder self-attention!
-    """
+    """Computes exact ColBERT MaxSim(Q, D) = sum_{i in Q} max_{j in D} (q_i · d_j)."""
     if not query_token_vecs or not doc_token_vecs:
         return 0.0
-    total_score = 0.0
-    for q_vec in query_token_vecs:
-        best_tok_sim = max(
-            sum(qk * dk for qk, dk in zip(q_vec, d_vec))
-            for d_vec in doc_token_vecs
-        )
-        total_score += best_tok_sim
-    return round(total_score, 6)
+    return round(
+        sum(
+            max(sum(qk * dk for qk, dk in zip(q_vec, d_vec)) for d_vec in doc_token_vecs)
+            for q_vec in query_token_vecs
+        ),
+        6,
+    )
 
 
 def compute_ndcg_at_k(relevances_in_rank_order: Sequence[float], k: int = 5) -> float:
-    """
-    Computes Normalized Discounted Cumulative Gain (NDCG@K) with graded relevance {0, 1, 2, 3}:
-    DCG@K = sum_{i=1}^K (2^{rel_i} - 1) / log2(i + 1).
-    """
+    """Computes Normalized Discounted Cumulative Gain (NDCG@K) with graded relevance {0, 1, 2, 3}."""
     def _dcg(rels: Sequence[float]) -> float:
-        return sum(
-            ((2.0 ** rel) - 1.0) / math.log2(idx + 2.0)
-            for idx, rel in enumerate(rels[:k])
-        )
+        return sum(((2.0 ** rel) - 1.0) / math.log2(idx + 2.0) for idx, rel in enumerate(rels[:k]))
 
     actual_dcg = _dcg(relevances_in_rank_order)
     ideal_dcg = _dcg(sorted(relevances_in_rank_order, reverse=True))
@@ -190,7 +275,7 @@ def execute_rerank_with_abstention_gate(
     texts = [txt for _, txt in stage1_candidates]
     scores = cross_encoder_batch_fn(query, texts)
     scored = sorted(
-        (( stage1_candidates[i][0], float(scores[i]) ) for i in range(len(texts))),
+        ((stage1_candidates[i][0], float(scores[i])) for i in range(len(texts))),
         key=lambda x: -x[1],
     )
     if scored[0][1] < min_calibrated_score:
@@ -198,15 +283,12 @@ def execute_rerank_with_abstention_gate(
     return RerankedResult(False, scored[:top_k])
 ```
 
-### Java 17 Blueprint: Multi-Query Sub-Retriever + Cross-Encoder Rerank & `NDCG@K` Evaluator
+#### Java 17 Equivalent
+
 ```java
 package com.hub.ai.rerank;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -215,10 +297,6 @@ public final class TwoStageRerankPipeline {
     public record CandidateChunk(String chunkId, String situatedText) {}
     public record ScoredChunk(String chunkId, String situatedText, double crossEncoderProb) {}
 
-    /**
-     * Executes parallel/multi-hop sub-query recall (unioning deduplicated candidates)
-     * followed by a single batched Cross-Encoder reranking pass + abstention floor.
-     */
     public static List<ScoredChunk> retrieveDecomposedAndRerank(
             String originalQuery,
             List<String> decomposedSubQueries,
@@ -233,9 +311,7 @@ public final class TwoStageRerankPipeline {
                 dedupedPool.putIfAbsent(hit.chunkId(), hit);
             }
         }
-        if (dedupedPool.isEmpty()) {
-            return List.of();
-        }
+        if (dedupedPool.isEmpty()) return List.of();
 
         List<CandidateChunk> poolList = new ArrayList<>(dedupedPool.values());
         double[] ceScores = batchedCrossEncoder.apply(originalQuery, poolList);
@@ -248,7 +324,7 @@ public final class TwoStageRerankPipeline {
         reranked.sort(Comparator.comparingDouble(ScoredChunk::crossEncoderProb).reversed());
 
         if (reranked.get(0).crossEncoderProb() < abstentionThreshold) {
-            return List.of(); // Safe Abstention: zero relevant evidence found in knowledgebase
+            return List.of(); // Safe Abstention: zero relevant evidence found
         }
         return reranked.subList(0, Math.min(finalTopK, reranked.size()));
     }
@@ -260,7 +336,7 @@ public final class TwoStageRerankPipeline {
             dcg += (Math.pow(2.0, gradedRelevances[i]) - 1.0) / (Math.log(i + 2.0) / Math.log(2.0));
         }
         double[] ideal = gradedRelevances.clone();
-        java.util.Arrays.sort(ideal);
+        Arrays.sort(ideal);
         double idcg = 0.0;
         for (int i = 0; i < limit; i++) {
             double rel = ideal[ideal.length - 1 - i];
@@ -271,11 +347,10 @@ public final class TwoStageRerankPipeline {
 }
 ```
 
-> [!WARNING] **Staff Interview Gotcha — Multi-Hop Comparative Queries Fail Even WITH a Cross-Encoder Unless Decomposed First!** Suppose a user asks: *"Did AeroCart's p99 latency improve between Q1 2025 and Q4 2025?"* If `Chunk A` (`Q1 2025: p99 = 180ms`) and `Chunk B` (`Q4 2025: p99 = 95ms`) live in separate documents, neither chunk alone answers the comparative question, and if `Q1 2025` had sparser wording it may rank `#112`—missing the `Top-75` Stage-1 recall pool completely (**a Cross-Encoder can NEVER rescue a document that missed Stage-1 Recall!**). **Invariant:** Comparative and multi-entity queries must run **Query Decomposition** (`["AeroCart p99 latency Q1 2025", "AeroCart p99 latency Q4 2025"]`) in Stage 1, union the recalled pools (`Top-40` per sub-query), and rerank/cover **each sub-query facet** so both operands reach the synthesis prompt!
+> [!WARNING] **Staff Interview Gotcha — A Cross-Encoder Can Never Rescue a Document That Missed Stage-1 Recall!**
+> Suppose a user asks: *"Did AeroCart's p99 latency improve between Q1 2025 and Q4 2025?"* If `Chunk A` (`Q1 2025: p99 = 180ms`) and `Chunk B` (`Q4 2025: p99 = 95ms`) live in separate documents and `Q1 2025` ranks `#112` in Stage 1, it misses the `Top-75` pool completely. Always run **Query Decomposition** (`["AeroCart p99 latency Q1 2025", "AeroCart p99 latency Q4 2025"]`) in Stage 1, union the recalled pools (`Top-40` per sub-query), and rerank across the combined pool so both sides of a comparison reach synthesis.
 
----
-
-## 4. Scenario Retrieval-Practice Mastery Gate
+**Up Next in Chapter 11:** Now that `AeroBrain v0.10` retrieves exact, reranked facts with 94% `NDCG@5`, what happens when our airline needs `AeroBrain` to speak in strict legacy IATA/EDIFACT telemetry schemas and polite brand tone *without* stuffing a 4,000-token style guide into every prompt? In **Chapter 11**, we will learn when to use **RAG vs. Fine-Tuning (`LoRA`, `QLoRA`, and `DPO`)**.
 
 ```json quiz
 [

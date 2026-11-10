@@ -17,105 +17,213 @@ tags: ["core-cs", "databases", "b-tree", "lsm-tree", "wal", "mvcc", "write-skew"
 
 # Database Storage Engines: B+Trees vs. LSM-Tree Internals, WAL & MVCC Isolation
 
-```json pretraining
+```json continuity
+{
+  "previously": "In Chapter 02, we tuned TCP sockets and TLS 1.3 session resumption so checkout requests reach python3 apps/aerocart/server.py in a single network round-trip.",
+  "painPoint": "Once the request lands inside server.py and writes an order to SQLite, concurrent readers start failing with database locked errors, and two simultaneous checkouts for the last seat both succeed!",
+  "unlock": "We will open up the disk storage engine behind AeroCart to enable Write-Ahead Logging (WAL), compare B+Trees against append-only LSM-Trees, and stop multi-row race conditions under Snapshot Isolation."
+}
+```
+
+```json walkthrough
 [
   {
-    "term": "Write-Ahead Log (WAL + fsync)",
-    "formula": "Append WAL Frame → fsync() → Mutate RAM Page",
-    "meaning": "Guarantees ACID Durability without flushing random 8KB B+Tree pages on every commit; crash recovery simply replays sequential WAL records."
+    "time": "0:00",
+    "badge": "1. The Notebook Problem",
+    "caption": "When AeroCart saves a flight order to disk, rewriting a giant encyclopedia page in place is slow and risky if power fails mid-write. Instead, databases jot the change at the end of a sequential diary called a Write-Ahead Log first.",
+    "code": "append_wal(order) -> fsync() -> update_memory_page()"
   },
   {
-    "term": "LSM-Tree Write Path",
-    "formula": "WAL Append + SkipList MemTable → Immutable SSTables",
-    "meaning": "Converts random key writes into sequential disk I/O with background Leveled/Tiered Compaction reclaiming overwritten rows and delete Tombstones."
+    "time": "0:22",
+    "badge": "2. First WAL & Log Store",
+    "caption": "With a 15-line append-only log and an in-memory dictionary, we can persist every AeroCart ticket order sequentially in microseconds while letting concurrent shoppers read without waiting.",
+    "code": "conn.execute('PRAGMA journal_mode=WAL;')"
   },
   {
-    "term": "SSTable Bloom Filter",
-    "formula": "0% False Negatives (~10 bits/key ⇒ <1% FP)",
-    "meaning": "Bit-array filter in RAM letting an LSM-Tree skip 99% of unnecessary disk SSTable lookups on absent keys."
+    "time": "0:48",
+    "badge": "3. Where Snapshots Break",
+    "caption": "Even with fast WAL snapshots, two pilots checking whether at least one pilot remains on duty can read the same snapshot and both sign off at once—a classic bug called Write Skew.",
+    "code": "Tx1 reads 2 -> drops Alice | Tx2 reads 2 -> drops Bob => 0 left!"
   },
   {
-    "term": "MVCC Snapshot Write Skew",
-    "formula": "T1 reads A, writes B  ∥  T2 reads B, writes A",
-    "meaning": "Subtle concurrency bug allowed under Snapshot Isolation (`REPEATABLE READ` in Postgres) when two transactions read overlapping invariants but mutate disjoint rows!"
+    "time": "1:12",
+    "badge": "4. Staff Storage Blueprint",
+    "caption": "At Staff scale, we pair B+Tree time-ordered keys with LSM-Tree Bloom filters and Serializable Snapshot Isolation so AeroCart handles high write throughput with zero data anomalies.",
+    "code": "BloomFilter.mightContain(key) + SERIALIZABLE / FOR UPDATE"
   }
 ]
 ```
 
-```json poe
-{
-  "question": "A hospital scheduling table requires at least 1 doctor on call. Currently Alice and Bob are BOTH `on_call = true`. Under PostgreSQL `REPEATABLE READ` (MVCC Snapshot Isolation), Tx1 checks `COUNT(*) WHERE on_call = true` (sees 2) and updates `Alice -> false`. Concurrently, Tx2 checks `COUNT(*) WHERE on_call = true` (sees 2) and updates `Bob -> false`. Both transactions `COMMIT`! What is the final database state?",
-  "options": [
-    "PostgreSQL automatically rolls back Tx2 with a Lost Update error",
-    "BOTH commits succeed and ZERO doctors remain on call! Snapshot Isolation only blocks write-write conflicts on the SAME row; because Tx1 mutated Alice and Tx2 mutated Bob (disjoint rows!), this classic 'Write Skew' anomaly slips right through unless guarded by `SERIALIZABLE` (`SSI`) or `SELECT ... FOR UPDATE`!",
-    "The B+Tree leaf page deadlocks and restarts Postgres",
-    "WAL mode converts `REPEATABLE READ` into single-threaded execution"
-  ],
-  "answerIndex": 1,
-  "explanation": "Write Skew (DDIA Ch. 7) is the #1 Staff database interview trap: MVCC Snapshot Isolation prevents Dirty Reads, Non-Repeatable Reads, and Lost Updates on the *same* row, but allows invariant-breaking disjoint writes unless promoted to Serializable Snapshot Isolation (`SSI`) or explicit row-level `FOR UPDATE` locks."
-}
+```json pretraining
+[
+  {
+    "term": "Write-Ahead Log (WAL)",
+    "formula": "Append to sequential log on disk -> then update memory",
+    "meaning": "A sequential diary on disk where a database writes every change before touching its main storage pages, ensuring zero data loss if the server loses power."
+  },
+  {
+    "term": "B+Tree vs. LSM-Tree",
+    "formula": "B+Tree = sorted 16KB disk pages | LSM-Tree = memory buffer + immutable sorted files",
+    "meaning": "The two main ways databases organize disk files: B+Trees update fixed-size pages in place for fast reads, while LSM-Trees only append new files for ultra-fast writes."
+  },
+  {
+    "term": "Bloom Filter",
+    "formula": "Compact bit array in RAM -> 'Definitely Not Here' or 'Might Be Here'",
+    "meaning": "A tiny memory checklist placed in front of each disk file so the database never wastes time opening a file that definitely does not contain the customer ID you asked for."
+  },
+  {
+    "term": "Write Skew Anomaly",
+    "formula": "Two transactions read the same rule, edit different rows, and break the rule",
+    "meaning": "A subtle concurrency bug where two simultaneous checkouts both see a valid state in their private snapshot, update two separate rows, and together violate a business rule."
+  }
+]
 ```
 
-## Part I — B+Trees vs. LSM-Tree Storage Engines
+---
 
-Every database storage engine on Earth navigates a fundamental hardware trade-off between **Read-Optimized In-Place Page Trees (`B+Trees`)** and **Write-Optimized Append-Only Log Structures (`LSM-Tree`)**:
+## 🌱 Step 1: Plain-English Story — The Encyclopedia vs. The Cashier's Diary
+
+Imagine running the reservation desk for **`AeroCart`** (`python3 apps/aerocart/server.py`) using a massive, 10,000-page leather-bound encyclopedia sorted alphabetically by passenger name.
+- **The Encyclopedia (`B+Tree`, used by PostgreSQL, MySQL, and SQLite)**: Finding a passenger is super fast because tabs on the side jump straight to the right page in 3 flips. But what happens when 500 travelers book flights at the exact same second? You have to flip to random pages across the book, erase lines, and squeeze in new names. Worse, if the lights go out while you are erasing half a page, the page is corrupted!
+- **The Cashier's Sequential Diary (`Write-Ahead Log` & `LSM-Tree`, used by RocksDB and Cassandra)**: Instead of flipping to page 4,812 while the customer waits, you simply jot `"Seat 12A -> Alice"` at the bottom of a sequential notepad (**Write-Ahead Log**) and also drop it into a sorted index card tray on your desk (**MemTable**). When the tray fills up, you staple those sorted cards into a read-only booklet (**SSTable**) and start a fresh tray.
 
 ```mermaid
 flowchart LR
-  Write["Write(key, val)"] -->|1. Sequential fsync| WAL["Append-Only Disk WAL (Crash Durability)"]
-  Write -->|2. O(log M) RAM| Mem["Sorted MemTable (SkipList / RB-Tree)"]
-  Mem -->|3. Flush at 64MB| L0["Immutable SSTable L0 + RAM Bloom Filter"]
-  L0 -->|4. Leveled Compaction| LK["Merged SSTables L1..LK (Purges Tombstones)"]
+  Req["AeroCart Order Write"] --> WAL["1. Append to Disk Diary (WAL)"]
+  Req --> Mem["2. Insert in RAM Tray (MemTable)"]
+  Mem --> SST["3. Flush to Read-Only Booklet (SSTable)"]
+  SST --> Bloom["4. RAM Checklist (Bloom Filter) Skips Absent Keys"]
 ```
+
+By never overwriting files in place, sequential diary writes fly at full disk speed, and readers can browse finished booklets without ever blocking behind an active writer.
+
+---
+
+## 🔨 Step 2: First Lines of Code — Enabling WAL & Building an Append-Only Store
+
+When `python3 apps/aerocart/server.py` opens a default SQLite file, a single writer locks the entire database file and blocks every reader. Switching to `WAL` mode and using an append-first memory buffer fixes reader-writer blocking in 16 lines:
+
+```python
+import sqlite3
+
+def init_aerocart_wal_db(db_path: str = ":memory:") -> sqlite3.Connection:
+    conn = sqlite3.connect(db_path, isolation_level=None)
+    # Switch from full-file locking to append-only Write-Ahead Logging
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    conn.execute("CREATE TABLE IF NOT EXISTS on_call (pilot TEXT PRIMARY KEY, active INT);")
+    return conn
+
+class TinyAppendLogStore:
+    def __init__(self) -> None:
+        self.wal: list[tuple[str, str | None]] = []
+        self.memtable: dict[str, str | None] = {}
+
+    def put(self, key: str, value: str | None) -> None:
+        self.wal.append((key, value))  # 1. Sequential log append
+        self.memtable[key] = value     # 2. Fast in-memory lookup
+```
+
+### Java 17 Equivalent
+
+```java
+import java.sql.Connection;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentSkipListMap;
+
+public final class TinyAppendLogStore {
+    private final List<String> wal = new ArrayList<>();
+    private final ConcurrentSkipListMap<String, String> memtable = new ConcurrentSkipListMap<>();
+
+    public static void enableSqliteWal(Connection conn) throws Exception {
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("PRAGMA journal_mode=WAL;");
+            stmt.execute("PRAGMA synchronous=NORMAL;");
+        }
+    }
+
+    public synchronized void put(String key, String value) {
+        wal.add(key + "=" + value); // 1. Sequential WAL append
+        memtable.put(key, value);   // 2. Sorted SkipList MemTable update
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — Tombstone Floods & Snapshot Write Skew
+
+As `AeroCart` scales up, two real-world storage surprises hit production:
+1. **LSM-Tree Tombstone Floods**: Because SSTable booklets on disk are read-only, deleting a canceled flight does not erase old lines—it appends a `"DELETED"` marker called a **Tombstone**. If a batch job deletes 5 million expired promo codes right at the start of a range scan, the next query must wade through 5 million dead tombstones before finding a single live row!
+2. **MVCC Snapshot Write Skew**: Even when readers and writers use clean historical snapshots (**Multi-Version Concurrency Control**, or `REPEATABLE READ`), two transactions that read the *same* safety rule (`"at least 1 pilot must stay on call"`) but update *different* rows (`Alice` vs. `Bob`) will both commit without noticing each other!
 
 ```json contrast
 {
   "title": "Storage Engine Architecture & Concurrency Control",
-  "naiveTitle": "SQLite Rollback Journal + Unindexed Scans",
-  "naiveMetric": "Writers Block All Readers · Write Skew Bugs",
+  "naiveTitle": "Rollback Journal + Unindexed Scans + Blind Snapshots",
+  "naiveMetric": "Writers Block Readers · Write Skew Bugs",
   "naivePoints": [
-    "Default SQLite DELETE journal mode acquires an exclusive file lock on write, blocking all concurrent readers with SQLITE_BUSY",
-    "Random UUID primary keys on B+Trees scatter inserts across cold 16KB pages, causing 50% page-split fragmentation and buffer-pool thrashing",
-    "Mass deleting 10M rows in an LSM-Tree (`Cassandra`) immediately followed by `SELECT` scans 10M Tombstones and times out!",
-    "Assumes MVCC `REPEATABLE READ` prevents multi-row business-rule race conditions (Write Skew)"
+    "Default SQLite DELETE journal mode locks the entire database on write, failing concurrent readers with SQLITE_BUSY",
+    "Random UUIDv4 primary keys on B+Trees scatter inserts across cold 16KB pages, causing 50% page-split fragmentation",
+    "Mass deleting rows in an LSM-Tree immediately followed by a range scan reads millions of Tombstones and times out",
+    "Assumes MVCC REPEATABLE READ prevents multi-row business-rule race conditions (Write Skew)"
   ],
-  "staffTitle": "WAL MVCC + UUIDv7 Locality + SSI / Locking",
+  "staffTitle": "WAL MVCC + UUIDv7 Locality + SSI / Row Locking",
   "staffMetric": "Zero Reader-Writer Blocking · Predictable P99 I/O",
   "staffPoints": [
-    "Enables `PRAGMA journal_mode=WAL` so writers append frames to `-wal` while concurrent readers view consistent MVCC snapshots",
-    "Uses time-ordered `UUIDv7` / Snowflake keys on B+Trees so inserts append sequentially to the rightmost leaf page",
-    "Attaches 10-bit/key Bloom Filters to LSM-Tree SSTables + avoids wide tombstone range scans",
-    "Prevents Write Skew via `SERIALIZABLE` (SSI) or materializing lockable conflict rows (`SELECT ... FOR UPDATE`)"
+    "Enables PRAGMA journal_mode=WAL so writers append frames to -wal while concurrent readers view consistent snapshots",
+    "Uses time-ordered UUIDv7 keys on B+Trees so new orders append sequentially to the hot rightmost leaf page",
+    "Attaches 10-bit/key Bloom Filters to LSM-Tree SSTables and compacts Tombstones asynchronously",
+    "Prevents Write Skew via SERIALIZABLE (SSI) or explicit row locks (SELECT ... FOR UPDATE)"
   ]
+}
+```
+
+```json poe
+{
+  "question": "An AeroCart crew table requires at least 1 pilot on call. Currently Alice and Bob are BOTH on_call = true. Under PostgreSQL REPEATABLE READ (MVCC Snapshot Isolation), Tx1 checks COUNT(*) WHERE on_call = true (sees 2) and updates Alice -> false. Concurrently, Tx2 checks COUNT(*) WHERE on_call = true (sees 2) and updates Bob -> false. Both transactions COMMIT! What is the final database state?",
+  "options": [
+    "PostgreSQL automatically rolls back Tx2 with a Lost Update error",
+    "BOTH commits succeed and ZERO pilots remain on call! Snapshot Isolation only blocks write-write conflicts on the SAME row; because Tx1 mutated Alice and Tx2 mutated Bob (disjoint rows!), this classic Write Skew anomaly slips right through unless guarded by SERIALIZABLE (SSI) or SELECT ... FOR UPDATE!",
+    "The B+Tree leaf page deadlocks and restarts Postgres",
+    "WAL mode converts REPEATABLE READ into single-threaded execution"
+  ],
+  "answerIndex": 1,
+  "explanation": "Write Skew (DDIA Ch. 7) is the #1 Staff database interview trap: MVCC Snapshot Isolation prevents Dirty Reads, Non-Repeatable Reads, and Lost Updates on the same row, but allows invariant-breaking disjoint writes unless promoted to Serializable Snapshot Isolation (SSI) or explicit row-level FOR UPDATE locks."
 }
 ```
 
 ---
 
-## Part II — Storage Engine & Isolation Level Trade-Off Matrices
+## 🚀 Step 4: Staff Engineer Deep-Dive — RUM Conjecture Math, Bloom Filters & LSM Compaction
 
-### 1. B+Tree vs. LSM-Tree Amplification Trade-Offs
+### 1. Bloom Filter False-Positive Rate & Optimal Hash Functions
+
+Every Storage Engine balances the **RUM Conjecture**: optimizing any two of **Read Overhead**, **Update (Write) Overhead**, and **Memory/Space Overhead** inevitably penalizes the third. To keep LSM-Tree point-read amplification near $1.0$ without reading every SSTable level on disk, we allocate $m$ bits for $n$ keys ($b = m/n$ bits per key) using $k$ independent hash functions:
+
+$$\text{Optimal Hashes } k^* = \frac{m}{n} \ln 2 \approx 0.693 \cdot b, \qquad P_{\text{false positive}} \approx \left(1 - e^{-k n / m}\right)^k = 2^{-b \ln 2}$$
+
+At $b = 10$ bits per key ($1.25\text{ bytes/key}$) and $k = 7$ hashes, $P_{\text{false positive}} \approx 0.82\%$, eliminating over $99\%$ of unnecessary disk reads for absent keys while guaranteeing **$0\%$ false negatives**.
+
+### 2. B+Tree vs. LSM-Tree & Isolation Level Matrices
 
 | Dimension | **B+Tree Engines** *(PostgreSQL, MySQL InnoDB, SQLite)* | **LSM-Tree Engines** *(RocksDB, Cassandra, ScyllaDB, Pebble)* |
 | :--- | :--- | :--- |
 | **Disk Layout** | Fixed-size mutable $4\text{KB}–16\text{KB}$ pages in a shallow $3–4$ level balanced tree | Append-only **WAL** + RAM **MemTable** flushed to immutable sorted **SSTables** |
-| **Write Amplification** | Higher on random keys (WAL write + dirty $16\text{KB}$ page flush + InnoDB doublewrite) | Low on ingest ($\mathcal{O}(1)$ sequential append); paid asynchronously during background **Compaction** |
+| **Write Amplification** | Higher on random keys (WAL write + dirty $16\text{KB}$ page flush + page splits) | Low on ingest ($\mathcal{O}(1)$ sequential append); paid asynchronously during background **Compaction** |
 | **Read Amplification** | **Lowest**: deterministic $3–4$ page hops (inner nodes pinned in RAM) | Higher on range scans; point reads mitigated by per-SSTable **Bloom Filters** ($0\%$ false negatives) |
 | **Space Amplification** | Moderate ($\sim 25\%–35\%$ internal page fragmentation) | **Lowest under Leveled Compaction** ($\sim 10\%$ dead space after merging SSTable levels) |
-
-### 2. Concurrency Anomalies Across Isolation Levels
 
 | Isolation Level | Dirty Read | Non-Repeatable Read | Lost Update *(Same Row)* | Write Skew / Phantom |
 | :--- | :--- | :--- | :--- | :--- |
 | **`READ COMMITTED`** *(Postgres Default!)* | Prevented | **Possible!** | **Possible!** (`x = x + 1` in app code loses increments!) | **Possible!** |
-| **`REPEATABLE READ` / Snapshot (`MVCC`)** | Prevented | Prevented | Prevented in Postgres (`ERROR: could not serialize`); **Possible in MySQL InnoDB** without `FOR UPDATE`! | **Possible (`Write Skew`)!** |
-| **`SERIALIZABLE` (`SSI` / `2PL`)** | Prevented | Prevented | Prevented | **100% Prevented** (Retry on `40001` serialization conflict) |
+| **`REPEATABLE READ` / Snapshot (`MVCC`)** | Prevented | Prevented | Prevented in Postgres (`could not serialize`); **Possible in MySQL InnoDB** without `FOR UPDATE`! | **Possible (`Write Skew`)!** |
+| **`SERIALIZABLE` (`SSI` / `2PL`)** | Prevented | Prevented | Prevented | **100% Prevented** (Retry on `40001` conflict) |
 
----
+### 3. Production Blueprints: Mini LSM-Tree + K-Hash Bloom Filter (Python 3 & Java 17)
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Mini LSM-Tree (`WAL + MemTable + Tombstone Compaction + Bloom Filter`)
 ```python
 import bisect
 
@@ -170,7 +278,8 @@ class MiniLSMStore:
         return purged_tombstones
 ```
 
-### Java 17 Blueprint: K-Hash BitSet Bloom Filter & Tombstone-Aware SSTable Resolver
+### Java 17 Equivalent
+
 ```java
 import java.util.BitSet;
 import java.util.Optional;
@@ -220,11 +329,9 @@ public final class SstableStoragePrimitives {
 
 > [!WARNING]
 > **Staff Interview Gotcha — Why Random `UUIDv4` Primary Keys Destroy B+Tree Write Throughput by $5\times–10\times$**:
-> In MySQL InnoDB (where the Primary Key **is** the clustered B+Tree leaf order) and PostgreSQL B+Tree indexes, sequential/time-ordered `UUIDv7` keys always append cleanly to the single hot rightmost `16KB` leaf page in RAM. Random `UUIDv4` keys scatter every single `INSERT` into a random cold `16KB` leaf page across a `500 GB` table—forcing constant buffer-pool evictions, random disk reads, and $50\%$-empty page splits! Always use **`UUIDv7` (RFC 9562)** for distributed B+Tree primary keys.
+> In MySQL InnoDB (where the Primary Key **is** the clustered B+Tree leaf order) and PostgreSQL B+Tree indexes, time-ordered `UUIDv7` keys always append cleanly to the single hot rightmost `16KB` leaf page in RAM. Random `UUIDv4` keys scatter every single `INSERT` into a random cold `16KB` leaf page across a `500 GB` table—forcing constant buffer-pool evictions, random disk reads, and $50\%$-empty page splits! Always use **`UUIDv7` (RFC 9562)** for distributed B+Tree primary keys.
 
----
-
-## Part IV — End-of-Chapter Mastery Check
+**Up Next in Chapter 04**: Our disk storage engine is now durable and isolated, but what happens inside RAM when 64 CPU threads inside `AeroCart` try to update an in-memory seat counter at the same nanosecond? Next, we trace CPU cache lines (`MESI`), false sharing, mutexes, and lock-free `CAS` atomics.
 
 ```json quiz
 [
@@ -233,7 +340,7 @@ public final class SstableStoragePrimitives {
     "question": "How does an LSM-Tree delete a key whose value is already stored inside an immutable SSTable on disk?",
     "options": [
       "It seeks into the middle of the SSTable file and zeros out the bytes in-place",
-      "It appends a special 'Tombstone' marker for that key into the WAL and MemTable; the old value is physically reclaimed later during background SSTable compaction",
+      "It appends a special Tombstone marker for that key into the WAL and MemTable; the old value is physically reclaimed later during background SSTable compaction",
       "It drops the entire SSTable file",
       "It blocks all reads until the file is rewritten"
     ],

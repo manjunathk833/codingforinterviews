@@ -8,7 +8,7 @@ module_title: "Module 1: Kernel Memory, Concurrency & Network Wire Internals"
 chapter_number: 1
 level_tag: "Foundations → Staff Systems"
 title: "OS Internals: Virtual Memory, Post-GC RSS Slope & File Descriptor Leaks"
-summary: "How Linux 4-level page tables, TLBs, JVM/Python garbage collectors, and /proc/<pid>/fd telemetry distinguish healthy sawtooth heap allocation from native memory and socket leaks."
+summary: "How Linux page tables, TLBs, JVM/Python garbage collectors, and /proc/<pid>/fd telemetry distinguish healthy sawtooth heap allocation from native memory and socket leaks."
 reading_time_minutes: 21
 visualizer_id: "cs-os-leak-detector"
 lab_path: "core-cs/operating-systems/01-memory-and-handle-leak-detector"
@@ -17,29 +17,154 @@ tags: ["core-cs", "os-kernel", "virtual-memory", "garbage-collection", "memory-l
 
 # OS Internals: Virtual Memory, Post-GC RSS Slope & File Descriptor Leaks
 
+```json continuity
+{
+  "previously": "Welcome to Day 1 of Core CS Internals! Zero prior operating-system or hardware background is needed. Throughout this course, we will trace a single live command—python3 apps/aerocart/server.py—all the way down into the Linux kernel, network card, SSD, and CPU cache lines.",
+  "painPoint": "We launch python3 apps/aerocart/server.py in production. For 5 hours its memory looks fine, but at hour 6 the Linux kernel suddenly murders the server with Exit Code 137 (OOMKilled) and Errno 24 (Too many open files)!",
+  "unlock": "We will learn how Virtual Memory vs. Physical RSS works, how to spot a rising Post-GC sawtooth trough slope before a crash, and how to catch leaked File Descriptors."
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "1. VIRT vs. RSS",
+    "caption": "When python3 apps/aerocart/server.py starts, Linux gives it a giant imaginary notebook of Virtual Memory (VIRT), but only hands out real physical RAM pages (RSS) when our code actually writes data.",
+    "code": "VIRT (promised address space) != RSS (real RAM pages used)"
+  },
+  {
+    "time": "0:25",
+    "badge": "2. Sawtooth GC",
+    "caption": "Healthy servers allocate temporary objects and clean them up during Garbage Collection, creating a flat sawtooth wave. A memory leak makes the bottom troughs climb steadily upward.",
+    "code": "troughs_mb = [310, 325, 340, 355] -> positive leak slope!"
+  },
+  {
+    "time": "0:50",
+    "badge": "3. Off-Heap Gap",
+    "caption": "Even if your Python or Java heap stays flat, leaked C buffers or thread stacks push total physical RSS past the container limit and trigger Exit Code 137.",
+    "code": "RSS_total = Managed_Heap + Off_Heap_Native + Thread_Stacks"
+  },
+  {
+    "time": "1:15",
+    "badge": "4. File Descriptors",
+    "caption": "Every open file or network socket takes a numbered ticket in /proc/<pid>/fd. Forgetting to close sockets leaves them stuck in CLOSE_WAIT until the server runs out of tickets.",
+    "code": "len(os.listdir('/proc/self/fd')) >= ulimit -> EMFILE (Errno 24)"
+  }
+]
+```
+
 ```json pretraining
 [
   {
-    "term": "VIRT vs. RSS Page Faults",
-    "formula": "mmap() → Demand-Zero Minor Fault → 4KB RSS",
-    "meaning": "Linux reserves virtual address ranges lazily; physical 4KB RAM frames (RSS) are wired into page tables only when written to."
+    "term": "Virtual Memory (VIRT) vs. Resident Set Size (RSS)",
+    "formula": "Promised Address Space vs. Physical 4KB RAM Pages",
+    "meaning": "VIRT is how much memory address space a program has asked to reserve on paper; RSS is how many actual physical RAM pages the program is actively holding right now."
   },
   {
-    "term": "Post-Major-GC Trough Slope (m)",
-    "formula": "m = Cov(t, RSS_min) / Var(t)",
-    "meaning": "Fitting Ordinary Least Squares across post-Major-GC local minima filters out noisy Eden/young-gen sawtooth spikes to expose true retention leaks."
+    "term": "Post-GC Trough Slope",
+    "formula": "Trendline Across Lowest Memory Points After Cleanup",
+    "meaning": "Measuring memory right after each Garbage Collection cleanup removes temporary noise so you can see if permanently stuck objects are slowly filling up RAM."
   },
   {
-    "term": "Off-Heap / Native RSS Gap",
-    "formula": "RSS_total = Heap + DirectBuffers + Stacks + JNI",
-    "meaning": "Why a JVM container with -Xmx1024m still gets SIGKILL (Exit 137) at 2GiB cgroup limit due to Netty DirectByteBuffers, glibc arenas, or 1MB thread stacks."
+    "term": "Off-Heap / Native Memory Gap",
+    "formula": "Total Physical RSS Minus Managed Language Heap",
+    "meaning": "Memory used outside Python or Java's normal object heap—such as C libraries, compression buffers, and thread stacks—that the Linux kernel still counts against your container limit."
   },
   {
-    "term": "Kernel FD Table (/proc/<pid>/fd)",
-    "formula": "count(open FDs) ≥ ulimit -n ⇒ EMFILE (Errno 24)",
-    "meaning": "Every unclosed socket, pipe, or file consumes an integer descriptor pointing to a kernel struct file; leaking FDs halts all new accept() and DNS calls."
+    "term": "Kernel File Descriptor (FD)",
+    "formula": "Integer Ticket for Every Open File or Socket",
+    "meaning": "A small ID number the operating system hands your process whenever it opens a file or network connection; if you forget to close them, the OS refuses to open any new connections."
   }
 ]
+```
+
+## 🌱 Step 1: Plain-English Story — The Hotel Reservation vs. Occupied Rooms
+
+When you type `python3 apps/aerocart/server.py`, what is the very first thing the operating system does? It gives your process an isolated memory sandbox and a coat-check ticket counter.
+
+Think of the Linux kernel as a massive hotel manager:
+1. **Virtual Memory (`VIRT`) is a group reservation on paper**: Your program says, *"I might need space for 10,000 rooms today."* The hotel manager smiles and says *"Sure!"* without unlocking a single physical room yet.
+2. **Resident Set Size (`RSS`) is actual occupied rooms**: Only when `AeroCart` writes a flight object into memory does the CPU trigger a brief pause (a **Minor Page Fault**) so the kernel can wire up a real 4-kilobyte slice of physical RAM.
+3. **Garbage Collection (`GC`) is the housekeeping crew**: Every few seconds, Python or Java sweeps through memory and frees temporary checkout carts. On a graph, healthy memory goes up and down like the teeth of a saw (**a Sawtooth Wave**), always dropping back to the same flat floor.
+4. **File Descriptors (`FD`) are coat-check tickets**: Every open log file or browser connection takes one numbered ticket (`0, 1, 2, 3...`). If your code forgets to return tickets when flyers disconnect, the counter hits its limit (`ulimit -n`) and crashes with `Too many open files`!
+
+```mermaid
+flowchart LR
+  Raw["Raw Memory Sawtooth Wave"] --> Troughs["Post-GC Troughs (Lowest Points)"]
+  Troughs --> Fit["Measure Trendline Slope (MB/min)"]
+  Fit --> Leak["Rising Floor -> True Memory Leak!"]
+  Fit -.-> Flat["Flat Floor -> Healthy Server"]
+```
+
+---
+
+## 🔨 Step 2: First Lines of Code — Inspecting Our Server's Handles & Leak Slope
+
+Let's write a 16-line diagnostic helper for `apps/aerocart/server.py` in Python 3 and Java 17 that counts our process's open File Descriptors and checks whether Post-GC memory troughs are climbing.
+
+```python
+import os
+
+def inspect_aerocart_health(post_gc_troughs_mb: list[float]) -> dict:
+    fd_dir = "/proc/self/fd" if os.path.isdir("/proc/self/fd") else "/dev/fd"
+    open_fds = len(os.listdir(fd_dir)) if os.path.isdir(fd_dir) else -1
+    # Compare first and last Post-GC memory floor
+    net_growth_mb = post_gc_troughs_mb[-1] - post_gc_troughs_mb[0]
+    avg_step_mb = net_growth_mb / max(1, len(post_gc_troughs_mb) - 1)
+    return {
+        "openFds": open_fds,
+        "slopeMbPerCycle": round(avg_step_mb, 2),
+        "isLeaking": avg_step_mb > 1.0,
+    }
+```
+
+### Java 17 Equivalent
+```java
+import com.sun.management.UnixOperatingSystemMXBean;
+import java.lang.management.ManagementFactory;
+
+public class AeroCartHealthProbe {
+    public static boolean isLeakingMemoryOrFds(double[] postGcTroughsMb) {
+        var os = ManagementFactory.getOperatingSystemMXBean();
+        long openFds = (os instanceof UnixOperatingSystemMXBean u)
+                ? u.getOpenFileDescriptorCount() : -1;
+        double growth = postGcTroughsMb[postGcTroughsMb.length - 1] - postGcTroughsMb[0];
+        double slope = growth / Math.max(1, postGcTroughsMb.length - 1);
+        return slope > 1.0 || openFds > 8000;
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — Off-Heap OOMKills & `CLOSE_WAIT` Exhaustion
+
+Why do teams get paged at 3:00 AM even when their dashboard says *"Heap usage is under 60%"*? Two hidden traps catch engineers off guard:
+
+1. **The Off-Heap RSS Blindspot (`Exit Code 137`)**: Suppose you run a Java or Python container with a `2,048 MiB` Docker memory limit and cap the managed heap at `1,024 MiB`. Your language heap stays calm at `700 MiB`—yet Linux still kills the container with `SIGKILL (Exit 137)`! Why? Because the Linux kernel's cgroup limit (`memory.current`) polices **total physical `RSS`**, which includes off-heap C libraries (`zlib` compression streams, `DirectByteBuffers`, OpenSSL buffers) plus `1 MB` per OS thread stack.
+2. **The `CLOSE_WAIT` Socket Leak (`Errno 24: EMFILE`)**: When a client closes an HTTP connection, your OS kernel receives the close packet and puts the socket into `CLOSE_WAIT`, waiting for `AeroCart`'s code to call `.close()`. If an exception skips `.close()`, that File Descriptor stays occupied forever until no new user can connect.
+
+```json contrast
+{
+  "title": "AeroCart Soak-Test Memory & Handle Leak Detection",
+  "naiveTitle": "Point-in-Time Threshold Check (<80% RAM)",
+  "naiveMetric": "Misses 3 MB/min Leak Until Prod OOM",
+  "naivePoints": [
+    "Checks only whether RAM < 80% at the end of a 3-minute smoke test",
+    "Triggers false alarms on normal young-generation allocation spikes before GC runs",
+    "Monitors only managed Python/JVM heap while ignoring physical VmRSS and open FDs",
+    "Sets JVM -Xmx equal to 100% of container memory limit, guaranteeing Exit 137 under load"
+  ],
+  "staffTitle": "Post-GC Trough OLS Regression + RSS & FD Slope Gate",
+  "staffMetric": "Catches 0.5 MB/min Leaks in 10m Soak",
+  "staffPoints": [
+    "Extracts strictly Post-Major-GC local minima and fits linear slope m + R^2 >= 0.80",
+    "Tracks both Managed Heap AND kernel cgroup RSS gap (detecting C-extension and buffer leaks)",
+    "Asserts zero net File Descriptor growth across /proc/<pid>/fd after warmup",
+    "Reserves 25-30% container headroom (-XX:MaxRAMPercentage=70.0) for stacks and off-heap I/O"
+  ]
+}
 ```
 
 ```json poe
@@ -56,61 +181,30 @@ tags: ["core-cs", "os-kernel", "virtual-memory", "garbage-collection", "memory-l
 }
 ```
 
-## Part I — First-Principles Mental Model & Visual Cue
-
-Why does a service crash with `exit code 137 (SIGKILL — OOMKilled)` or `Errno 24 (Too many open files — EMFILE)` after 6 hours in production even when instantaneous RAM usage looked "under $60\%$" during a 5-minute smoke test?
-
-Because **instantaneous memory snapshots hide monotonic leak slopes**:
-- A healthy garbage-collected runtime (JVM G1GC/ZGC, V8, CPython reference counting + cyclic GC) exhibits a **Sawtooth Pattern**: memory rises as young-generation objects allocate, then drops back to a **flat baseline** after each Major GC cycle.
-- A leaking process also exhibits a sawtooth—except **the troughs (Post-GC Minima) climb monotonically** at slope $m > 0\text{ MB/min}$ (`R² >= 0.80`) until the kernel cgroup limit triggers the OOM Killer!
-
-```mermaid
-flowchart LR
-  Raw["Raw RSS / Heap Telemetry (Sawtooth Spikes)"] -->|Filter GC Events| Troughs["Post-Major-GC Troughs (Local Minima y_1..y_n)"]
-  Troughs -->|Linear Fit| OLS["OLS Slope m = Cov(t, y) / Var(t) + R^2"]
-  OLS -->|m > 1.0 & R^2 >= 0.80| Leak["True Leak Detected + Compute Time-to-OOM"]
-  OLS -.->|Flat Baseline m ≈ 0| Healthy["Healthy Bounded Sawtooth"]
-```
-
-```json contrast
-{
-  "title": "Soak-Test Memory & Handle Leak Detection",
-  "naiveTitle": "Point-in-Time Threshold Check (<80% RAM)",
-  "naiveMetric": "Misses 3 MB/min Leak Until Prod OOM",
-  "naivePoints": [
-    "Checks only whether RAM < 80% at the end of a 3-minute CI test",
-    "Triggers false alarms on normal G1GC Eden allocation spikes before GC runs",
-    "Monitors only managed JVM/Python heap while ignoring /proc/<pid>/status VmRSS and /proc/<pid>/fd",
-    "Sets JVM -Xmx equal to 100% of container memory limit, guaranteeing Exit 137 under thread/off-heap load"
-  ],
-  "staffTitle": "Post-GC Trough OLS Regression + RSS & FD Slope Gate",
-  "staffMetric": "Catches 0.5 MB/min Leaks in 10m Soak",
-  "staffPoints": [
-    "Extracts strictly Post-Major-GC local minima and fits OLS slope m + goodness-of-fit R^2 >= 0.80",
-    "Tracks both Managed Heap AND kernel cgroup RSS gap (detecting JNI, zlib, and DirectByteBuffer leaks)",
-    "Asserts zero net File Descriptor growth across /proc/<pid>/fd after connection-pool warmup",
-    "Reserves 25–30% container headroom (-XX:MaxRAMPercentage=70.0) for stacks, Metaspace, and off-heap I/O"
-  ]
-}
-```
-
 ---
 
-## Part II — Linux Memory Hierarchy (`VIRT` vs. `RSS` vs. Page Tables) & FD Exhaustion
+## 🚀 Step 4: Staff Engineer Deep-Dive — OLS Leak Math, Kernel Page Tables & Blueprints
 
-Inside the Linux kernel (`mm_struct`), every process sees a private $48$-bit virtual address space translated by hardware **MMU + TLB** caches across 4-level page tables (`PGD -> PUD -> PMD -> PTE`):
+### 1. Mathematical Laws of Post-GC Trough Regression & Time-to-OOM
+
+Given $n$ Post-Major-GC memory trough observations $(t_i, y_i)$ where $t_i$ is elapsed minutes and $y_i$ is physical RSS (or post-GC heap in MiB), Ordinary Least Squares (OLS) computes the true retention leak rate $m$ (in $\text{MiB/min}$) and coefficient of determination $R^2$:
+
+$$m = \frac{\sum_{i=1}^{n} (t_i - \bar{t})(y_i - \bar{y})}{\sum_{i=1}^{n} (t_i - \bar{t})^2}, \quad R^2 = \frac{\left[\sum_{i=1}^{n} (t_i - \bar{t})(y_i - \bar{y})\right]^2}{\sum_{i=1}^{n} (t_i - \bar{t})^2 \sum_{i=1}^{n} (y_i - \bar{y})^2}$$
+
+When $m > 0$ and $R^2 \ge 0.80$, we flag a deterministic leak and predict **Time-to-OOM ($T_{\text{OOM}}$)** against the container cgroup ceiling $M_{\text{limit}}$:
+
+$$T_{\text{OOM}} = \frac{M_{\text{limit}} - y_n}{m}$$
+
+### 2. Architectural Trade-Off Table: Linux Kernel Memory & Handle Telemetry
 
 | Kernel Metric (`/proc/<pid>/`) | What It Actually Measures | Triggers `OOMKiller`? | Classic Diagnostic Signature |
 | :--- | :--- | :--- | :--- |
-| **`VmSize` (`VIRT`)** | Total virtual address space mapped (`mmap`, `malloc` arenas, shared `.so` libs) | **No!** (Pure address reservation) | Java/Go processes routinely show `20 GB+ VIRT` while using only `300 MB` of physical RAM |
-| **`VmRSS` (`RSS` / `memory.current`)** | Physical `4KB` RAM pages actively resident in hardware memory | **YES (`SIGKILL 137`)** | Rising `RSS - HeapUsed` delta pinpoints off-heap native/JNI/DirectBuffer leaks |
-| **`/proc/<pid>/fd` Count** | Open file descriptors (TCP `socket:[inode]`, `anon_inode:[eventpoll]`, pipes, files) | Fails syscalls with **`EMFILE (Errno 24)`** | Thousands of `CLOSE_WAIT` sockets prove application code forgot `response.close()` / `try-with-resources`! |
+| **`VmSize` (`VIRT`)** | Total virtual address space mapped (`mmap`, `malloc` arenas, shared `.so` libs) | **No!** (Pure address reservation) | Processes routinely show `20 GB+ VIRT` while using only `300 MB` of physical RAM |
+| **`VmRSS` (`RSS` / `memory.current`)** | Physical `4KB` RAM pages actively wired in hardware page tables | **YES (`SIGKILL 137`)** | Rising `RSS - HeapUsed` delta pinpoints off-heap native/JNI/DirectBuffer leaks |
+| **`/proc/<pid>/fd` Count** | Open file descriptors (TCP `socket:[inode]`, `eventpoll`, pipes, files) | Fails syscalls with **`EMFILE (Errno 24)`** | Thousands of `CLOSE_WAIT` sockets prove code forgot `close()` / `try-with-resources`! |
 
----
+### 3. Production Blueprints (Python 3 & Java 17)
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Post-GC Trough Linear Regression (`OLS Slope + R²`) & FD Inspector
 ```python
 import os
 
@@ -148,7 +242,7 @@ def current_open_fd_count() -> int:
     return -1
 ```
 
-### Java 17 Blueprint: JVM Post-GC Memory Pool + Unix File Descriptor Leak Monitor
+### Java 17 Equivalent
 ```java
 import com.sun.management.UnixOperatingSystemMXBean;
 import java.lang.management.ManagementFactory;
@@ -176,11 +270,9 @@ public final class HeapAndFdTroughMonitor {
 
 > [!WARNING]
 > **Staff Interview Gotcha — `TIME_WAIT` vs. `CLOSE_WAIT` Socket Diagnosis**:
-> Interviewers love asking: *"`netstat`/`ss -tan` shows 15,000 sockets stuck in `CLOSE_WAIT` and `accept()` is throwing `EMFILE`. Should we tune `net.ipv4.tcp_tw_reuse`?"* **NO!** `TIME_WAIT` happens on the side that **actively closed** the connection (`2 * MSL` kernel timer), whereas **`CLOSE_WAIT` is 100% an application code bug**: the remote peer sent `FIN`, your kernel ACKed it, and your Java/Python code **never called `close()` on the socket/HTTP response body stream**! No sysctl tuning can fix `CLOSE_WAIT`—fix the missing `try-with-resources` / `contextlib.closing`!
+> Interviewers love asking: *"`ss -tan` shows 15,000 sockets stuck in `CLOSE_WAIT` and `accept()` is throwing `EMFILE`. Should we tune `net.ipv4.tcp_tw_reuse`?"* **NO!** `TIME_WAIT` happens on the side that **actively closed** the connection (`2 * MSL` kernel timer), whereas **`CLOSE_WAIT` is 100% an application code bug**: the remote peer sent `FIN`, your kernel ACKed it, and your Java/Python code **never called `close()` on the socket/HTTP response stream**! Fix the missing `try-with-resources` / `with` block!
 
----
-
-## Part IV — End-of-Chapter Mastery Check
+**Up Next in Chapter 02**: Now that `python3 apps/aerocart/server.py` has clean memory pages and healthy file descriptors, what actually happens on the network wire when a flyer's browser connects to port `8090`? In Chapter 02, we will trace the **TCP 3-Way Handshake, TLS 1.3 Encryption, HTTP/2 Stream Multiplexing, and WebSocket Binary Framing**.
 
 ```json quiz
 [
@@ -210,7 +302,7 @@ public final class HeapAndFdTroughMonitor {
   },
   {
     "id": "cs-01-q3",
-    "question": "During an outage, `ss -tan` on your API gateway shows 32,000 sockets stuck indefinitely in `CLOSE_WAIT`, and `/proc/<pid>/fd` hits `ulimit -n` (Errno 24: Too many open files). What is the exact root cause?",
+    "question": "During an outage, `ss -tan` on your AeroCart gateway shows 32,000 sockets stuck indefinitely in `CLOSE_WAIT`, and `/proc/<pid>/fd` hits `ulimit -n` (Errno 24: Too many open files). What is the exact root cause?",
     "options": [
       "The Linux kernel `tcp_tw_reuse` sysctl is disabled",
       "Remote peers closed their half of the TCP connection (sent FIN), and your application code leaked the socket handles without calling `.close()` on HTTP response streams or error paths",

@@ -17,29 +17,167 @@ tags: ["system-design", "raft", "consensus", "quorums", "fencing-tokens", "split
 
 # Replication Quorums, Split-Brain Fencing Tokens & Raft Consensus Internals
 
+```json continuity
+{
+  "previously": "In Chapter 04, we protected AeroCart's database from 100,000-RPS cache stampedes using Singleflight request coalescing, Memcache Lease tokens, and XFetch early refreshes.",
+  "painPoint": "When AeroCart's primary database server freezes during a 14-second garbage-collection pause, our cluster elects a new primary. Suddenly the frozen old primary wakes up—still believing it is the leader—and overwrites seat 12A with a conflicting booking ('Split-Brain')!",
+  "unlock": "We will build Strict Quorum overlap checks, Monotonic Fencing Tokens, and Raft Consensus voting rules so split-brain zombie leaders can never corrupt AeroCart's bookings."
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "1. Two Captains",
+    "caption": "Imagine a flight tower losing radio contact with Captain A for 10 seconds and promoting Captain B. If Captain A comes back online and both issue orders, the runway collides.",
+    "code": "OldLeader (Term 8) vs NewLeader (Term 9) -> Split-Brain!"
+  },
+  {
+    "time": "0:25",
+    "badge": "2. Fencing Tokens",
+    "caption": "Every time a new leader takes over, it gets a strictly higher Fencing Token number. The storage drive rejects any write carrying an older number.",
+    "code": "if fencing_token < max_seen_token: reject_write()"
+  },
+  {
+    "time": "0:50",
+    "badge": "3. Quorum Overlap",
+    "caption": "In leaderless stores with N=3 nodes, writing to W=2 and reading from R=2 guarantees at least 1 overlapping node holds the newest version.",
+    "code": "R + W > N  (2 + 2 > 3 -> 1 node overlap)"
+  },
+  {
+    "time": "1:15",
+    "badge": "4. Raft Consensus",
+    "caption": "In Raft, a candidate only wins election if a majority of voters confirm its log term and index are at least as up-to-date as theirs.",
+    "code": "(cand_term, cand_idx) >= (voter_term, voter_idx)"
+  }
+]
+```
+
 ```json pretraining
 [
   {
     "term": "Strict Quorum Overlap",
     "formula": "R + W > N  (e.g., 2 + 2 > 3)",
-    "meaning": "Pigeonhole guarantee in N-replica leaderless stores: the read set of size R and write set of size W must intersect in at least 1 replica holding the latest timestamp/version."
+    "meaning": "When you store copies on 3 servers, writing to at least 2 and reading from at least 2 guarantees that your read and write groups overlap on at least one up-to-date server."
   },
   {
     "term": "Monotonic Fencing Token",
     "formula": "Reject Write if token < max_seen_token",
-    "meaning": "Prevents a GC-paused 'zombie leader' whose distributed lock expired from corrupting storage after a new leader has already taken over."
+    "meaning": "An ever-increasing ticket number attached to every leader write so a paused 'zombie' leader with an old ticket number is immediately blocked by the storage disk."
   },
   {
-    "term": "Raft Election Safety & Term",
-    "formula": "≤ 1 Leader per Term t (Majority ⌊N/2⌋ + 1)",
-    "meaning": "Logical clock epoch incremented on every election; candidates only win votes from peers if the candidate's log is at least as up-to-date (lastLogTerm, lastLogIndex)."
+    "term": "Raft Term & Majority Election",
+    "formula": "At Most 1 Leader per Term via Majority Votes",
+    "meaning": "A numbered election round where a server can only become leader by winning votes from more than half the cluster."
   },
   {
     "term": "Leader Completeness Invariant",
-    "formula": "Committed(idx, t) ⇒ Present in Leaders(t' > t)",
-    "meaning": "Once a log entry from the current term is replicated on a majority quorum, no future elected leader can ever overwrite or lose that entry."
+    "formula": "Majority-Committed Entry Never Lost",
+    "meaning": "Raft's rule that voters refuse to elect any candidate whose log is missing entries that were already confirmed by a majority."
   }
 ]
+```
+
+## 🌱 Step 1: Plain-English Story — Two Captains in the Control Tower
+
+Imagine `AeroCart` stores seat reservations on a single database server. To survive hardware crashes, we add two backup servers (3 servers total). One night, Primary Server 1 freezes for 14 seconds during a heavy memory cleanup.
+
+After 10 seconds of silence, Backup Server 2 says: *"Server 1 is dead! I am the new Primary!"* and sells Seat `12A` to Alice. Four seconds later, Server 1 wakes up from its pause. It has no idea time passed—it still thinks it is the boss, so it sells Seat `12A` to Bob and overwrites the disk! Now two flyers hold boarding passes for the exact same window seat. Engineers call this disaster **Split-Brain**.
+
+How do we make Split-Brain mathematically impossible? First, every time a leader wins an election, the cluster increments an election counter called a **Term** (or **Fencing Token**): Server 1 had Token `#33`, and Server 2 gets Token `#34`. Once the storage engine sees Token `#34`, it permanently slams the door on any delayed command carrying Token `#33`. Second, before any seat booking is confirmed, the leader must copy that log entry to a **Majority Quorum** (at least 2 out of 3 servers) using **Raft Consensus**.
+
+```mermaid
+sequenceDiagram
+  participant C as AeroCart API
+  participant L as Raft Leader (Term 9)
+  participant F1 as Follower 1
+  participant F2 as Follower 2
+  C->>L: Book Seat 12A (Term 9)
+  L->>F1: AppendEntries(idx=42, term=9)
+  L->>F2: AppendEntries(idx=42, term=9)
+  F1-->>L: ACK (Majority 2/3 Reached!)
+  L-->>C: Booking Confirmed (Token=9)
+```
+
+---
+
+## 🔨 Step 2: First Lines of Code — Fencing Token Guard & Quorum Check
+
+Let's write a 16-line `FencedSeatStore` in Python 3 and Java 17 that blocks zombie `AeroCart` leaders using monotonic fencing tokens and verifies strict quorum overlap.
+
+```python
+class FencedSeatStore:
+    def __init__(self):
+        self.max_token = 0
+        self.seats = {}
+
+    def book_seat(self, seat: str, flyer: str, token: int) -> bool:
+        if token < self.max_token:
+            return False  # Reject zombie leader with old token!
+        self.max_token = token
+        self.seats[seat] = flyer
+        return True
+
+def has_quorum_overlap(n_nodes: int, r_reads: int, w_writes: int) -> bool:
+    return (r_reads + w_writes) > n_nodes
+```
+
+### Java 17 Equivalent
+```java
+import java.util.HashMap;
+import java.util.Map;
+
+public class FencedSeatStore {
+    private long maxToken = 0;
+    private final Map<String, String> seats = new HashMap<>();
+
+    public synchronized boolean bookSeat(String seat, String flyer, long token) {
+        if (token < maxToken) return false; // Reject zombie leader!
+        maxToken = token;
+        seats.put(seat, flyer);
+        return true;
+    }
+
+    public static boolean hasQuorumOverlap(int n, int r, int w) {
+        return (r + w) > n;
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — Why `R + W > N` Is Still Not Linearizable
+
+Many engineers assume that setting $N = 3, W = 2, R = 2$ in a leaderless database (like Cassandra or Dynamo) guarantees every reader immediately sees the latest write. **It does not!**
+
+Suppose Writer W updates Seat `12A = Alice`. The write reaches **Node 1** (`Alice`), is still in flight to **Node 2** (`Empty`), and hasn't reached **Node 3** (`Empty`).
+1. **Reader A** queries `{Node 1, Node 2}`, sees `Alice` (newer timestamp), and tells the user *"Seat 12A is taken!"*
+2. One millisecond later, **Reader B** queries `{Node 2, Node 3}`, sees `Empty` on both, and tells a second user *"Seat 12A is free!"*—even though Reader A already observed the newer state!
+3. Worse still, if servers use wall-clock timestamps for **Last-Write-Wins (LWW)** and one server's clock drifts ahead by 5 milliseconds, it will silently discard newer bookings.
+
+True **Linearizability** (where every read globally sees the latest committed write) requires either **Raft / Paxos Consensus** with `ReadIndex` heartbeats or synchronous read-repair before returning.
+
+```json contrast
+{
+  "title": "AeroCart Distributed Coordination & Split-Brain Safety",
+  "naiveTitle": "Unfenced Lock + Async Primary-Replica Failover",
+  "naiveMetric": "Data Loss & Split-Brain Double-Bookings on Partition",
+  "naivePoints": [
+    "Promotes an async replica before all ACKed primary bookings have arrived (permanent data loss!)",
+    "Old partitioned primary keeps serving stale reads and accepting writes ('Split-Brain')",
+    "Relies on client wall-clock TTL leases that break under GC pauses or clock jumps",
+    "Uses N=3, W=2, R=2 with wall-clock Last-Write-Wins assuming it prevents double-booking"
+  ],
+  "staffTitle": "Raft Majority Log + ReadIndex + Fencing Tokens",
+  "staffMetric": "Zero Split-Brain · Provable Linearizability",
+  "staffPoints": [
+    "Requires majority quorum for both Leader Election and Log Commit so minorities freeze safely",
+    "Restricts RequestVote: voters reject any candidate whose (lastLogTerm, lastLogIndex) lags behind",
+    "Uses ReadIndex heartbeats to confirm majority leadership before serving linearizable reads",
+    "Propagates monotonic (term, index) Fencing Tokens down to storage engines to block zombie writers"
+  ]
+}
 ```
 
 ```json poe
@@ -56,75 +194,34 @@ tags: ["system-design", "raft", "consensus", "quorums", "fencing-tokens", "split
 }
 ```
 
-## Part I — Leaderless Dynamo Quorums ($R + W > N$) vs. Linearizable Consensus
-
-Distributed data systems replicate across $N$ nodes for fault tolerance using two fundamentally different families of protocols:
-
-1. **Leaderless `Dynamo`-Style Quorums (*Cassandra, Riak, DynamoDB eventual mode*)**:
-   - Clients send writes directly to all $N=3$ replicas in parallel and succeed once $W=2$ ACK; reads query $R=2$ replicas in parallel (`R + W = 4 > 3`) and return the value with the highest version/timestamp, repairing stale replicas asynchronously via **Read Repair** + background **Merkle-Tree Anti-Entropy**.
-   - **Why $R + W > N$ Is STILL Not Linearizable!** Even with $N=3, W=2, R=2$: if a write partially succeeds on Node 1 (`new`) while failing on Nodes 2 & 3 (`old`), or if Reader A observes `{Node 1 (new), Node 2 (old)}` while concurrent Reader B observes `{Node 2 (old), Node 3 (old)}` before the write finishes on Node 2, Reader B sees an older value *after* Reader A already saw the new value! Furthermore, **Last-Write-Wins (`LWW`)** using wall-clock NTP timestamps silently drops concurrent writes whenever server clocks skew by $5\text{ ms}$.
-2. **Consensus-Backed Replicated State Machines (`Raft` / `Multi-Paxos` — *etcd, CockroachDB, TiKV, Kafka KRaft*)**:
-   - Elects **at most one Leader per Term $t$** via majority quorum ($\lfloor N/2 \rfloor + 1$). Every state mutation is appended in strict sequential order to the Leader's log and committed once replicated to a majority, providing **true Linearizability** and atomic Compare-And-Swap (`CAS`).
-
-```mermaid
-sequenceDiagram
-  participant C as Client
-  participant L as Raft Leader (Term 8)
-  participant F1 as Follower 1 (AZ-a)
-  participant F2 as Follower 2 (AZ-b)
-
-  C->>L: Propose Command(set k=v)
-  L->>L: Append Log[idx=42, term=8]
-  L->>F1: AppendEntries(prevIdx=41, prevTerm=8, entry=42)
-  L->>F2: AppendEntries(prevIdx=41, prevTerm=8, entry=42)
-  F1-->>L: ACK (MatchIdx=42) -> Majority 2/3 Reached!
-  L->>L: Advance commitIndex = 42 & Apply State Machine
-  L-->>C: Linearizable Commit OK (Fencing Term=8, Index=42)
-```
-
 ---
 
-## Part II — Raft Safety Mechanics & Split-Brain Prevention
+## 🚀 Step 4: Staff Engineer Deep-Dive — Quorum Math, Raft Safety Laws & Blueprints
 
-How does **Raft** (*Ongaro & Ousterhout*) prevent **Split-Brain** during an asymmetric network partition separating a 5-node cluster into `{OldLeader, N2}` (2 nodes) and `{N3, N4, N5}` (3 nodes)?
-- The majority side `{N3, N4, N5}` times out waiting for heartbeats, increments `currentTerm` ($8 \to 9$), and elects `N3` (3/5 votes).
-- Meanwhile, `OldLeader` on the minority side `{OldLeader, N2}` can still accept client TCP sockets—**but** `OldLeader` can only collect `2/5` ACKs on `AppendEntries`, so its `commitIndex` **freezes** (zero dirty writes can commit!). And for **Linearizable Reads**, `OldLeader` must execute a **`ReadIndex` heartbeat round** confirming a majority still recognizes `Term 8` before answering reads—preventing stale reads from a partitioned minority leader!
+### 1. Mathematical Laws of Quorums & Raft Election Safety
 
-```json contrast
-{
-  "title": "Distributed Coordination & Split-Brain Safety",
-  "naiveTitle": "Unfenced Lock + Async Primary-Replica Failover",
-  "naiveMetric": "Data Loss & Split-Brain Corruption on Partition",
-  "naivePoints": [
-    "Promotes an asynchronous standby replica before all ACKed primary transactions replicated (permanent data loss!)",
-    "Old partitioned primary keeps serving stale reads and accepting writes ('Split-Brain')",
-    "Relies on client-side wall-clock TTL leases that break under JVM GC pauses or NTP clock jumps",
-    "Uses N=3, W=2, R=2 with NTP Last-Write-Wins assuming it provides strict linearizability"
-  ],
-  "staffTitle": "Raft Majority Log + ReadIndex + Fencing Tokens",
-  "staffMetric": "Zero Split-Brain · Provable Linearizability",
-  "staffPoints": [
-    "Requires majority quorum (⌊N/2⌋ + 1) for both Leader Election and Log Commit—minorities freeze safely",
-    "Restricts RequestVote: voters reject any candidate whose (lastLogTerm, lastLogIndex) lags behind their own",
-    "Uses ReadIndex / Leader Leases with bounded monotonic clock drift to prevent stale minority-leader reads",
-    "Propagates monotonic (term, index) Fencing Tokens down to storage engines to block zombie writers"
-  ]
-}
-```
+In a leaderless replica set of size $N$, strict quorum intersection requires that the read set $R$ and write set $W$ satisfy the Pigeonhole Principle:
 
-### Architectural Trade-Off Table: Replication & Consensus Models
+$$R + W > N \implies |S_{\text{read}} \cap S_{\text{write}}| \ge R + W - N \ge 1$$
+
+In **Raft Consensus**, both leader elections and log commits require a strict majority quorum $Q$:
+
+$$Q = \left\lfloor \frac{N}{2} \right\rfloor + 1, \quad f_{\text{max}} = \left\lfloor \frac{N - 1}{2} \right\rfloor$$
+
+where $f_{\text{max}}$ is the maximum number of simultaneous node failures the cluster can tolerate. To guarantee the **Leader Completeness Invariant** (any entry committed in term $t$ is present in the log of all leaders for terms $t' > t$), Raft's `RequestVote` RPC compares log freshness lexicographically by `(lastLogTerm, lastLogIndex)`:
+
+$$\text{UpToDate}(C, V) \iff (T_C > T_V) \lor (T_C = T_V \land I_C \ge I_V)$$
+
+### 2. Architectural Trade-Off Table: Replication & Consensus Models
 
 | Architecture | Write Availability | Read Consistency | Cross-Region WAN Latency | Canonical Production Systems |
 | :--- | :--- | :--- | :--- | :--- |
-| **Async Single-Leader** | High (Primary local WAL ACK) | Eventual on replicas (**Read-Your-Writes** requires primary routing or LSN pinning) | $0\text{ RTT}$ write | PostgreSQL / MySQL read-replica topologies |
-| **Leaderless Quorum (`R+W>N` + Sloppy Quorum)** | **Highest** (Hinted handoff accepts writes even during partitions — `AP`) | Tunable / Eventual (Vector Clocks or `LWW`) | $1\text{ RTT}$ to nearest $W$ nodes | **Apache Cassandra, ScyllaDB, Riak** |
+| **Async Single-Leader** | High (Primary local WAL ACK) | Eventual on replicas (**Read-Your-Writes** needs LSN pinning) | $0\text{ RTT}$ write | PostgreSQL / MySQL read-replica topologies |
+| **Leaderless Quorum (`R+W>N` + Sloppy Quorum)** | **Highest** (Hinted handoff accepts writes during partitions — `AP`) | Tunable / Eventual (Vector Clocks or `LWW`) | $1\text{ RTT}$ to nearest $W$ nodes | **Apache Cassandra, ScyllaDB, Riak** |
 | **Raft / Paxos Consensus (`CP`)** | Survives $f$ failures with $2f+1$ nodes (`3` $\to$ `1`, `5` $\to$ `2`) | **Strict Linearizable** (via `ReadIndex`) | $1\text{ Quorum RTT}$ per write | **etcd (Kubernetes), CockroachDB, Spanner, Kafka KRaft** |
 
----
+### 3. Production Blueprints (Python 3 & Java 17)
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Fenced Storage Resource + Raft Election Log-Up-To-Date Verifier
 ```python
 from dataclasses import dataclass
 
@@ -158,12 +255,6 @@ class RaftVoterNode:
     def handle_request_vote(
         self, candidate_id: str, cand_term: int, cand_last_log_term: int, cand_last_log_idx: int
     ) -> tuple[int, bool]:
-        """
-        Enforces Raft §5.2 & §5.4.1 Election Safety + Log Up-To-Date restriction:
-        Candidate log is at least as up-to-date iff:
-          (cand_last_log_term > self.last_log_term) OR
-          (cand_last_log_term == self.last_log_term AND cand_last_log_idx >= self.last_log_index)
-        """
         if cand_term < self.current_term:
             return self.current_term, False
 
@@ -183,7 +274,7 @@ class RaftVoterNode:
         return self.current_term, False
 ```
 
-### Java 17 Blueprint: Quorum Overlap Validator, Fencing Guard & Raft Vote Rule
+### Java 17 Equivalent
 ```java
 public final class ConsensusInvariants {
     public record LogPosition(long term, long index) implements Comparable<LogPosition> {
@@ -227,9 +318,7 @@ public final class ConsensusInvariants {
 > **Staff Interview Gotcha — Why Deploying a 4-Node Raft/etcd Cluster Is Strictly WORSE Than a 3-Node Cluster!**:
 > Majority quorum for $N = 3$ is $\lfloor 3/2 \rfloor + 1 = 2$ (tolerates **$1$ dead node**). Majority quorum for $N = 4$ is $\lfloor 4/2 \rfloor + 1 = 3$ (STILL tolerates **only $1$ dead node**—if 2 nodes die, $2 < 3$ halts the cluster!). Yet $N = 4$ has $33\%$ more hardware that can fail and requires an extra network ACK on every quorum! Always size consensus groups to **odd numbers ($N = 3$ or $N = 5$)**.
 
----
-
-## Part IV — End-of-Chapter Mastery Check
+**Up Next in Chapter 06**: With `AeroCart`'s cache and Raft consensus storage hardened, how do we stop a single runaway bot or slow downstream payment gateway from exhausting all worker threads across our fleet? In Chapter 06, we will build **Token-Bucket / GCRA Rate Limiters, Adaptive Little's Law Concurrency Limits, and Tail-Latency Hedging**.
 
 ```json quiz
 [
