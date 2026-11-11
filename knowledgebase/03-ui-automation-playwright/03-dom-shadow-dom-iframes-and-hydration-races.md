@@ -17,29 +17,159 @@ tags: ["shadow-dom", "iframes", "framelocator", "ssr-hydration", "critical-rende
 
 # Critical Rendering Path, Shadow DOM, Iframes & SSR Hydration Races
 
+```json continuity
+{
+  "previously": "In Chapter 2, we upgraded AeroBot to v0.2 with 12ms incognito BrowserContext sandboxes so 500 tests run with zero cookie or localStorage leaks.",
+  "painPoint": "When AeroCart adds a Shadow DOM address widget, a cross-origin Stripe payment iframe, and Next.js Server-Side Rendering (SSR), AeroBot v0.2 clicks buttons before React attaches event listeners and fails to reach inside the payment iframe!",
+  "unlock": "We will upgrade AeroBot to v0.3 with automatic Shadow DOM piercing, stateless FrameLocator lenses, and a deterministic SSR hydration contract."
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "🌱 The Storefront Mannequin Illusion",
+    "caption": "In Server-Side Rendered apps like Next.js, the browser paints a realistic HTML button at 100ms, but React only wires up its click listener at 350ms. Clicking at 150ms is like pressing an unplugged doorbell!",
+    "code": "t=100ms (HTML Painted, 0 JS!) -> [Dead Click Gap] -> t=350ms (Hydrated!)"
+  },
+  {
+    "time": "0:25",
+    "badge": "🔨 AeroBot v0.3: Shadow & IFrame Lenses",
+    "caption": "Playwright's Role and CSS locators automatically walk right through open Shadow DOM walls, and FrameLocator lets us type into a Stripe iframe without ever switching global page focus.",
+    "code": "page.frame_locator(\"iframe[title='Secure Card']\").get_by_label('CVV').fill('123')"
+  },
+  {
+    "time": "0:50",
+    "badge": "⚡ Why XPath and switchTo() Break",
+    "caption": "XPath is completely blind to Shadow DOM roots, and Selenium's stateful switchTo().frame() leaves your test stranded inside the iframe if you forget to switch back.",
+    "code": "locator('//aero-card//button') -> 0 matches (Blocked by #shadow-root!)"
+  },
+  {
+    "time": "1:15",
+    "badge": "🚀 Staff SSR Hydration Contract",
+    "caption": "Instead of using brittle sleeps or networkidle, we synchronize on a data-hydrated='true' attribute or disabled button state once React's root useEffect completes.",
+    "code": "expect(page.locator(\"body[data-hydrated='true']\")).to_be_attached()"
+  }
+]
+```
+
 ```json pretraining
 [
   {
+    "term": "Open Shadow DOM Piercing",
+    "formula": "get_by_role() / CSS Locator -> Walks Inside #shadow-root Automatically",
+    "meaning": "Web Components hide their internal HTML inside a private bubble called Shadow DOM. Playwright's Role and CSS locators see right through open bubbles automatically, while XPath hits a brick wall."
+  },
+  {
+    "term": "Stateless FrameLocator",
+    "formula": "page.frame_locator('iframe[title=...]').get_by_label('Card')",
+    "meaning": "A magnifying glass pointed at a payment iframe: you can type into the iframe on line 1 and click a main-page button on line 2 without ever calling switchTo()."
+  },
+  {
+    "term": "SSR Hydration Uncanny Valley",
+    "formula": "HTML Paint (Button Visible) -> 200ms Gap -> JS Hydrated (onClick Wired)",
+    "meaning": "The brief window where a server-rendered button looks 100% ready on screen, but the JavaScript code that makes it actually work hasn't finished loading yet."
+  },
+  {
     "term": "Critical Rendering Path",
-    "formula": "HTML -> DOM + CSS -> CSSOM => RenderTree -> Layout -> Paint -> Composite",
-    "meaning": "An element present in the DOM is NOT clickable until CSSOM + Layout compute a non-zero bounding box (`display != none`, `visibility != hidden`)."
-  },
-  {
-    "term": "Automatic Open Shadow Piercing",
-    "formula": "page.get_by_role(...) / page.locator('css') -> Traverses #shadow-root (open)",
-    "meaning": "Unlike `document.querySelector` or XPath, Playwright's CSS and Role engines automatically pierce nested open Shadow DOM trees with zero `.shadowRoot` boilerplate."
-  },
-  {
-    "term": "Stateless `FrameLocator`",
-    "formula": "page.frame_locator('#stripe-iframe').get_by_label('Card')  [No `switchTo` State!]",
-    "meaning": "Declarative `FrameLocator` eliminates Selenium's stateful `driver.switchTo().frame()` cursor bugs and auto-waits for cross-origin iframes to mount and navigate."
-  },
-  {
-    "term": "SSR / Hydration Uncanny Valley",
-    "formula": "t_SSR_Paint (Visible + Enabled HTML!) < t_Hydrate (React `onClick` Attached!)",
-    "meaning": "Server-Side Rendered apps paint visible buttons BEFORE JS bundles download and attach event listeners; clicking in the gap fires a dead click into thin air!"
+    "formula": "HTML + CSS -> Layout Box -> Paint Pixels",
+    "meaning": "The steps the browser takes to turn raw HTML text into visible, clickable boxes with real width and height on screen."
   }
 ]
+```
+
+## 🌱 Step 1: Plain-English Story — The Unplugged Doorbell & The Armored Bank Window
+
+As AeroCart grows into a real airline checkout page, our test bot runs into three modern frontend traps:
+
+1. **The Private VIP Bubble (`Shadow DOM`)**: The UI team builds a reusable `<aero-address-picker>` Web Component. Inside it lives a private `#shadow-root` bubble so its styles never clash with the rest of the page. Old XPath locators (`//button`) walk up to the bubble and go completely blind! Playwright's Role and CSS locators walk right through open Shadow bubbles automatically.
+2. **The Armored Bank Window (`Cross-Origin <iframe>`)**: For credit card security, Stripe locks the card number input inside a separate mini-webpage (`<iframe>`). In older tools, you had to climb *inside* the window (`switchTo().frame()`) and remember to climb back out (`switchTo().defaultContent()`). Playwright gives you **`FrameLocator`**—a stateless lens that lets you type into the iframe on one line and click the main page on the next.
+3. **The Unplugged Doorbell (`SSR Hydration Race`)**: Modern frameworks (`Next.js`, `Remix`) send a fast HTML snapshot first so human eyes see the page in `100ms`, and attach the JavaScript click listeners `250ms` later (**Hydration**). If **`AeroBot`** clicks the visible button at `120ms`, it presses an unplugged doorbell—nothing happens!
+
+```mermaid
+flowchart LR
+  SSR["1. HTML Painted (100ms)"] -->|Unplugged Doorbell Gap| Hydrated["2. JS Hydrated (data-hydrated=true)"]
+  Hydrated -->|Auto-Pierce Shadow DOM| Shadow["3. <aero-address> Shadow Root"]
+  Shadow -->|Stateless FrameLocator| Iframe["4. Stripe Payment <iframe>"]
+```
+
+---
+
+## 🔨 Step 2: First Lines of Code — AeroBot v0.3 Shadow, Iframe & Hydration
+
+Let's upgrade **`AeroBot` to `v0.3`**. Notice how we wait for the page's hydration marker (`data-hydrated="true"`), click inside a Shadow DOM component, fill a cross-origin `<iframe>` via `frame_locator`, and click **"Pay Now"** on the main page with zero `switchTo()` calls!
+
+```python
+# aerobot_v03.py — AeroBot v0.3: Hydration sync + Shadow DOM + Stateless FrameLocator
+from playwright.sync_api import Page, expect
+
+def test_aerocart_shadow_and_iframe_checkout(page: Page) -> None:
+    page.goto("http://127.0.0.1:8090")
+    expect(page.locator("body[data-hydrated='true']")).to_be_attached()
+
+    # Pierces <aero-address-card> #shadow-root automatically:
+    page.get_by_role("button", name="Confirm Address").click()
+
+    # Stateless lens into cross-origin payment iframe:
+    stripe = page.frame_locator("iframe[title='Secure Card Input']")
+    stripe.get_by_label("Card number").fill("4242424242424242")
+
+    # Immediately click main-document button—no switchTo().defaultContent()!
+    page.get_by_role("button", name="Pay Now").click()
+```
+
+### Java 17 Equivalent
+
+```java
+// AeroBotV03.java — AeroBot v0.3: Hydration sync + Shadow DOM + Stateless FrameLocator
+import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.AriaRole;
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
+public class AeroBotV03 {
+    public static void completeCheckout(Page page) {
+        page.navigate("http://127.0.0.1:8090");
+        assertThat(page.locator("body[data-hydrated='true']")).isAttached();
+
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Confirm Address")).click();
+
+        FrameLocator stripe = page.frameLocator("iframe[title='Secure Card Input']");
+        stripe.getByLabel("Card number").fill("4242424242424242");
+
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Pay Now")).click();
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — Why `networkidle` & XPath Fail
+
+When teams hit dead clicks on Next.js apps or fail to find elements inside Web Components, they often reach for three anti-patterns that make CI even flakier:
+
+1. **Using XPath (`//aero-modal//button`)**: The W3C XPath engine has zero concept of Shadow DOM. The moment your frontend adopts Web Components, every XPath locator returns `0 matches`.
+2. **Matching iframes by index (`iframe >> nth=0`)**: When marketing injects a Google Tag Manager or Intercom hidden `<iframe>` at the top of `<body>`, `nth=0` suddenly points to an ad tracker instead of Stripe! Always match iframes by semantic `title` or `name`.
+3. **Waiting for `wait_until="networkidle"`**: `networkidle` forces a mandatory **500ms sleep** on every navigation, **times out after 30s** if the app has live WebSockets or SSE flight tickers, and **still doesn't guarantee** React finished CPU hydration!
+
+```json contrast
+{
+  "title": "XPath + Stateful switchTo() + networkidle vs AeroBot v0.3 Shadow Role + FrameLocator + Hydration Gate",
+  "naiveTitle": "XPath + switchTo() + networkidle",
+  "naiveMetric": "Blind to Shadow DOM · 500ms+ Tax · Dead Clicks",
+  "naivePoints": [
+    "XPath //aero-modal//button fails completely because XPath cannot cross #shadow-root boundaries",
+    "Stateful switchTo().frame(0) breaks whenever analytics scripts inject a tracking iframe at index 0",
+    "wait_until='networkidle' hangs on WebSockets/SSE and still races against React main-thread hydration"
+  ],
+  "staffTitle": "AeroBot v0.3 Role + FrameLocator + Hydration Gate",
+  "staffMetric": "Auto Shadow Pierce · Stateless Iframe · 0 Dead Clicks",
+  "staffPoints": [
+    "get_by_role('button', name='Confirm') pierces nested open Shadow DOM roots transparently",
+    "page.frame_locator('iframe[title=\"Secure Card Input\"]') targets cross-origin iframes statelessly",
+    "Synchronizes SSR interactivity via disabled={!isHydrated} or body[data-hydrated='true']"
+  ]
+}
 ```
 
 ```json poe
@@ -56,77 +186,35 @@ tags: ["shadow-dom", "iframes", "framelocator", "ssr-hydration", "critical-rende
 }
 ```
 
-## Part I — First-Principles Mental Model: Three Boundaries Where Naive DOM Queries Break
-
-To automate modern enterprise UIs—Design-System Web Components (`Lit` / `Stencil`), PCI-DSS isolated payment fields (`Stripe Elements` / `Adyen` cross-origin `<iframe>`s), and SSR frameworks (`Next.js` / `Remix` / `Nuxt`)—you must understand how Blink/WebKit partition trees and attach interactivity:
-
-### 1. Encapsulated Shadow DOM (`attachShadow({ mode: 'open' })`)
-Standard `document.querySelector("input")` and **all XPath expressions** (`//input`) stop dead at a Shadow Root boundary! In Selenium 3/4, piercing 3 nested design-system web components (`<aero-checkout>` $\to$ `<aero-card-field>` $\to$ `<aero-input>`) required chaining three brittle `getShadowRoot()` calls.
-- **Playwright Engine Behavior**: Both **Role/Accessibility locators** (`get_by_role`, `get_by_label`) and **CSS locators** in Playwright **pierce open Shadow DOM roots automatically** by default! (**Critical corollary**: XPath in Playwright *never* pierces Shadow DOM—another nail in XPath's coffin.)
-
-### 2. Cross-Origin `<iframe>` Sandboxes (`FrameLocator` vs `switchTo`)
-Payment gateways isolate PAN/CVV inputs inside cross-origin `<iframe>` documents so merchant JS cannot skim credit cards.
-- **Legacy Stateful Cursor Trap**: `driver.switchTo().frame("stripe")` mutates global driver focus; if an exception occurs or a helper forgets `driver.switchTo().defaultContent()`, every subsequent page locator throws `NoSuchElementException`.
-- **Stateless `FrameLocator`**: `card_frame = page.frame_locator("iframe[title='Secure card input']")` is a pure, stateless lens. Interacting with `card_frame.get_by_label("CVV").fill("123")` and immediately clicking `page.get_by_role("button", name="Pay").click()` on the main document requires **zero context-switching state**.
-
-### 3. The SSR Hydration Gap (`HTML Paint` $\neq$ `JS Interactive`)
-In Next.js/React SSR, the server sends fully rendered HTML first (`First Contentful Paint` at `100ms`), and the client downloads/executes hydration bundles later (`Time to Interactive` at `350ms`). During `[100ms, 350ms]`, buttons pass every visual/DOM actionability check, yet clicking them does nothing—or worse, submits a native HTML `<form>` reload instead of `e.preventDefault()`!
-
-```mermaid
-flowchart LR
-  SSR["1. SSR HTML Stream (t=100ms)"] -->|Buttons Visible, 0 JS Listeners!| Gap["Hydration Uncanny Valley"]
-  Gap -->|React hydrateRoot() (t=320ms)| Ready["2. Interactive (`data-hydrated=true`)"]
-  Ready -->|Pierce Open Shadow + FrameLocator| Click["3. Deterministic Action Execution"]
-```
-
-```json contrast
-{
-  "title": "XPath + Stateful `switchTo().frame()` + `sleep()` vs Shadow-Piercing Role + `FrameLocator` + Hydration Signal",
-  "naiveTitle": "XPath + `switchTo()` + `networkidle`",
-  "naiveMetric": "Fails Shadow DOM · Hydration Dead-Clicks",
-  "naivePoints": [
-    "XPath `//aero-modal//button` returns 0 matches because XPath is blind to Web Component `#shadow-root` trees",
-    "Stateful `switchTo().frame(0)` breaks whenever analytics scripts inject a hidden tracking `<iframe>` at index `0`",
-    "Relies on `wait_until='networkidle'` (waits 500ms of zero traffic), flaking on SSE/WebSocket/analytics polling apps"
-  ],
-  "staffTitle": "AXTree Role + `FrameLocator` + Hydration Gate",
-  "staffMetric": "Auto Shadow Pierce · 0ms Dead-Click Flake",
-  "staffPoints": [
-    "`page.get_by_role('button', name='Continue')` pierces nested open Shadow roots transparently",
-    "`page.frame_locator('iframe[name=\"stripe-pan\"]')` scopes cross-origin iframe actions statelessly by semantic attribute",
-    "Synchronizes SSR interactivity via `disabled` hydration binding or root `[data-hydrated='true']` readiness contract"
-  ]
-}
-```
-
 ---
 
-## Part II — DOM Encapsulation & Rendering Boundaries Matrix
+## 🚀 Step 4: Staff Engineer Deep-Dive — Hydration Window Math & Nested Iframe Orchestration
 
-Use the **`pw-locators-actionability`** simulator to inspect how queries traverse standard DOM, nested open Shadow roots, cross-origin `FrameLocator` subtrees, and SSR hydration windows.
+### 1. The SSR Hydration Vulnerability Window ($\Delta t_{\text{uncanny}}$)
 
-| Boundary | XPath (`//...`) | Playwright CSS (`page.locator`) | Playwright Role (`get_by_role`) | Staff Recommendation |
+Let $t_{\text{FCP}}$ be the First Contentful Paint timestamp when the browser parses SSR HTML and computes layout boxes, and let $t_{\text{TTI}}$ be the Time to Interactive when JavaScript bundles finish downloading ($T_{\text{net}}$), parsing/compiling ($T_{\text{parse}}$), and executing `hydrateRoot()` ($T_{\text{exec}}$):
+
+$$\Delta t_{\text{uncanny}} = t_{\text{TTI}} - t_{\text{FCP}} = T_{\text{net}} + \gamma_{\text{CPU}} \cdot \left(T_{\text{parse}} + T_{\text{exec}}\right)$$
+
+Under CI container CPU throttling ($\gamma_{\text{CPU}} = 4\times$), $\Delta t_{\text{uncanny}}$ stretches from $80\text{ ms}$ on a developer MacBook to $450\text{--}900\text{ ms}$ in CI. Because a fast automated locator resolves in $\sim 15\text{ ms}$ after $t_{\text{FCP}}$, any click dispatched in $(t_{\text{FCP}}, t_{\text{TTI}})$ lands on an unhydrated DOM node with probability approaching $1.0$ unless gated by `disabled={!hydrated}` or a root hydration attribute.
+
+| Boundary | XPath (`//...`) | Playwright CSS (`page.locator`) | Playwright Role (`get_by_role`) | Staff Architecture Rule |
 | :--- | :--- | :--- | :--- | :--- |
 | **Standard Light DOM** | Traverses | Traverses | Traverses AXTree | Prefer `get_by_role` / `get_by_label`. |
-| **Open Shadow DOM (`#shadow-root`)** | **BLIND (Fails!)** | **Pierces Automatically** | **Pierces Automatically** | Ban XPath completely in Web Component apps. |
-| **Closed Shadow DOM (`mode: 'closed'`)** | Blind | Blind | Exposed only if browser maps ARIA | Request `mode: 'open'` testability seam from UI team. |
-| **Cross-Origin `<iframe>`** | Fails without frame lens | Requires `page.frame_locator(...)` | `frame_locator(...).get_by_role(...)` | Never match iframes by numeric index `[0]`; match `title` or `name`. |
+| **Open Shadow DOM (`#shadow-root`)** | **BLIND (Fails!)** | **Pierces Automatically** | **Pierces Automatically** | Ban XPath in Web Component apps. |
+| **Closed Shadow DOM (`mode: 'closed'`)** | Blind | Blind | Exposed only via ARIA | Require `mode: 'open'` testability seam. |
+| **Cross-Origin `<iframe>`** | Fails without frame lens | Requires `page.frame_locator(...)` | `frame_locator(...).get_by_role(...)` | Match `iframe` by `title`/`name`, never index `[0]`. |
 
----
+### 2. Production Dual-Language Blueprint: Nested PCI `FrameLocator` + Hydration Sync
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Stateless Nested `FrameLocator` Payment Component + SSR Hydration Synchronization
 ```python
 from __future__ import annotations
 from playwright.sync_api import Locator, Page, expect
 
-
 class PciHostedCardComponent:
-    """Stateless cross-origin payment iframe component—zero `switchTo()` state mutations!"""
+    """Stateless cross-origin payment iframe component—zero switchTo() state mutations!"""
 
     def __init__(self, page: Page) -> None:
-        # Match iframe by semantic title/name, NEVER by positional index `iframe >> nth=0`!
         vault_frame = page.frame_locator("iframe[title='PCI Secure Payment Frame']")
         cvv_nested_frame = vault_frame.frame_locator("iframe[name='cvv-subframe']")
 
@@ -139,35 +227,12 @@ class PciHostedCardComponent:
         self.expiry_input.fill(expiry)
         self.cvv_input.fill(cvv)
 
-
 def open_hydrated_ssr_route(page: Page, path: str) -> None:
-    """
-    Navigates to an SSR route (Next.js / Remix) and deterministically awaits React hydration
-    before dispatching fast synthetic clicks—eliminating the SSR Hydration Uncanny Valley!
-    """
+    """Navigates to an SSR route and deterministically awaits React hydration completion."""
     page.goto(path, wait_until="domcontentloaded")
-    # Frontend sets `<body data-app-hydrated="true">` inside root `useEffect(() => ..., [])`
     expect(page.locator("body[data-app-hydrated='true']")).to_be_attached()
-
-
-def open_drawer_resilient_to_late_hydration(trigger: Locator, drawer_heading: Locator) -> None:
-    """Fallback pattern for third-party SSR apps where you cannot add `data-app-hydrated`."""
-    def _click_and_verify_opened() -> None:
-        trigger.click()
-        expect(drawer_heading).to_be_visible(timeout=750)
-
-    # Retries the idempotent drawer toggle cleanly if the very first click fell inside the pre-hydration gap
-    expect(drawer_heading).to_be_hidden()
-    # In Playwright Python >=1.41, polling assertions or bounded retry blocks synchronize cleanly:
-    for attempt in range(3):
-        trigger.click()
-        if drawer_heading.is_visible():
-            break
-        page.wait_for_timeout(100) if (page := trigger.page) and attempt < 2 else None
-    expect(drawer_heading).to_be_visible()
 ```
 
-### Java 17 Blueprint: Shadow-Piercing Web Components + Cross-Origin `FrameLocator` + `waitForAll`
 ```java
 package com.aerocart.qa.dom;
 
@@ -176,7 +241,6 @@ import com.microsoft.playwright.options.AriaRole;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 public final class CheckoutDomOrchestrator {
-
     private final Page page;
     private final FrameLocator stripeFrame;
 
@@ -186,17 +250,12 @@ public final class CheckoutDomOrchestrator {
     }
 
     public void completeShadowAndIframeCheckout(String cardPan, String cvv) {
-        // 1. Wait for SSR root hydration contract (zero arbitrary Thread.sleep!)
-        assertThat(page.locator("[data-hydrated='true']")).isAttached();
-
-        // 2. Automatically pierces `<aero-address-shell>` -> `#shadow-root` -> `<aero-button>`!
+        assertThat(page.locator("body[data-app-hydrated='true']")).isAttached();
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Confirm Shipping Address")).click();
 
-        // 3. Interact inside cross-origin PCI iframe without switching global page context:
         stripeFrame.getByLabel("Card number").fill(cardPan);
         stripeFrame.getByLabel("CVC").fill(cvv);
 
-        // 4. Immediately click host-document button on the very next line—no switchTo().defaultContent()!
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Authorize Payment")).click();
         assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName("Receipt"))).isVisible();
     }
@@ -205,11 +264,9 @@ public final class CheckoutDomOrchestrator {
 
 > [!WARNING]
 > **Staff Interview Gotcha — Why `wait_until="networkidle"` Is Officially Discouraged in Playwright**:
-> Playwright's own documentation explicitly discourages `page.goto(url, wait_until="networkidle")` for test synchronization! Why? First, `networkidle` waits **at least 500ms** of zero connections on *every* navigation (adding artificial latency across hundreds of tests). Second, modern apps with WebSockets, Server-Sent Events (SSE), GraphQL subscriptions, or Segment analytics heartbeats **never reach `networkidle`**, causing `30,000ms` navigation timeouts! Navigate with default `load` / `domcontentloaded` and synchronize on concrete **Web-First UI assertions (`expect(locator).to_be_visible()`)**.
+> Playwright's official documentation explicitly discourages `page.goto(url, wait_until="networkidle")` for test synchronization! First, `networkidle` waits **at least 500ms** of zero network connections on *every* navigation. Second, modern apps with WebSockets, Server-Sent Events (SSE), or analytics heartbeats **never reach `networkidle`**, causing `30,000ms` navigation timeouts! Always navigate with `load` / `domcontentloaded` and synchronize on concrete **Web-First UI assertions (`expect(locator).to_be_visible()`)**.
 
----
-
-## Part IV — Scenario Retrieval-Practice Mastery Gate
+**Up Next in Chapter 4**: Now that **`AeroBot v0.3`** pierces Shadow DOM and cross-origin iframes, what happens when AeroCart's flight results page renders **20 identical `"Book Flight"` buttons** and a Tailwind CSS refactor renames every `.btn-primary` class? In **Chapter 4**, we upgrade **`AeroBot` to `v0.4`** using **Accessibility Tree (`AXTree`) Semantic Locators, Scoped `.filter()` Chains, and Strict Mode**.
 
 ```json quiz
 [

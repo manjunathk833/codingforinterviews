@@ -1328,6 +1328,62 @@ COURSE_SIMULATORS: Dict[str, Dict[str, Any]] = {
             },
         ],
     },
+    "sql-btree-explain-planner": {
+        "title": "Course 09: Composite B+Tree Leftmost Prefix, Sargability & EXPLAIN (ANALYZE, BUFFERS)",
+        "category": "SQL & Storage Query Optimization",
+        "complexity": {"time": "O(log_B N) Index Only Scan vs O(N) Seq Scan", "space": "8KB Shared Buffer Pages"},
+        "description": "Compare a non-sargable function-wrapped WHERE clause causing a 50,000-page Seq Scan against a sargable composite covering index scan (`shared hit=4`).",
+        "steps": [
+            {
+                "stepIndex": 0,
+                "title": "1. Sargability Trap: `WHERE DATE(booked_at) = '2026-11-10'` vs Half-Open Timestamp Range",
+                "narration": "Wrapping an indexed column inside `DATE(booked_at)` blinds the B+Tree planner—PostgreSQL must evaluate `DATE()` on all 2,000,000 rows (`Seq Scan`, 28,400 disk buffers). Rewriting as `booked_at >= '2026-11-10' AND booked_at < '2026-11-11'` walks the sorted B+Tree directly!",
+                "codeLine": "WHERE tenant_id = $1 AND status = 'CONFIRMED' AND booked_at >= $2 AND booked_at < $3  -- Sargable!",
+                "leftTitle": "Non-Sargable `WHERE DATE(booked_at) = ...`",
+                "rightTitle": "Sargable Range + Equality-First Composite Index",
+                "leftMetrics": {"Plan Node": "Seq Scan on bookings (2.0M rows)", "Buffers Read": "28,400 pages (~227 MB)", "Query Latency": "412.6 ms"},
+                "rightMetrics": {"Plan Node": "Index Only Scan (idx_tenant_status_booked)", "Buffers Hit": "4 pages (32 KB RAM)", "Query Latency": "0.18 ms"},
+            },
+            {
+                "stepIndex": 1,
+                "title": "2. `1:N` Join Fan-Out Trap: Inflated `SUM(fare_cents)` vs Pre-Aggregated CTE",
+                "narration": "Joining `bookings` (`1` row, `$400`) directly to `baggage_items` (`3` bags) multiplies the booking row 3x before `SUM(b.fare_cents)` runs—reporting `$1,200` instead of `$400`! Pre-aggregating child counts inside a CTE preserves 1-to-1 grain.",
+                "codeLine": "WITH bag_counts AS (SELECT booking_id, COUNT(*) AS bags FROM baggage GROUP BY booking_id) SELECT SUM(b.fare_cents) ...",
+                "leftTitle": "Naive `bookings LEFT JOIN baggage` + `SUM`",
+                "rightTitle": "Grain-Safe Pre-Aggregated CTE Join",
+                "leftMetrics": {"Booking Fare ($400 x 3 Bags)": "$1,200 (3x Silent Inflation!)", "QA Gate Outcome": "False Revenue Report"},
+                "rightMetrics": {"Booking Fare ($400 x 1 Row)": "$400 Exact", "QA Gate Outcome": "100% Grain Invariant Preserved"},
+            },
+        ],
+    },
+    "sql-mvcc-seat-locking": {
+        "title": "Course 09: Airline Seat `12A` MVCC Race vs `SELECT ... FOR UPDATE` & Double-Entry Ledger",
+        "category": "Transactions, MVCC & Data Reconciliation",
+        "complexity": {"time": "Row-Level Tuple Lock + Outbox CDC", "space": "SUM(debits) == SUM(credits)"},
+        "description": "Step through how two concurrent flyers double-book Seat `12A` under naive Read Committed check-then-act, and how pessimistic row locks + double-entry ledgers guarantee zero drift.",
+        "steps": [
+            {
+                "stepIndex": 0,
+                "title": "1. Concurrent Seat `12A` Checkout: Check-Then-Act Race vs `SELECT ... FOR UPDATE` + Unique Constraint",
+                "narration": "Under default `READ COMMITTED`, Tx A and Tx B both read `seat 12A = AVAILABLE` in separate `SELECT` statements before either writes—issuing Seat `12A` to BOTH flyers! Locking the seat tuple via `SELECT ... FOR UPDATE` (backed by `UNIQUE(flight_id, seat_no)`) serializes contenders cleanly.",
+                "codeLine": "SELECT seat_id FROM flight_seats WHERE flight_id = $1 AND seat_no = '12A' AND passenger_id IS NULL FOR UPDATE;",
+                "leftTitle": "App-Layer `SELECT` then `UPDATE` (No Lock)",
+                "rightTitle": "Atomic `FOR UPDATE` Lock + `UNIQUE` Constraint",
+                "leftMetrics": {"16 Concurrent Flyers on Seat 12A": "2+ Flyers Assigned 12A!", "Production Impact": "Airport Gate Overbooking Incident"},
+                "rightMetrics": {"16 Concurrent Flyers on Seat 12A": "Exactly 1 Winner, 15 Clean 409s", "Production Impact": "Zero Double-Allocation"},
+            },
+            {
+                "stepIndex": 1,
+                "title": "2. Mutable Balance Column vs Stripe-Style Immutable Double-Entry Ledger + Outbox Reconciliation",
+                "narration": "Mutating `UPDATE wallets SET balance = balance - 400` loses audit history and drifts silently on retries. Recording paired immutable `DEBIT` + `CREDIT` rows alongside a transactional `outbox_events` row lets QA verify `SUM(debits) == SUM(credits)` and `0` missing Kafka events!",
+                "codeLine": "ASSERT (SELECT SUM(debit_cents) - SUM(credit_cents) FROM ledger_entries) == 0 AND orphan_outbox_events == 0",
+                "leftTitle": "Mutable `balance` + Dual-Write Kafka Publish",
+                "rightTitle": "Immutable Double-Entry Ledger + Transactional Outbox",
+                "leftMetrics": {"Retry / Crash Auditability": "Silent $400 Drift, No Trail", "Missing Kafka Events on Crash": "Unreconciled Orphan Orders"},
+                "rightMetrics": {"Ledger Conservation Invariant": "SUM(Debits) - SUM(Credits) = $0.00", "Outbox-to-Warehouse Parity": "100% Reconciled"},
+            },
+        ],
+    },
 }
 
 VISUALIZER_ALIASES: Dict[str, str] = {

@@ -4,47 +4,84 @@ course_id: 06-ai-engineering-qa-focused
 track: ai-engineering
 volume: "06. Zero to Mastery: AI Engineering — QA Focused"
 module_number: 2
-module_title: "Module 2: RAG Evaluation & Hallucination Gates"
+module_title: "Module 2: RAG Evaluation & Hallucination Gates (AeroEval v0.3 → v0.4)"
 chapter_number: 3
-level_tag: "Foundations → Senior AI QA"
-title: "The RAG Evaluation Triad: Context Recall, RAG Entailment & Claim Verification"
-summary: "Why cosine similarity alone fails to catch LLM hallucinations, and how RAG Entailment decomposes generated answers into atomic claims verified against retrieved chunks."
+level_tag: "🌿 Foundations → Senior AI QA"
+title: "Build AeroEval v0.3: The RAG Evaluation Triad, Context Recall & Atomic Claim Verification"
+summary: "Why cosine similarity passes opposite policies with a 0.96 score, and how to upgrade AeroEval v0.3 with the 3-way RAG Triad (Context Recall, RAG Entailment, Answer Relevance) to pinpoint Retriever vs. Generator bugs."
 reading_time_minutes: 22
 visualizer_id: "ai-rag-triad-gate"
 lab_path: "ai-engineering/01-rag-triad-evaluator"
-tags: ["ai-engineering", "rag", "rag-evals", "rag-entailment", "hallucination", "claim-entailment", "vector-search", "llm-as-a-judge"]
+tags: ["ai-engineering", "rag", "rag-evals", "aeroeval", "rag-entailment", "hallucination", "claim-entailment", "vector-search", "llm-as-a-judge"]
 ---
 
-# The RAG Evaluation Triad: Context Recall, RAG Entailment & Claim Verification
+# Build AeroEval v0.3: The RAG Evaluation Triad, Context Recall & Atomic Claim Verification
+
+```json continuity
+{
+  "previously": "In Chapter 02, we built `AeroEval v0.2` with a 500-case Stratified Golden Dataset storing `gold_chunk_ids`, `must_include_claims`, and `must_not_claim` alongside a 5-gram Jaccard decontamination gate.",
+  "painPoint": "When a Golden test case fails on `AeroBrain`, the search team blames the LLM prompt and the prompt team blames the vector database! Worse, someone added a naive `cosine_similarity(context, answer) >= 0.85` check that gave a 0.96 PASS when `AeroBrain` said 'Basic Economy IS refundable' instead of 'NOT refundable'!",
+  "unlock": "Upgrade to `AeroEval v0.3`: build the 3-part RAG Evaluation Triad (`Context Recall@K`, `Atomic Claim Faithfulness`, and `Answer Relevance`) to isolate Retriever bugs from Generator hallucinations!"
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "Slide 1 / 4 · Why Cosine Similarity Passes Opposite Policies!",
+    "caption": "Compare 'Basic Economy tickets are non-refundable after 24 hours' vs. 'Basic Economy tickets are refundable after 24 hours'. Because 90% of the topic words are identical, vector cosine similarity scores 0.96 PASS—even though the meaning is 100% inverted!",
+    "code": "ctx = \"Basic Economy tickets are strictly non-refundable after 24 hours.\"\nans = \"Basic Economy tickets are fully refundable after 24 hours.\"\n# cosine_similarity(embed(ctx), embed(ans)) -> 0.96 (CATASTROPHIC FALSE PASS!)"
+  },
+  {
+    "time": "0:26",
+    "badge": "Slide 2 / 4 · Leg 1: Context Recall@K (Did Search Find the Policy?)",
+    "caption": "Instead of one blurry score, AeroEval v0.3 splits RAG quality into 3 legs. Leg 1 checks the Retriever alone: what fraction of the Golden `gold_chunk_ids` showed up in the top-K search results?",
+    "code": "retrieved = [\"doc_14\", \"doc_99\", \"doc_eu261\"]\ngold      = {\"doc_14\", \"doc_eu261\"}\ncontext_recall = len(set(retrieved) & gold) / len(gold)  # 2 / 2 = 1.0!"
+  },
+  {
+    "time": "0:54",
+    "badge": "Slide 3 / 4 · Leg 2: Faithfulness via Atomic Claim Splitting",
+    "caption": "Leg 2 checks the LLM Generator: split the answer into bite-sized atomic claims and verify that EVERY single claim is supported by the retrieved chunks (with no negation flips!).",
+    "code": "claims = [\"Cancellations within 24h are free\", \"Pets fly free in cabin\"]\n# Claim 1 -> Supported by doc_14 ✓\n# Claim 2 -> Not in retrieved chunks ✗\n# Faithfulness = 1 / 2 = 0.50 (FAIL: Generator Hallucination!)"
+  },
+  {
+    "time": "1:20",
+    "badge": "Slide 4 / 4 · Leg 3: Answer Relevance & Instant Triage",
+    "caption": "What if Context Recall is 1.0 and Faithfulness is 1.0, yet the user is still angry? Leg 3 checks Answer Relevance—catching overly timid prompts that recite true boilerplate without answering the question!",
+    "code": "# Recall = 0.20, Faithfulness = 1.00 -> Fix Vector Retriever / Chunker!\n# Recall = 0.95, Faithfulness = 0.40 -> Fix LLM Grounding Prompt!\n# Recall = 0.95, Faithfulness = 1.00, Relevance = 0.25 -> Fix Over-Refusal!"
+  }
+]
+```
 
 ```json pretraining
 [
   {
     "term": "Context Precision & Recall@K",
     "formula": "|C_retrieved ∩ C_gold| / |C_gold|",
-    "meaning": "Measures whether the Retriever + Reranker surfaced all ground-truth evidence chunks into the top-K context window."
+    "meaning": "Checks whether your search engine actually pulled the right policy documents into the top K results before the LLM even starts writing."
   },
   {
     "term": "RAG Entailment (Faithfulness)",
     "formula": "|Claims_entailed| / |Claims_total|",
-    "meaning": "Decomposes the generated answer into atomic factual propositions and verifies each is strictly entailed by retrieved chunks—not parametric memory."
+    "meaning": "Breaks the AI's paragraph into individual single-fact sentences ('atomic claims') and checks what percentage are strictly proven by the retrieved documents."
   },
   {
     "term": "Answer Relevance",
     "formula": "Addresses(Answer, Query_intent)",
-    "meaning": "Verifies the response directly resolves the user's specific question without evasive tangents or polarity inversions."
+    "meaning": "Checks whether the AI directly answered the user's specific question instead of dodging or reciting unrelated true facts from the document."
   },
   {
     "term": "Extrinsic vs. Intrinsic Hallucination",
     "formula": "Unsupported vs. Contradicted",
-    "meaning": "Extrinsic hallucinations invent facts absent from context; intrinsic hallucinations directly contradict facts present in the retrieved chunks."
+    "meaning": "An extrinsic hallucination invents a new fact not mentioned in the docs; an intrinsic hallucination directly contradicts a fact written in the docs."
   }
 ]
 ```
 
 ```json poe
 {
-  "question": "During a RAG regression triage, your dashboard shows Context Recall@5 = 0.96, RAG Entailment (Faithfulness) = 1.00, yet Answer Relevance = 0.28 and users are furious. Without reading a single trace yet, what exact failure pattern is occurring?",
+  "question": "During a RAG regression triage, your AeroEval v0.3 dashboard shows Context Recall@5 = 0.96, RAG Entailment (Faithfulness) = 1.00, yet Answer Relevance = 0.28 and users are furious. Without reading a single trace yet, what exact failure pattern is occurring?",
   "options": [
     "The vector database index is corrupted and returning empty strings",
     "The Retriever found the right policy chunks and the LLM made zero hallucinated claims, but the prompt/guardrail is over-refusing or summarizing tangential boilerplate from the chunks instead of answering the user's specific question",
@@ -56,24 +93,96 @@ tags: ["ai-engineering", "rag", "rag-evals", "rag-entailment", "hallucination", 
 }
 ```
 
-## Part I — First-Principles Mental Model & Visual Cue
+## 🌱 Step 1: Plain-English Story — Why Cosine Similarity Passes Opposite Answers!
 
-Why does a naive **Cosine Similarity check** (`cosine(embed(context), embed(answer)) >= 0.85`) catastrophically fail as a production safety gate for Retrieval-Augmented Generation (`RAG`)?
+Suppose a passenger asks `AeroBrain`: *"Can I get a refund on my Basic Economy ticket 3 days after booking?"*
+Your search engine retrieves `doc_14`:
+> *"Basic Economy tickets are strictly **non-refundable** after 24 hours."*
 
-Because dense bi-encoder embedding models measure **topical proximity**, not **RAG Entailment**:
-- **Retrieved Policy Chunk**: *"Basic Economy tickets are strictly **non-refundable** after 24 hours."*
-- **Hallucinated LLM Output**: *"Basic Economy tickets are fully **refundable** after 24 hours."*
-- **Cosine Similarity Score**: **$0.96$ (PASS!)** — nearly every token shares identical topical coordinates in embedding space except the single negation prefix!
+Unfortunately, `AeroBrain` hallucinates and replies:
+> *"Basic Economy tickets are fully **refundable** after 24 hours."*
 
-### The RAG Triad Decomposition
-To evaluate a RAG pipeline deterministically and isolate Retrieval bugs from Generation bugs, you must decompose evaluation across **three orthogonal axes** (popularized by TruLens and RAGAS):
+If your test suite checks quality using **Embedding Cosine Similarity** (`cosine(embed(doc_14), embed(answer)) >= 0.85`), what happens?
+**It passes with a `0.96` score!**
+Why? Because standard embedding models measure **topic similarity** (*"Are both sentences talking about Basic Economy ticket refunds after 24 hours?"*), not logical truth! Dropping the three letters `"non"` barely nudges the topic vector, even though it reverses the airline's entire refund policy!
+
+Worse still, when a RAG test fails, a single end-to-end score can't tell you **who broke it**:
+- Did the **Retriever** fail to find `doc_14` in the database?
+- Or did theRetriever find `doc_14`, and the **LLM Generator** ignored it and made something up?
 
 ```mermaid
 flowchart LR
-  Query["User Query Q"] -->|Bi-Encoder + Cross-Encoder| Ret["1. Context Recall & Precision@K (Retriever Gate)"]
-  Ret -->|Top-K Chunks C_1..C_K| Gen["2. RAG Entailment / Faithfulness (Atomic Claim Verifier)"]
-  Gen -->|Generated Answer A| Rel["3. Answer Relevance & Polarity Guard (Intent Alignment)"]
+  Query["User Query Q"] -->|Search Engine| Ret["1. Context Recall@K (Did Retriever Find Gold Docs?)"]
+  Ret -->|Top-K Chunks C| Gen["2. Faithfulness / Entailment (Are All Claims in C?)"]
+  Gen -->|Generated Answer A| Rel["3. Answer Relevance (Did A Actually Answer Q?)"]
 ```
+
+To end the finger-pointing between search engineers and prompt engineers forever, we upgrade to **`AeroEval v0.3`** and measure the **RAG Evaluation Triad** (popularized by TruLens and RAGAS):
+1. **Context Recall & Precision@K** (grades the **Retriever**),
+2. **RAG Entailment / Faithfulness** (grades the **Generator** claim-by-claim), and
+3. **Answer Relevance** (grades **Intent Alignment**).
+
+## 🔨 Step 2: First Lines of Code — Build the `AeroEval v0.3` RAG Triad Scorer
+
+Let's write a clean, self-contained `AeroEval v0.3` scorer that computes **Context Recall@K** and **Atomic Claim Faithfulness**—and automatically diagnoses whether a failure came from the **Retriever** or the **Generator**:
+
+```python
+def score_rag_triad(
+    retrieved_ids: list[str],
+    gold_ids: set[str],
+    claims: list[str],
+    supported_flags: list[bool],
+    answer_relevance: float,
+) -> dict:
+    """AeroEval v0.3: Computes the 3 RAG Triad legs and pinpoints the failing subsystem."""
+    recall = len(set(retrieved_ids) & gold_ids) / max(1, len(gold_ids))
+    faithfulness = sum(supported_flags) / max(1, len(claims))
+    status = "HEALTHY"
+    if recall < 0.70:
+        status = "RETRIEVER_FAILURE"
+    elif faithfulness < 0.90:
+        status = "GENERATOR_HALLUCINATION"
+    elif answer_relevance < 0.75:
+        status = "OVER_REFUSAL_OR_OFF_TOPIC"
+    return {"recall": round(recall, 2), "faithfulness": round(faithfulness, 2), "diagnosis": status}
+
+
+print(score_rag_triad(["doc_14"], {"doc_14", "doc_22"}, ["24h refund"], [True], 0.92))
+```
+
+### Java 17 Equivalent
+
+```java
+import java.util.List;
+import java.util.Set;
+
+public class AeroEvalV03Triad {
+    public record TriadVerdict(double recall, double faithfulness, double relevance, String diagnosis) {}
+
+    public static TriadVerdict scoreRagTriad(
+            List<String> retrievedIds, Set<String> goldIds, List<Boolean> claimSupported, double relevance) {
+        long hits = retrievedIds.stream().filter(goldIds::contains).distinct().count();
+        double recall = goldIds.isEmpty() ? 1.0 : (double) hits / goldIds.size();
+        long validClaims = claimSupported.stream().filter(Boolean::booleanValue).count();
+        double faithfulness = claimSupported.isEmpty() ? 1.0 : (double) validClaims / claimSupported.size();
+
+        String status = "HEALTHY";
+        if (recall < 0.70) status = "RETRIEVER_FAILURE";
+        else if (faithfulness < 0.90) status = "GENERATOR_HALLUCINATION";
+        else if (relevance < 0.75) status = "OVER_REFUSAL_OR_OFF_TOPIC";
+        return new TriadVerdict(recall, faithfulness, relevance, status);
+    }
+}
+```
+
+## ⚡ Step 3: Where It Breaks in Real Life — Context Dilution & Pre-Training Memory Leaks
+
+Watch what happens when you deploy `AeroEval v0.3` on real enterprise traffic—two subtle failure modes immediately jump out on your dashboard:
+
+1. **Failure Mode 1: High Recall (`0.95`), Low Context Precision (`0.20`) — "Lost in the Middle"**
+   A search engineer tries to boost `Context Recall` by changing `top_k` from `5` to `25`. Now the gold policy chunk is almost always retrieved (`Recall = 0.95`), **but** it is buried inside 24 noisy, irrelevant chunks (`Precision = 0.20`)! Stuffing 24 noise chunks into the prompt dilutes the LLM's attention and causes `Faithfulness` to drop from `0.94` to `0.72`.
+2. **Failure Mode 2: Parametric Memory Leaks (Right Answer from the Wrong Place!)**
+   What if a user asks an unauthorized question, the Retriever returns **zero** documents (`retrieved = []`), and the LLM still answers accurately using public facts it memorized from the internet during pre-training? In enterprise RAG, **answering from pre-training memory when context is empty is a critical `Faithfulness = 0.0` failure** because it bypasses tenant access controls and outdated-policy overrides!
 
 ```json contrast
 {
@@ -97,20 +206,15 @@ flowchart LR
 }
 ```
 
----
+## 🚀 Step 4: Staff Engineer Deep-Dive — Atomic Claim Entailment & Average Precision@K Math
 
-## Part II — Atomic Claim Decomposition & Diagnostic Matrix
+Instead of grading a multi-paragraph response as one blob, `AeroEval v0.3` decomposes generated answer $A$ into minimal, self-contained atomic propositions $\{c_1, c_2, \dots, c_m\}$ and computes **RAG Entailment (`Faithfulness`)** against retrieved context $C = \{C_1, \dots, C_K\}$:
 
-Instead of scoring a 3-paragraph LLM response as a single unstructured string:
-1. **Sentence / Claim Splitting**: Break the generated response into minimal, self-contained atomic factual propositions $c_1, c_2, \dots, c_m$ (resolving coreferences like *"It"* $\to$ *"The Basic Economy fare"*).
-2. **Per-Claim RAG Entailment Verification**: Each claim $c_i$ is verified against retrieved chunks $C_1 \dots C_K$ using an NLI Cross-Encoder (`DeBERTa-v3-large-MNLI` outputting `ENTAILMENT`, `NEUTRAL`, `CONTRADICTION`) or a structured claim-verification rubric:
-   - **Lexical & Entity Grounding**: Numbers, dates, error codes, and SKU identifiers in $c_i$ must exist verbatim or mathematically in $C$.
-   - **Negation Polarity Consistency**: Negation markers (`not`, `never`, `non-`, `prohibited`, `except`) must preserve logical entailment relative to the cited span.
-3. **Faithfulness Formula**:
+$$\text{Faithfulness}(A, C) = \frac{|\{c_i \in A : C \models c_i\}|}{|\{c_1, c_2, \dots, c_m\}|}$$
 
-$$\text{Faithfulness (RAG Entailment)} = \frac{|\{c_i \in A : C \models c_i\}|}{|\{c_1, c_2, \dots, c_m\}|}$$
+To grade the **Retriever** not just on whether it fetched the gold chunks, but whether it ranked them at the **very top** (positions $1..2$ instead of position $19$), we pair `Recall@K` with **Context Average Precision (`AP@K`)**:
 
-### The Staff RAG Diagnostic Triage Table
+$$\text{AP}@K = \frac{1}{|C_{\text{gold}}|} \sum_{k=1}^{K} \text{Precision}@k \cdot \mathbb{I}(C_k \in C_{\text{gold}})$$
 
 | Context Recall | Context Precision | RAG Entailment (Faithfulness) | Answer Relevance | Exact Root Cause & Architectural Fix |
 | :--- | :--- | :--- | :--- | :--- |
@@ -119,11 +223,8 @@ $$\text{Faithfulness (RAG Entailment)} = \frac{|\{c_i \in A : C \models c_i\}|}{
 | **High ($0.95$)** | High ($0.90$) | **Low ($0.45$)** | High | **Generator Hallucination / Parametric Leak**: LLM ignores context or fabricates clauses; tighten grounding prompt + lower temperature + enforce per-claim inline citations. |
 | **High ($0.95$)** | High ($0.90$) | **High ($1.00$)** | **Low ($0.30$)** | **Over-Refusal / Tangent Summary**: Safety guardrail or prompt template dumps true context facts without answering $Q$. |
 
----
+### Production Blueprint: RAG Triad Evaluator (`Recall@K + AP@K + Atomic RAG Entailment`)
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: RAG Triad Evaluator (`Recall@K + Precision@K + Atomic RAG Entailment`)
 ```python
 NEGATION_TOKENS = {
     "not", "no", "never", "neither", "non", "without",
@@ -180,7 +281,8 @@ def evaluate_claim_entailment(context_chunks: list[str], atomic_claims: list[str
     }
 ```
 
-### Java 17 Blueprint: Full RAG Triad Verdict & Subsystem Fault Classifier
+### Java 17 Equivalent
+
 ```java
 import java.util.List;
 import java.util.Set;
@@ -228,9 +330,7 @@ public final class RagTriadScorer {
 > **Staff Interview Gotcha — Parametric Truth Is Still a RAG Faithfulness Failure**:
 > Suppose an enterprise legal RAG bot is asked *"What is the GDPR statutory fine ceiling?"*, the Retriever fetches **zero** GDPR chunks due to a broken filter, and the LLM answers *"Up to 4% of global annual turnover"* from pre-training memory. Is Faithfulness (`RAG Entailment`) `1.0` or `0.0`? **Strictly `0.0`!** In enterprise RAG, any factual claim not entailed by the retrieved tenant context—even if publicly true—bypasses document access controls and policy versioning (e.g., an internal stricter `1%` compliance cap).
 
----
-
-## Part IV — End-of-Chapter Mastery Check
+**Up Next in Chapter 04**: What if every single number and word in `AeroBrain`'s claim *does* exist in the retrieved context, yet the AI swapped `Tier-1`'s `$25` fee with `Tier-2`'s `$0` fee—or attached `[doc_4]` to a sentence `doc_4` doesn't actually support (*Citation Laundering*)? In Chapter 04, we'll upgrade to **`AeroEval v0.4`: NLI Cross-Encoders, Citation-Span Grounding & Abstention QA**!
 
 ```json quiz
 [

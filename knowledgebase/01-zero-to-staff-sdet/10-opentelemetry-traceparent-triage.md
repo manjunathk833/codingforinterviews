@@ -159,7 +159,8 @@ def make_test_trace_headers(test_name: str) -> tuple[str, dict[str, str]]:
 
 trace_id, headers = make_test_trace_headers("test_checkout_flight")
 status_code = 500  # Simulating a 500 crash from AeroCart's API Gateway
-assert status_code == 200, f"Got {status_code}! Inspect root cause -> http://traces.local/{trace_id}"
+if status_code != 200:
+    print(f"Got {status_code}! Inspect root cause -> http://traces.local/{trace_id}")
 ```
 
 ### Java 17 Equivalent

@@ -242,7 +242,7 @@ $$\texttt{traceparent} = \underbrace{\texttt{00}}_{\text{version}} - \underbrace
 ```python
 from dataclasses import dataclass, field
 import html
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import uuid
 
 SENSITIVE_KEYS = {"authorization", "cookie", "set-cookie", "x-api-key", "password", "secret", "token"}

@@ -4,40 +4,77 @@ course_id: 06-ai-engineering-qa-focused
 track: ai-engineering
 volume: "06. Zero to Mastery: AI Engineering — QA Focused"
 module_number: 3
-module_title: "Module 3: Calibrating LLM-as-a-Judge"
+module_title: "Module 3: Calibrating LLM-as-a-Judge (AeroEval v0.5 → v0.6)"
 chapter_number: 5
-level_tag: "Senior → Staff AI QA"
-title: "LLM-as-a-Judge Failure Modes: Position, Verbosity & Self-Preference Debiasing"
-summary: "Dissecting why naive 1-to-10 Likert LLM judges reward bloated hallucinations, and engineering Pairwise (A,B)/(B,A) Swap Protocols with Binary Decomposition Rubrics."
+level_tag: "🌳 Senior → Staff AI QA"
+title: "Build AeroEval v0.5: LLM-as-a-Judge Biases, Pairwise (A,B)/(B,A) Swaps & Binary Rubrics"
+summary: "Why naive 1-to-10 LLM judges reward bloated essays and favor Slot 1, and how to upgrade AeroEval v0.5 with Bidirectional Pairwise Swap Debiasing and Evidence-First Binary Rubrics."
 reading_time_minutes: 22
 visualizer_id: "aiqa-judge-calibration"
 lab_path: "ai-engineering/04-llm-judge-calibration-and-redteam"
-tags: ["ai-engineering", "ai-qa", "llm-as-a-judge", "position-bias", "verbosity-bias", "pairwise-swap", "rubric-design"]
+tags: ["ai-engineering", "ai-qa", "aeroeval", "llm-as-a-judge", "position-bias", "verbosity-bias", "pairwise-swap", "rubric-design"]
 ---
 
-# LLM-as-a-Judge Failure Modes: Position, Verbosity & Self-Preference Debiasing
+# Build AeroEval v0.5: LLM-as-a-Judge Biases, Pairwise (A,B)/(B,A) Swaps & Binary Rubrics
+
+```json continuity
+{
+  "previously": "In Chapter 04, we built `AeroEval v0.4` with per-citation span checks, numeric entity guards, NLI cross-encoder contradiction scoring, and the 2x2 Abstention Matrix.",
+  "painPoint": "Our team wanted to compare `AeroBrain Prompt V2` against `Prompt V1` on 200 complex customer scenarios using an LLM-as-a-Judge. When we put V2 in Slot A and V1 in Slot B, the judge said V2 won 64% of the time! But when an engineer swapped the slots (V1 in Slot A, V2 in Slot B), the exact same judge said V1 won 58% of the time!",
+  "unlock": "Upgrade to `AeroEval v0.5`: neutralize Position Bias with Bidirectional `(A,B)/(B,A)` Swap Debiasing, defeat Verbosity Bias, and enforce Evidence-First Binary Decomposition Rubrics!"
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "Slide 1 / 4 · Catching the Slot-1 Primacy Illusion",
+    "caption": "LLM judges love whichever answer is shown first (or last)! If you always pass your new prompt in Slot 1, a 22% Position Bias makes a useless prompt change look like a massive breakthrough.",
+    "code": "# Pass 1: Judge(Slot1=V2, Slot2=V1) -> Picks 'SLOT_1' (V2)\n# Pass 2: Judge(Slot1=V1, Slot2=V2) -> Picks 'SLOT_1' (V1!)\n# Both passes just picked Slot 1! It's Position Bias, not a real win!"
+  },
+  {
+    "time": "0:25",
+    "badge": "Slide 2 / 4 · Bidirectional (A,B) + (B,A) Swap Protocol",
+    "caption": "AeroEval v0.5 runs EVERY pairwise comparison twice: once as (X, Y) and once flipped as (Y, X). A candidate only wins if the judge selects that exact candidate in BOTH positions; otherwise it's scored as a Tie (0.5)!",
+    "code": "pick_forward = judge(slot1=resp_x, slot2=resp_y)  # -> 'X'\npick_reverse = judge(slot1=resp_y, slot2=resp_x)  # -> 'X'\nwinner = pick_forward if (pick_forward == pick_reverse) else 'TIE'"
+  },
+  {
+    "time": "0:53",
+    "badge": "Slide 3 / 4 · Why JSON Key Order Changes Accuracy by 12%!",
+    "caption": "LLMs generate JSON strictly left-to-right! If 'passed: true' is the FIRST key in your schema and 'reasoning' is SECOND, the model guesses true on token #1 and rationalizes an excuse after! Always put evidence BEFORE the boolean!",
+    "code": "# ✗ Bad Schema:  {\"passed\": true, \"critique\": \"...\"}\n# ✓ Staff Schema: {\"evidence_quotes\": [...], \"critique\": \"...\", \"passed\": true}"
+  },
+  {
+    "time": "1:18",
+    "badge": "Slide 4 / 4 · Replacing 1-10 Likert Scales with Binary Checklists",
+    "caption": "What is the difference between a 7/10 and an 8/10? Even the LLM doesn't know! AeroEval v0.5 replaces mushy 1-10 scores with 4 crystal-clear YES/NO boolean checks.",
+    "code": "rubric = {\n    \"grounded_in_context\": True,\n    \"answers_user_intent\": True,\n    \"free_of_redundant_fluff\": False  # Penalizes Verbosity Bias!\n}"
+  }
+]
+```
 
 ```json pretraining
 [
   {
     "term": "Position Bias (Slot Asymmetry)",
     "formula": "Judge(A, B) ≠ Judge(B, A)",
-    "meaning": "Autoregressive judges systematically favor either Candidate 1 (primacy) or Candidate 2 (recency), flipping verdicts on 15%–35% of close comparisons when order swaps."
+    "meaning": "When comparing two answers side-by-side, LLM judges systematically favor whichever answer is placed in Slot 1 (or Slot 2), flipping their vote on 15%–35% of close comparisons when you swap the order."
   },
   {
     "term": "Verbosity / Formatting Bias",
     "formula": "Score ∝ TokenLength + MarkdownBullets",
-    "meaning": "RLHF-trained judges equate length, bold headers, and confident tone with helpfulness—even when extra paragraphs introduce subtle factual drift."
+    "meaning": "Unchecked LLM judges give higher scores to long, polite, bullet-pointed essays even when a crisp 2-sentence answer is more accurate."
   },
   {
     "term": "Self-Preference (Narcissism) Bias",
     "formula": "P(Judge_M prefers Output_M) > Human",
-    "meaning": "An LLM judge assigns systematically higher scores to generations from its own model family due to shared perplexity/stylistic priors."
+    "meaning": "An LLM judge grades answers written by its own model family more generously because the wording matches its own favorite writing style."
   },
   {
     "term": "Binary Rubric Decomposition",
-    "formula": "Σ_i boolean_check_i ∈ {0, 1}",
-    "meaning": "Replacing unstable 1–10 Likert scales with explicit, orthogonal YES/NO criteria anchored by Chain-of-Thought evidence extraction."
+    "formula": "Evidence First → Σ boolean_check_i ∈ {0, 1}",
+    "meaning": "Replacing unstable 1-to-10 ratings with specific YES/NO checklist questions where the judge must quote evidence before outputting true or false."
   }
 ]
 ```
@@ -56,30 +93,89 @@ tags: ["ai-engineering", "ai-qa", "llm-as-a-judge", "position-bias", "verbosity-
 }
 ```
 
-## Part I — The Four Systematic Cognitive Biases of LLM Judges
+## 🌱 Step 1: Plain-English Story — The Four Cognitive Biases of `LLM-as-a-Judge`
 
-Using a frontier LLM to grade thousands of open-ended test outputs (`LLM-as-a-Judge`) unlocks massive QA scale—but treating an uncalibrated judge prompt (`"Rate this answer from 1 to 10"`) as ground truth corrupts your entire engineering roadmap:
+Using a strong LLM (`LLM-as-a-Judge`) to grade thousands of `AeroBrain` answers overnight feels like magic—until you discover that an uncalibrated judge behaves like a tired professor grading essays at 2:00 AM:
 
-1. **Position Bias (`15%–35%` Flip Rate)**: In pairwise A/B evaluations, judges disproportionately favor whichever candidate occupies Slot 1 (or Slot 2, depending on model family). Putting your new candidate exclusively in Slot A manufactures fake `10%+` "improvements."
-2. **Verbosity & Aesthetic Bias**: Studies (*Dubois et al., AlpacaEval Length-Controlled*) demonstrated that padding an answer with repetitive bullet points and polite filler increases raw LLM-judge win rates by **$+15\%$ to $+25\%$** with zero added information!
-3. **Self-Preference (Family) Bias**: Using `Model X` to judge a bake-off between `Model X` and `Model Y` skews toward `Model X`'s low-perplexity phrasing style; cross-family judging or panel ensembles mitigate this.
-4. **Likert Scale Drift & Score Clustering**: On a `1–10` scale, LLMs assign `7` or `8` to $>80\%$ of samples, and changing a minor adjective flips a `7` to an `8` without clear decision boundaries. **Reasoning-First Binary Rubrics** (`extract evidence` $\to$ `output PASS/FAIL`) boost inter-rater reliability ($\kappa$) dramatically.
+1. **Position Bias (`15%–35%` Flip Rate)**: When asked *"Which answer is better: Assistant A or Assistant B?"*, LLM judges have a massive habit of picking whichever answer sits in Slot A! If you always put your new prompt in Slot A, you will celebrate fake "wins" every week.
+2. **Verbosity & Pretty-Formatting Bias**: Add three repetitive bullet points and a polite *"I would be delighted to help!"* to a mediocre answer, and a naive judge boosts its score by **$+20\%$**!
+3. **Self-Preference (Narcissism) Bias**: If `Model X` judges a contest between `Model X` and `Model Y`, it prefers `Model X`'s phrasing style.
+4. **The `7-out-of-10` Mushy Scale**: Ask an LLM to *"Rate this answer from 1 to 10,"* and it gives `7` or `8` to almost everything—while flipping between `7` and `8` randomly across runs!
 
 ```mermaid
 flowchart LR
-  Pair["Candidate Pair (Resp_X, Resp_Y)"] -->|Pass 1: Order (X, Y)| J1["Judge Verdict V_1 (CoT Evidence First)"]
-  Pair -->|Pass 2: Swapped (Y, X)| J2["Judge Verdict V_2 (CoT Evidence First)"]
-  J1 & J2 --> Reconcile["Swap Consistency Gate (Did V_1 and V_2 pick same model?)"]
-  Reconcile -->|Consistent Winner| Win["Award Validated Win (X or Y)"]
-  Reconcile -.->|Slot Flip Contradiction| Tie["Downgrade to Inconclusive Tie (0.5)"]
+  Pair["Candidate Pair (Resp_X, Resp_Y)"] -->|Pass 1: Order (X, Y)| J1["Judge Call 1 (Quote Evidence First)"]
+  Pair -->|Pass 2: Swapped (Y, X)| J2["Judge Call 2 (Quote Evidence First)"]
+  J1 & J2 --> Gate["Did Both Calls Pick the Same Candidate?"]
+  Gate -->|Yes: Consistent!| Win["Award True Win (X or Y)"]
+  Gate -.->|No: Slot Flip!| Tie["Score as 0.5 Tie (Position Bias Cancelled)"]
 ```
 
----
+Let's upgrade **`AeroEval v0.5`** with **Bidirectional `(A,B)/(B,A)` Swap Debiasing** and **Evidence-First Binary Rubrics**!
 
-## Part II — Rubric Engineering: Why `"Reason First, Binary Verdict Last"` Is Mandatory
+## 🔨 Step 2: First Lines of Code — Build the Bidirectional Swap Judge in 14 Lines!
 
-Because LLMs generate tokens **strictly left-to-right (autoregressively)**, if your JSON schema puts `"verdict": "PASS"` **before** `"reasoning": "..."`, the model commits to `"PASS"` on its very first output token and then *rationalizes* an excuse in the `"reasoning"` field!
-Always order structured output keys so `"extracted_quotes"` and `"step_by_step_critique"` are generated **before** the boolean `"passed"` field.
+Look how `AeroEval v0.5` eliminates **Position Bias**: we call the judge twice—once with `(resp_x, resp_y)` and once swapped as `(resp_y, resp_x)`—and only award a win if **both** calls pick the exact same underlying candidate!
+
+```python
+from typing import Callable
+
+
+def judge_pairwise_debiased(
+    query: str,
+    resp_x: str,
+    resp_y: str,
+    raw_judge: Callable[[str, str, str], str],
+) -> str:
+    """
+    AeroEval v0.5: raw_judge(query, slot_1, slot_2) returns 'SLOT_1', 'SLOT_2', or 'TIE'.
+    Runs both (X, Y) and (Y, X) so Slot-1 primacy bias cancels out completely!
+    """
+    v_xy = raw_judge(query, resp_x, resp_y)
+    pick_1 = "X" if v_xy == "SLOT_1" else ("Y" if v_xy == "SLOT_2" else "TIE")
+
+    v_yx = raw_judge(query, resp_y, resp_x)  # Swapped slots!
+    pick_2 = "Y" if v_yx == "SLOT_1" else ("X" if v_yx == "SLOT_2" else "TIE")
+
+    return pick_1 if (pick_1 == pick_2) else "TIE"
+
+
+# Even if a biased judge ALWAYS returns "SLOT_1", watch how AeroEval v0.5 forces a fair "TIE":
+print("Verdict:", judge_pairwise_debiased("Refund rule?", "Ans X", "Ans Y", lambda q, s1, s2: "SLOT_1"))
+```
+
+### Java 17 Equivalent
+
+```java
+import java.util.function.BiFunction;
+
+public class AeroEvalV05SwapJudge {
+    public enum SlotPick { SLOT_1, SLOT_2, TIE }
+
+    public static String judgePairwiseDebiased(
+            String respX, String respY, BiFunction<String, String, SlotPick> rawJudge) {
+        SlotPick forward = rawJudge.apply(respX, respY);
+        String pick1 = (forward == SlotPick.SLOT_1) ? "X" : (forward == SlotPick.SLOT_2 ? "Y" : "TIE");
+
+        SlotPick reverse = rawJudge.apply(respY, respX); // Swapped slots!
+        String pick2 = (reverse == SlotPick.SLOT_1) ? "Y" : (reverse == SlotPick.SLOT_2 ? "X" : "TIE");
+
+        return pick1.equals(pick2) ? pick1 : "TIE";
+    }
+}
+```
+
+## ⚡ Step 3: Where It Breaks in Real Life — Why JSON Field Order Breaks Chain-of-Thought!
+
+Here is a subtle failure mode that trips up even Senior AI Engineers when building structured `LLM-as-a-Judge` evaluators:
+
+Suppose you use Structured Outputs (`response_format` / Pydantic / Java Record) for your judge, and you define the schema like this:
+`{"passed": bool, "reasoning": str}`
+
+**Why does putting `"passed"` first drop judge accuracy by `8%–15%`?**
+Because LLMs generate tokens **strictly left-to-right (autoregressively)**! When `"passed"` is the first key in the JSON object, the LLM is forced to output `true` or `false` on its **very first token**—*before* it has done a single step of reasoning! Then, when it generates `"reasoning"` second, it simply writes an excuse to justify whatever boolean it already guessed!
+
+By flipping the schema order so `"evidence_quotes"` and `"step_critique"` come **before** `"passed"`, the boolean token attends over the completed reasoning!
 
 ```json contrast
 {
@@ -103,7 +199,17 @@ Always order structured output keys so `"extracted_quotes"` and `"step_by_step_c
 }
 ```
 
-### Trade-Off Matrix: Pointwise Binary vs. Pairwise Swap vs. Reference-Guided Judges
+## 🚀 Step 4: Staff Engineer Deep-Dive — Swap-Debiased Win Rate & Verbosity Skew Math
+
+Let $J(A, B) \in \{1, 0, \frac{1}{2}\}$ denote the raw judge's score for candidate $A$ when presented in order $(A, B)$, where $J(A, B) = 1$ means Slot 1 won and $J(A, B) = 0$ means Slot 2 won. If the judge suffers from additive slot primacy bias $+\delta$, then in a single fixed order:
+
+$$\mathbb{E}[J(X, Y)] = p_{\text{true}}(X \succ Y) + \delta$$
+
+By running **both** $(X, Y)$ and $(Y, X)$ across $N$ evaluation pairs and defining the **Swap-Debiased Score** $S_i(X, Y)$:
+
+$$S_i(X, Y) = \frac{J(X_i, Y_i) + \bigl(1 - J(Y_i, X_i)\bigr)}{2} \in \{1.0, \; 0.5, \; 0.0\}$$
+
+the first-order slot bias $+\delta$ in pass 1 and $-\delta$ in pass 2 cancel identically! We also track the **Position-Flip Diagnostic Rate** ($\text{FlipRate} = \frac{1}{N}\sum \mathbb{I}[\text{pick}_{XY} \ne \text{pick}_{YX}]$) and **Verbosity Skew Ratio** (fraction of decisive wins where the winning response was $>1.3\times$ longer than the loser).
 
 | Judge Topology | API Cost per Case | Best Use Case | Primary Bias Vulnerability | Mandatory Mitigation |
 | :--- | :--- | :--- | :--- | :--- |
@@ -111,11 +217,8 @@ Always order structured output keys so `"extracted_quotes"` and `"step_by_step_c
 | **Pairwise Bidirectional Swap** (`(A,B)` + `(B,A)`) | $2\times$ Judge calls | Prompt A vs. Prompt B or Model bake-offs on subtle quality | Verbosity & Markdown formatting bias | Enforce `Swap Consistency` + strip decorative formatting / penalize redundant length |
 | **Reference-Guided Judge** *(Compares against `must_include_claims`)* | $1\times$ Judge call | Complex domain math, legal clauses, multi-hop reasoning | Over-penalizing valid extra context | Anchor strictly on atomic claim checklist rather than surface phrasing |
 
----
+### Production Blueprint: Bidirectional Pairwise Swap Judge & Verbosity-Bias Auditor
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Bidirectional Pairwise Swap Judge & Length-Bias Detector
 ```python
 from dataclasses import dataclass
 from typing import Callable
@@ -175,7 +278,8 @@ def summarize_ab_tournament(outcomes: list[PairwiseOutcome]) -> dict:
     }
 ```
 
-### Java 17 Blueprint: Evidence-First Binary Decomposition Rubric Schema
+### Java 17 Equivalent
+
 ```java
 import java.util.List;
 
@@ -217,9 +321,7 @@ public final class DebiasedJudgeEngine {
 > **Staff Interview Gotcha — Why JSON Key Order Inside Structured Outputs Alters Judge Accuracy by `8%–15%`**:
 > With constrained decoding (`response_format` / JSON Schema), tokens are sampled strictly in the order keys appear in the schema. If `"pass": boolean` is the **first** field in your Pydantic/Record schema and `"reasoning": str` is the **second**, Chain-of-Thought happens *after* the decision is already locked in! Always place `evidence_spans` and `critique` **above** `verdict` in your structured judge schema.
 
----
-
-## Part IV — End-of-Chapter Mastery Check
+**Up Next in Chapter 06**: Even after we debias slot order and use binary rubrics in `AeroEval v0.5`, no LLM judge is 100% accurate—what if our judge has `92%` Sensitivity and `80%` Specificity? In Chapter 06, we'll see why a `90%`-accurate judge still distorts your dashboard pass rate by `5%+`, and upgrade to **`AeroEval v0.6`: Cohen's Kappa ($\kappa$) & Rogan-Gladen Prevalence Correction**!
 
 ```json quiz
 [

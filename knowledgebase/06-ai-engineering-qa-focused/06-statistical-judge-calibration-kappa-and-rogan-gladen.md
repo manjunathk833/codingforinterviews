@@ -4,40 +4,77 @@ course_id: 06-ai-engineering-qa-focused
 track: ai-engineering
 volume: "06. Zero to Mastery: AI Engineering — QA Focused"
 module_number: 3
-module_title: "Module 3: Calibrating LLM-as-a-Judge"
+module_title: "Module 3: Calibrating LLM-as-a-Judge (AeroEval v0.5 → v0.6)"
 chapter_number: 6
-level_tag: "Staff AI QA Scientist"
-title: "Statistical Judge Calibration: Cohen's Kappa, Sensitivity/Specificity & Rogan-Gladen Correction"
-summary: "Why raw 90%-accurate LLM judges distort true pass rates, and how Staff AI Scientists apply Cohen's κ, TPR/TNR calibration sets, Rogan-Gladen bias correction, and bootstrap 95% CIs."
+level_tag: "🌳 Staff AI QA Scientist"
+title: "Build AeroEval v0.6: Statistical Judge Calibration, Cohen's Kappa & Rogan-Gladen Correction"
+summary: "Why even a 90%-accurate LLM Judge distorts your true pass rate, and how AeroEval v0.6 applies Cohen's Kappa (κ), TPR/TNR calibration sets, Rogan-Gladen prevalence correction, and Joint Bootstrap 95% CIs."
 reading_time_minutes: 24
 visualizer_id: "aiqa-judge-calibration"
 lab_path: "ai-engineering/04-llm-judge-calibration-and-redteam"
-tags: ["ai-engineering", "ai-qa", "cohens-kappa", "rogan-gladen", "judge-calibration", "bootstrap-ci", "statistics"]
+tags: ["ai-engineering", "ai-qa", "aeroeval", "cohens-kappa", "rogan-gladen", "judge-calibration", "bootstrap-ci", "statistics"]
 ---
 
-# Statistical Judge Calibration: Cohen's Kappa, Sensitivity/Specificity & Rogan-Gladen Correction
+# Build AeroEval v0.6: Statistical Judge Calibration, Cohen's Kappa & Rogan-Gladen Correction
+
+```json continuity
+{
+  "previously": "In Chapter 05, we upgraded `AeroEval v0.5` with Bidirectional `(A,B)/(B,A)` Swap Debiasing and Evidence-First Binary Rubrics to remove slot and verbosity bias from our LLM Judge.",
+  "painPoint": "Even with a clean binary rubric, our LLM Judge isn't a mind reader! On a 150-example human-labeled gold set, our judge had 90% Sensitivity (`TPR`) and 80% Specificity (`TNR`). When we ran it on 1,000 nightly `AeroBrain` answers whose true human pass rate was 80.0%, the judge reported `76.0%`—triggering a false rollback alarm!",
+  "unlock": "Upgrade to `AeroEval v0.6`: audit judges with chance-corrected Cohen's Kappa (`κ`), mathematically remove judge error bias using the Rogan-Gladen Estimator (`θ̂`), and compute Joint Bootstrap 95% Confidence Intervals!"
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "Slide 1 / 4 · Why 90% Raw Agreement Can Be a Complete Lie!",
+    "caption": "Suppose 95% of AeroBrain's answers are good, and you deploy a lazy 'Yes-Man' judge that blindly outputs PASS 95% of the time at random. It agrees with humans 90.5% of the time—while catching ZERO real bugs! Cohen's Kappa (κ) subtracts chance guessing, exposing κ = 0.00!",
+    "code": "# 95% good answers + lazy 95%-PASS judge:\n# Raw Agreement p_o = 0.905 (Looks great!)\n# Chance Agreement p_e = 0.95*0.95 + 0.05*0.05 = 0.905\n# Cohen's Kappa κ = (p_o - p_e) / (1 - p_e) = 0.00 (Exposed!)"
+  },
+  {
+    "time": "0:27",
+    "badge": "Slide 2 / 4 · Measuring Judge Sensitivity (q1) & Specificity (q0)",
+    "caption": "Before trusting any judge in CI, we test it against 150 human-labeled examples (75 true passes + 75 true failures) to measure Sensitivity q1 (how often it passes good answers) and Specificity q0 (how often it catches bad answers).",
+    "code": "q1_tpr = true_positives / (true_positives + false_negatives)   # e.g., 0.90\nq0_tnr = true_negatives / (true_negatives + false_positives)   # e.g., 0.80"
+  },
+  {
+    "time": "0:55",
+    "badge": "Slide 3 / 4 · The Rogan-Gladen Formula: Unbiasing the Score!",
+    "caption": "Once we know q1 and q0, we don't have to accept the judge's distorted raw score p_obs! The Rogan-Gladen formula inverts the judge's error rates to recover the exact unbiased human pass rate θ̂!",
+    "code": "# Observed raw judge score p_obs = 0.76 (with q1 = 0.90, q0 = 0.80):\ntheta_hat = (p_obs + q0 - 1.0) / (q1 + q0 - 1.0)\n# -> (0.76 + 0.80 - 1.0) / (0.90 + 0.80 - 1.0) = 0.56 / 0.70 = 0.80 (Exact!)"
+  },
+  {
+    "time": "1:20",
+    "badge": "Slide 4 / 4 · Joint Bootstrap 95% Confidence Intervals",
+    "caption": "Both our 150-item human calibration set and our 1,000-item nightly run have sampling noise! AeroEval v0.6 resamples BOTH sets 1,000 times to compute an honest 95% confidence interval.",
+    "code": "# Resample 150 calibration pairs -> (q1*, q0*)\n# Resample 1,000 nightly verdicts -> p_obs*\n# Compute θ̂* across 1,000 iterations -> [2.5th percentile, 97.5th percentile]"
+  }
+]
+```
 
 ```json pretraining
 [
   {
     "term": "Cohen's Kappa (κ)",
     "formula": "κ = (p_o - p_e) / (1 - p_e)",
-    "meaning": "Chance-corrected agreement between an LLM Judge and human domain experts; penalizes high raw % agreement caused purely by class imbalance."
+    "meaning": "Measures how well an AI Judge agrees with human experts AFTER subtracting the agreement they would get just by lucky coin-flipping on easy datasets."
   },
   {
     "term": "Judge Sensitivity & Specificity",
     "formula": "q_1 = TPR,  q_0 = TNR",
-    "meaning": "Measured on a 150-sample human gold calibration set: q_1 is P(Judge=1 | Human=1) and q_0 is P(Judge=0 | Human=0)."
+    "meaning": "Two accuracy scores measured on a 150-item human answer key: q_1 is the judge's accuracy on truly good answers, and q_0 is the judge's accuracy on truly bad answers."
   },
   {
     "term": "Rogan-Gladen Estimator (θ̂)",
     "formula": "θ̂ = (p_obs + q_0 - 1) / (q_1 + q_0 - 1)",
-    "meaning": "Mathematically removes systematic judge false-positive and false-negative bias from raw observed pass rate p_obs when J = q_1 + q_0 - 1 > 0."
+    "meaning": "A classic math formula that uses the judge's known error rates (q_1 and q_0) to cancel out false positives and false negatives from your nightly pass rate."
   },
   {
     "term": "Joint Bootstrap 95% CI",
     "formula": "Resample(Gold_m, Unlabeled_N)",
-    "meaning": "Propagates BOTH finite calibration-set uncertainty (m=150) AND test-run sampling uncertainty (N=1,000) into an honest confidence interval."
+    "meaning": "Running 1,000 computer simulations that re-draw both the 150 human calibration items and the 1,000 nightly test items to calculate honest error bars."
   }
 ]
 ```
@@ -56,38 +93,86 @@ tags: ["ai-engineering", "ai-qa", "cohens-kappa", "rogan-gladen", "judge-calibra
 }
 ```
 
-## Part I — Why Raw LLM-Judge Pass Rates Lie (And How to Debias Them)
+## 🌱 Step 1: Plain-English Story — Why Raw Judge Scores Lie (And How to Fix Them!)
 
-Suppose your system's **true** human-verified pass rate is $\theta = 0.90$. You evaluate $N = 1,000$ unlabeled traces using an LLM-as-a-Judge whose calibration against a $m = 150$ human-annotated gold set yields:
-- **Sensitivity ($q_1 = \text{TPR}$)**: $P(\hat{Y}=1 \mid Y=1) = 0.92$
-- **Specificity ($q_0 = \text{TNR}$)**: $P(\hat{Y}=0 \mid Y=0) = 0.80$ (meaning false-positive rate $1 - q_0 = 0.20$)
+Imagine you buy a radar speed gun to check if cars on your street are speeding. You test the radar gun first and discover it consistently reads **4 mph too slow**.
+When you point that radar gun at 1,000 cars tomorrow and the screen says `56 mph`, do you tell the mayor *"Cars are driving 56 mph"*?
+Of course not! Because you **calibrated** the radar gun and know its exact error (`-4 mph`), you add `4 mph` back and report the true speed: **`60 mph`**!
 
-What raw pass rate $p_{\text{obs}} = P(\hat{Y}=1)$ will the judge report on your dashboard? By the Law of Total Probability:
+An **LLM-as-a-Judge** is just like that radar gun! Even after our Chapter 05 rubric upgrades, no LLM judge agrees with human domain experts 100% of the time:
+- Maybe on truly **good** answers, the judge says `PASS` **90%** of the time (**Sensitivity `q1 = 0.90`**).
+- And on truly **bad** answers, the judge catches `FAIL` **80%** of the time (**Specificity `q0 = 0.80`**, meaning it accidentally lets 20% of bad answers slip through as false passes).
 
-$$p_{\text{obs}} = \theta \cdot q_1 + (1 - \theta) \cdot (1 - q_0) = 0.90(0.92) + 0.10(0.20) = 0.828 + 0.020 = 0.848$$
-
-The raw judge reports **$84.8\%$** when true quality is **$90.0\%$**—a **$5.2\%$ systematic distortion**! Worse yet, if true quality is low ($\theta = 0.50$) and specificity is weak ($q_0 = 0.65$), a sycophantic judge inflates observed accuracy systematically.
-
-Solving the linear equation $p_{\text{obs}} = \theta q_1 + (1 - \theta)(1 - q_0)$ for $\theta$ yields the **Rogan-Gladen (1978) Prevalence Correction** (adopted across modern Stanford / Anthropic LLM evaluation frameworks):
-
-$$\hat{\theta} = \text{clip}_{[0, 1]}\left(\frac{p_{\text{obs}} + q_0 - 1}{q_1 + q_0 - 1}\right)$$
-
-Notice the denominator $J = q_1 + q_0 - 1$ is **Youden's J statistic** (informedness). Whenever $q_1 + q_0 > 1$, $\hat{\theta}$ recovers an asymptotically unbiased estimate of the **true human pass rate**!
+If you run that judge on 1,000 nightly `AeroBrain` answers where **80%** are genuinely good:
+- Out of 800 good answers, the judge passes $800 \times 0.90 = 720$.
+- Out of 200 bad answers, the judge accidentally passes $200 \times 0.20 = 40$.
+- Total raw judge passes: $720 + 40 = 760$ (**`76.0%`** instead of the true **`80.0%`**!).
 
 ```mermaid
 flowchart LR
-  SME["150 Human-Labeled Gold Traces"] -->|Compare vs Judge| Cal["Estimate κ, q_1 (TPR), q_0 (TNR)"]
-  Prod["1,000 Unlabeled CI / Prod Traces"] -->|Run Judge| Obs["Raw Observed Pass Rate p_obs"]
-  Cal & Obs -->|Invert Total Probability| RG["Rogan-Gladen Estimator θ̂ + Joint Bootstrap 95% CI"]
+  SME["150 Human-Labeled Gold Traces (75 Pass / 75 Fail)"] -->|Compare vs Judge| Cal["Calibrate Judge: κ, Sensitivity q_1, Specificity q_0"]
+  Prod["1,000 Nightly AeroBrain Traces"] -->|Run Judge| Obs["Raw Distorted Score p_obs (e.g., 76.0%)"]
+  Cal & Obs -->|Rogan-Gladen Formula| TrueScore["True Corrected Pass Rate θ̂ (80.0%) + 95% CI"]
 ```
 
----
+Instead of reporting the distorted `76.0%` raw score, **`AeroEval v0.6`** calibrates `(q1, q0)` on a 150-item human gold set and applies the **Rogan-Gladen Correction** to recover the true `80.0%` pass rate!
 
-## Part II — Two-Stage Judge Qualification Protocol
+## 🔨 Step 2: First Lines of Code — Build `AeroEval v0.6` Rogan-Gladen Calibrator in 15 Lines!
 
-Before any LLM-as-a-Judge prompt is promoted to gate CI/CD, it must clear a **Two-Stage Statistical Qualification**:
-1. **Inter-Human Anchor Check**: Have 2 domain experts independently label $m = 150$ stratified traces ($75$ passes, $75$ failures—oversampling failures so $q_0$ has tight variance!). Require human-to-human $\kappa \ge 0.80$; if humans disagree, the **rubric itself is ambiguous** and no LLM can guess their minds.
-2. **Judge-to-Human Calibration**: Run the frozen LLM judge (`temperature=0`) against the adjudicated $150$-item gold set. Require **Cohen's $\kappa \ge 0.70$**, $q_1 \ge 0.85$, and $q_0 \ge 0.85$, then persist $(q_1, q_0)$ alongside the judge prompt hash to compute Rogan-Gladen $\hat{\theta}$ and **Joint Non-Parametric Bootstrap $95\%$ CIs** ($B = 2,000$ resamples of both the $m$-item calibration set and $N$-item eval run).
+Look how clean the math is once you see it in code: given our judge's Sensitivity `q1` (`TPR`), Specificity `q0` (`TNR`), and raw observed pass rate `p_obs`, `rogan_gladen_correct` removes the judge's error bias in 4 lines!
+
+```python
+def calibrate_and_correct_judge(
+    human_gold: list[int],
+    judge_calib: list[int],
+    p_obs: float,
+) -> dict:
+    """AeroEval v0.6: Measures judge (q1, q0) on human gold labels and unbiases p_obs!"""
+    tp = sum(1 for h, j in zip(human_gold, judge_calib) if h == 1 and j == 1)
+    fn = sum(1 for h, j in zip(human_gold, judge_calib) if h == 1 and j == 0)
+    tn = sum(1 for h, j in zip(human_gold, judge_calib) if h == 0 and j == 0)
+    fp = sum(1 for h, j in zip(human_gold, judge_calib) if h == 0 and j == 1)
+
+    q1 = tp / max(1, tp + fn)  # Sensitivity (TPR)
+    q0 = tn / max(1, tn + fp)  # Specificity (TNR)
+    theta_hat = max(0.0, min(1.0, (p_obs + q0 - 1.0) / (q1 + q0 - 1.0)))
+    return {"q1": round(q1, 2), "q0": round(q0, 2), "raw": p_obs, "corrected": round(theta_hat, 4)}
+
+
+# 90% Sensitivity (9/10), 80% Specificity (8/10), raw observed pass rate = 0.76 -> Recovers 0.80!
+print(calibrate_and_correct_judge([1] * 10 + [0] * 10, [1] * 9 + [0] * 1 + [0] * 8 + [1] * 2, p_obs=0.76))
+```
+
+### Java 17 Equivalent
+
+```java
+public class AeroEvalV06Calibrator {
+    public record CalibratedScore(double q1, double q0, double rawPObs, double correctedTheta) {}
+
+    public static CalibratedScore calibrateAndCorrect(int[] humanGold, int[] judgeCalib, double pObs) {
+        int tp = 0, fn = 0, tn = 0, fp = 0;
+        for (int i = 0; i < humanGold.length; i++) {
+            if (humanGold[i] == 1 && judgeCalib[i] == 1) tp++;
+            else if (humanGold[i] == 1 && judgeCalib[i] == 0) fn++;
+            else if (humanGold[i] == 0 && judgeCalib[i] == 0) tn++;
+            else fp++;
+        }
+        double q1 = (double) tp / Math.max(1, tp + fn);
+        double q0 = (double) tn / Math.max(1, tn + fp);
+        double theta = Math.max(0.0, Math.min(1.0, (pObs + q0 - 1.0) / (q1 + q0 - 1.0)));
+        return new CalibratedScore(q1, q0, pObs, theta);
+    }
+}
+```
+
+## ⚡ Step 3: Where It Breaks in Real Life — The "Yes-Man" Judge & Skewed Calibration Sets
+
+Watch **two classic traps** that break judge calibration in real companies if you aren't careful:
+
+1. **Trap 1: Validating a Judge Using Raw `% Agreement` on a 95%-Pass Dataset**
+   Suppose `AeroBrain` passes `95%` of normal customer questions, and someone writes a terrible "Yes-Man" judge prompt that blindly says `PASS` `95%` of the time. If you check raw agreement against humans, it scores **`90.5%` agreement**—while catching **zero** bugs! That is why `AeroEval v0.6` gates judges on **Cohen's Kappa ($\kappa \ge 0.70$)**, which subtracts lucky base-rate guessing.
+2. **Trap 2: Sampling 150 Random Production Logs for Calibration (Only 6 Failures!)**
+   If you pick 150 *random* logs from a `96%`-accurate bot to build your human calibration set, only **$\sim 6$ logs will be failures ($Y = 0$)**! Trying to estimate Specificity $q_0$ from just 6 examples produces huge random error ($\pm 30\%$). Instead, always curate a **50/50 class-balanced calibration set** (`75` true passes + `75` true failures)!
 
 ```json contrast
 {
@@ -111,7 +196,19 @@ Before any LLM-as-a-Judge prompt is promoted to gate CI/CD, it must clear a **Tw
 }
 ```
 
-### Trade-Off Table: Judge Calibration & Estimation Choices
+## 🚀 Step 4: Staff Engineer Deep-Dive — Total Probability Inversion & Joint Bootstrap Math
+
+Let $\theta = P(Y = 1)$ denote the true human pass rate, $q_1 = P(\hat{Y} = 1 \mid Y = 1)$ denote Judge Sensitivity (`TPR`), and $q_0 = P(\hat{Y} = 0 \mid Y = 0)$ denote Judge Specificity (`TNR`). By the Law of Total Probability, the raw observed judge pass rate $p_{\text{obs}} = P(\hat{Y} = 1)$ satisfies:
+
+$$p_{\text{obs}} = \theta \cdot q_1 + (1 - \theta) \cdot (1 - q_0)$$
+
+Solving this linear equation for $\theta$ yields the **Rogan-Gladen (1978) Prevalence Estimator** (used across Stanford & Anthropic evaluation harnesses):
+
+$$\hat{\theta} = \text{clip}_{[0, 1]}\!\left(\frac{p_{\text{obs}} + q_0 - 1}{q_1 + q_0 - 1}\right)$$
+
+where the denominator $J = q_1 + q_0 - 1$ is **Youden's $J$ statistic** (informedness). And to qualify the judge against human raters with observed agreement $p_o$ and expected chance agreement $p_e = p_{H=1}p_{J=1} + p_{H=0}p_{J=0}$, we require **Cohen's Kappa**:
+
+$$\kappa = \frac{p_o - p_e}{1 - p_e} \ge 0.70$$
 
 | Metric / Estimator | Mathematical Role | Minimum Production Bar | What Happens If Omitted |
 | :--- | :--- | :--- | :--- |
@@ -120,11 +217,8 @@ Before any LLM-as-a-Judge prompt is promoted to gate CI/CD, it must clear a **Tw
 | **Rogan-Gladen ($\hat{\theta}$)** | Corrects prevalence distortion in $p_{\text{obs}}$ | $q_1 + q_0 - 1 \ge 0.65$ | Systematic $5\%–15\%$ bias whenever true pass rate shifts |
 | **Joint Bootstrap 95% CI** | Propagates $\text{Var}(\hat{q}_1, \hat{q}_0) + \text{Var}(p_{\text{obs}})$ | $B \ge 1,000$ resamples | Overconfident narrow error bars cause false regression alarms |
 
----
+### Production Blueprint: Cohen's $\kappa$, Rogan-Gladen Estimator & Joint Bootstrap 95% CI
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Cohen's $\kappa$, Rogan-Gladen Estimator & Joint Bootstrap 95% CI
 ```python
 import random
 
@@ -203,7 +297,8 @@ def calibrated_pass_rate_with_ci(
     }
 ```
 
-### Java 17 Blueprint: Judge Calibration & Rogan-Gladen Estimator
+### Java 17 Equivalent
+
 ```java
 public final class RoganGladenCalibrator {
     public record CalibrationMetrics(double kappa, double q1Sensitivity, double q0Specificity) {
@@ -248,9 +343,7 @@ public final class RoganGladenCalibrator {
 > **Staff Interview Gotcha — Why Your 150-Item Human Calibration Set MUST Be Class-Balanced (`~50/50`), Not Randomly Sampled**:
 > If your production system passes $95\%$ of the time and you label $150$ *random* production traces, you will only get **$\sim 7$ true failure examples**! Estimating Specificity $q_0 = \text{TN}/(\text{TN}+\text{FP})$ on $7$ examples produces massive variance ($\pm 30\%$), blowing up the Rogan-Gladen denominator $q_1 + q_0 - 1$. Always construct the human calibration set with **deliberately oversampled failure traces ($75$ passes + $75$ failures)**—because $q_1$ and $q_0$ condition on $Y=1$ and $Y=0$ respectively, class-balancing the calibration set shrinks $\text{Var}(\hat{\theta})$ dramatically without biasing $q_1$ or $q_0$!
 
----
-
-## Part IV — End-of-Chapter Mastery Check
+**Up Next in Chapter 07**: Our `AeroEval v0.6` harness now grades accuracy with mathematical precision—but what happens when an attacker hides invisible instructions inside a partner hotel PDF (`Indirect Prompt Injection`) to steal VIP passenger phone numbers via a Markdown image link? In Chapter 07, we'll build **`AeroEval v0.7`: Adversarial Red-Teaming, Canary Tokens & Dual ASR/FRR Gates**!
 
 ```json quiz
 [

@@ -6,100 +6,209 @@ volume: "05. Zero to Mastery: AI Engineering"
 module_number: 3
 module_title: "Module 3: Decoding Physics, Context Architecture & Latency"
 chapter_number: 8
-level_tag: "Mid → Staff"
-title: "Context Architecture, KV Prefix Caching, Lost-in-the-Middle & TTFT/TPOT Economics"
-summary: "Causal attention prefix-invalidation physics, ordering static system/tool/corpus blocks before volatile timestamps to unlock >85% Radix/Paged KV-Cache hits (50-90% cost & TTFT cuts), U-shaped Lost-in-the-Middle mitigation, and end-to-end TTFT + TPOT SLA budgeting."
+level_tag: "🌱 Lead-In → Staff AI Engineer"
+title: "AeroBrain v0.8: Context Architecture, KV Prefix Caching, Lost-in-the-Middle & TTFT/TPOT Economics"
+summary: "Why did putting a live timestamp on Line 1 of AeroBrain's system prompt increase our cloud bill by 5x and slow Time-To-First-Token to 2.4s? Master causal KV Prefix Caching (RadixAttention), U-shaped 'Lost in the Middle' sandwich ordering, and end-to-end TTFT + TPOT SLA budgeting."
 reading_time_minutes: 22
 visualizer_id: ai-transformer-kv-cache
 lab_path: ai-engineering/03-hybrid-rag-rrf-and-attention
 tags: ["ai-engineering", "prefix-caching", "context-engineering", "ttft", "tpot", "lost-in-the-middle", "radix-attention"]
 ---
 
-# Context Architecture, KV Prefix Caching, Lost-in-the-Middle & TTFT/TPOT Economics
+# AeroBrain v0.8: Context Architecture, KV Prefix Caching, Lost-in-the-Middle & TTFT/TPOT Economics
+
+```json continuity
+{
+  "previously": "In Chapter 07, we upgraded AeroBrain v0.7 with FSM grammar masking so every refund decision returns 100% valid JSON.",
+  "painPoint": "Each AeroBrain request includes 18,000 tokens of AeroCart system instructions, tool schemas, and policy examples. Because an engineer put `Current UTC Time: ...` on Line 1 of the prompt, our GPU server recomputes all 18,000 tokens from scratch on every single call—costing 5x more money and making users wait 2.4 seconds before the first word appears!",
+  "unlock": "We will upgrade to AeroBrain v0.8 by arranging prompts into a 4-Tier Static-to-Dynamic Stack that hits 89% KV Prefix Cache reuse (cutting TTFT from 2.4s to 240ms and slashing token bills by 80%), while fixing the U-shaped 'Lost in the Middle' blind spot!"
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "Slide 1 / 4 · Why Line 1 Ruined Our Entire Cache",
+    "caption": "Transformers read strictly left-to-right: every token's cached memory (KV-Cache) depends on ALL tokens before it. Changing just 1 character on Line 1 invalidates all 18,000 tokens below it!",
+    "code": "# ❌ BAD (0% Cache Hit): Timestamp at Line 1 breaks everything after it!\nprompt = f'Time: {now}\\n' + STATIC_18K_RULES + user_question\n# ✅ GOOD (89% Cache Hit): Static rules FIRST, changing timestamp LAST!\nprompt = STATIC_18K_RULES + f'\\nTime: {now}\\n' + user_question"
+  },
+  {
+    "time": "0:26",
+    "badge": "Slide 2 / 4 · The 4-Tier Monotonic Stability Stack",
+    "caption": "Put your most permanent text at the very top (System Rules + Sorted Tools), append-only chat turns in the middle, and fast-changing RAG chunks + timestamps at the very bottom!",
+    "code": "Tier 0: Static System + Sorted Tool JSON (100% cached)\nTier 1: Domain Handbook + Few-Shots      (95% cached)\nTier 2: Append-Only Chat History         (Incremental cache)\nTier 3: RAG Chunks + Timestamp + Query   (Uncached tail)"
+  },
+  {
+    "time": "0:52",
+    "badge": "Slide 3 / 4 · The 'Lost in the Middle' Blind Spot",
+    "caption": "When you paste 20 retrieved paragraphs into a prompt, LLMs pay great attention to the FIRST and LAST paragraphs, but miss 15-30% of facts buried in the middle (#8-#12)!",
+    "code": "# Edge-Sandwich Ordering for Top-5 Ranked Chunks [R1, R2, R3, R4, R5]:\n# Put #1 at the very top, #2 at the very bottom (closest to query!)\nsandwiched = [R1, R3, R5, R4, R2]"
+  },
+  {
+    "time": "1:18",
+    "badge": "Slide 4 / 4 · Budgeting TTFT vs. TPOT Latency",
+    "caption": "Total wait time has two parts: TTFT (reading your uncached prompt tokens) plus TPOT (generating output words one by one). Prefix caching crushes TTFT!",
+    "code": "TTFT_ms  = 35 + (uncached_input_tokens / 18_000) * 1000\nTotal_ms = TTFT_ms + (output_tokens - 1) * TPOT_ms"
+  }
+]
+```
 
 ```json pretraining
 [
   {
-    "term": "Causal Cache Rule",
-    "formula": "KV(token_i) = f(tokens[0 .. i])  ==>  1 Mutated Byte @ k Invalidates [k .. L]!",
-    "meaning": "Because causal attention attends strictly leftward, KV-Cache reuse works ONLY on exact byte-identical token prefixes from index 0."
+    "term": "Causal Prefix Cache Rule",
+    "formula": "KV(token_i) depends on tokens[0..i]",
+    "meaning": "An LLM server can reuse saved memory from a previous request ONLY up to the first word where the two prompts differ."
   },
   {
-    "term": "Radix / Automatic Prefix",
-    "formula": "BlockHash_b = SHA256(BlockHash_{b-1} || TokenIDs[16b .. 16b+15])",
-    "meaning": "SGLang RadixAttention & vLLM Automatic Prefix Caching index 16-token KV pages in a radix tree, skipping prefill FLOPs on cache hits."
+    "term": "RadixAttention (Block Hashing)",
+    "formula": "Hash_block = SHA256(PrevHash + 16_Token_IDs)",
+    "meaning": "How engines like vLLM and SGLang save 16-token chunks of prompt memory in a lookup tree so identical prompt beginnings skip heavy math."
   },
   {
-    "term": "U-Shaped Recall Curve",
-    "formula": "Recall(pos) >> Recall(middle)  (Primacy + Recency Bias)",
-    "meaning": "Liu et al. ('Lost in the Middle'): LLM retrieval accuracy drops 15-30% on facts buried at 40-60% depth vs top-1 or bottom-most positions!"
+    "term": "U-Shaped Recall ('Lost in the Middle')",
+    "formula": "Start & End Recall >> Middle Recall",
+    "meaning": "LLMs remember facts at the very top and very bottom of a long prompt much better than facts buried in the middle."
   },
   {
-    "term": "End-to-End Latency Law",
-    "formula": "T_total = T_retrieval + TTFT(L_uncached) + TPOT * (N_out - 1)",
-    "meaning": "Decomposes p99 latency into uncached prefill (TTFT) plus linear output generation (TPOT * N_out) to allocate exact SLA budgets."
+    "term": "TTFT vs. TPOT",
+    "formula": "Total Time = TTFT + TPOT * (OutputTokens - 1)",
+    "meaning": "TTFT is the pause before the first word appears (reading the prompt); TPOT is the speed at which each new word streams onto the screen."
   }
 ]
 ```
 
 ```json poe
 {
-  "question": "An AI Agent prepends line 1 of its 18,000-token System Prompt with f'Current UTC Timestamp: {datetime.now().isoformat()}\\n' followed by 17,980 tokens of static tool JSON schemas and enterprise SOP rules. Despite traffic hitting 50 RPS on the same tenant, cloud bill inspection shows 0.0% Prompt Cache Hit Rate and a 2,100ms Time-To-First-Token (TTFT)! What 1-line architectural change cuts cost by ~78% and TTFT down to ~240ms?",
+  "question": "AeroBrain v0.8 has an 18,000-token System Prompt containing static AeroCart refund rules and 15 tool JSON schemas, handling 50 requests per second. Yet our monitoring dashboard shows a 0.0% Prefix Cache Hit Rate and a 2,100ms wait before the first token! You check the code and see Line 1 says `f'Current UTC Time: {datetime.now()}\\n'` and tools are serialized from an unordered Python `set`. What fixes both issues?",
   "options": [
-    "Round the timestamp to the nearest 500 milliseconds",
-    "Move volatile dynamic fields (current timestamp, user_id, live query) to the VERY END of the prompt (user turn) AFTER all static system rules, tool schemas (sorted deterministically by name!), and static few-shot examples—preserving an immutable 17,980-token causal prefix from index 0!",
-    "Compress the system prompt using Base64 encoding",
-    "Switch from streaming SSE to blocking HTTP/1.1"
+    "Round the timestamp to the nearest 5 seconds",
+    "Move volatile dynamic fields (timestamp, request_id, user query) to the VERY END of the prompt AND sort tool schemas deterministically by name (`sort_keys=True`), creating a byte-identical 17,980-token prefix from token 0 across all requests!",
+    "Base64-encode the prompt",
+    "Increase temperature to 1.0"
   ],
   "answerIndex": 1,
-  "explanation": "Causal self-attention makes KV_i a function of every preceding token 0..i. Mutating token #6 (a per-second timestamp) alters K and V for all 17,980 subsequent tokens, destroying 100% of KV prefix cache hits!"
+  "explanation": "Because causal attention attends strictly leftward, changing token #5 (a timestamp) or shuffling tool order invalidates the KV-Cache for all 17,980 tokens that follow! Moving dynamic fields to the tail unlocks ~89% cache hits and 50-90% cost discounts."
 }
 ```
 
-## 1. Causal Prefix-Caching Physics (`RadixAttention`) & Canonical Prompt Layering
+## 🌱 Step 1: Plain-English Story — The Photocopy Template vs. Retyping an 18-Page Contract
 
-In modern LLM APIs (Anthropic, OpenAI, Gemini Context Caching) and self-hosted engines (`vLLM` Automatic Prefix Caching / `SGLang` `RadixAttention`), cached prompt tokens cost **`50%–90%` less** and bypass $O(L^2)$ prefill compute—slashing `TTFT` on a `32,000`-token context from `2.4s` down to `~190ms`!
+Imagine an AeroCart gate agent has to read an **18-page airline rulebook** before answering a passenger's 1-sentence question.
+- If the rulebook is **100% identical** from Page 1 to Page 18 every time, the agent reads it **once** at 8:00 AM, keeps sticky-note summaries in their head (**the KV Prefix Cache**), and answers every new passenger in **0.2 seconds**!
+- Now suppose someone stamps the **current second (`08:01:42`) at the very top of Page 1** before handing the 18-page packet to the agent. Because Transformers read strictly left-to-right and mix each word with every word that came before it, changing **Line 1 of Page 1** changes the mathematical meaning of **every single word on Pages 1 through 18**! The GPU has to throw away its saved memory and re-read all 18 pages from scratch on every single request!
 
-Why must cached blocks form a **strict prefix from token `0`**? In Chapter 04, we proved that under causal masking `M`, token $i$'s hidden representation depends on `tokens[0..i]`, and `RoPE` rotates `K_i` by exact absolute index $i$. If you insert `3` extra tokens at index `10`, then every subsequent token shifts from position $i \to i + 3$ **and** attends to those `3` new tokens—invalidating every cached `K, V` vector after index `10`!
-
-Therefore, Staff AI Engineers structure every production prompt as a **4-Tier Monotonic Stability Stack** (most static at top, most volatile at bottom):
-1. **Tier 0 — Immutable Global Prefix**: Core System Instructions + **Canonically Sorted Tool Schemas** (`json.dumps(..., sort_keys=True)`—never iterate unsorted Python `set`s!).
-2. **Tier 1 — Semi-Static Domain / Tenant Context**: Cached handbook / codebase summary + static Golden Few-Shot examples (`5–60 min` cache TTL).
-3. **Tier 2 — Append-Only Conversation History**: Multi-turn `[user_1, assistant_1, tool_call_1, tool_result_1, ...]`—**never rewrite or re-summarize old turns on every single step**! Wait until context hits `80%` threshold, compact once, and start a fresh long-lived prefix.
-4. **Tier 3 — Ephemeral Per-Turn Tail**: Retrieved RAG chunks + current `UTC date` + user's latest message + final instruction reminder.
+And there is a second trap once the prompt gets long: **The "Lost in the Middle" Effect**. Just like a human skimming a 20-page briefing remembers **Page 1** and **Page 20** clearly but zones out around **Page 10**, LLMs lose `15–30%` accuracy when key facts are buried in the middle of retrieved context!
 
 ```mermaid
 flowchart LR
-  T0["Tier 0: Static System + Sorted Tools (12k Toks)"] -->|100% KV Cache Hit| T1["Tier 1: Tenant SOP + Few-Shots (4k Toks)"]
-  T1 -->|92% KV Cache Hit| T2["Tier 2: Append-Only Chat Turns"]
-  T2 -->|Incremental Prefill ONLY| T3["Tier 3: Sandwich RAG + Timestamp + User Query"]
+  T0["1. Static System Rules + Sorted Tools (Top)"] -->|100% KV Cache Hit!| T1["2. Static Few-Shot Examples"]
+  T1 -->|92% KV Cache Hit!| T2["3. Append-Only Chat History"]
+  T2 -->|Only New Tail Computed!| T3["4. Sandwiched Evidence + Timestamp + Query (Bottom)"]
 ```
 
----
+To make `AeroBrain v0.8` both **fast (`<250ms` start time)** and **sharp**, we follow two golden rules:
+1. **Static at the Top, Dynamic at the Bottom**: Keep system rules and sorted tool definitions locked at Token `0`; push timestamps, user IDs, and live questions to the very end.
+2. **Edge-Sandwich Your Best Evidence**: Put your `#1` most relevant retrieved fact at the **start** of the evidence block, and your `#2` most relevant fact at the **very end** (right next to the user's question), pushing weaker notes into the middle!
 
-## 2. Mitigating `"Lost in the Middle"` & Budgeting `TTFT` vs. `TPOT` SLAs
+## 🔨 Step 2: First Lines of Code — Build `AeroBrain v0.8`'s Cache-Safe & Sandwich Prompt Builder!
 
-Even when models advertise `128k–1M` context windows, **effective reasoning recall $\neq$ maximum token window** ("Context Rot"). Liu et al. (*Lost in the Middle*) showed that Transformer retrieval accuracy follows a pronounced **U-shaped curve**: highest at the **very beginning** (primacy / attention-sink anchor) and **very end** (recency proximity to the generating query token), sagging `15–30%` on evidence buried in positions `40%–65%`!
+Let's write a 17-line function for `AeroBrain v0.8` that locks static rules at the top (so the prefix hash never changes!) and arranges ranked evidence in **Edge-Sandwich order** (`[#1, #3, #5, #4, #2]`) so top facts never get lost in the middle!
+
+```python
+import hashlib
+
+
+def sandwich_order(ranked_facts: list[str]) -> list[str]:
+    # Odd ranks (#1, #3, #5) go to the START; Even ranks (#2, #4) go to the END!
+    head = ranked_facts[0::2]
+    tail = list(reversed(ranked_facts[1::2]))
+    return head + tail
+
+
+def build_aerobrain_v08_prompt(static_rules: str, ranked_facts: list[str], query: str, now_utc: str) -> dict:
+    # 1. IMMUTABLE PREFIX at Token 0 -> 100% reusable in GPU KV-Cache across all flyers!
+    prefix = f"<system>\n{static_rules.strip()}\n</system>\n"
+    # 2. DYNAMIC TAIL at the bottom -> Sandwiched facts + changing timestamp + user query
+    evidence = "\n".join(sandwich_order(ranked_facts))
+    tail = f"<evidence>\n{evidence}\n</evidence>\n<time>{now_utc}</time>\n<query>{query}</query>"
+    return {"prefix_hash": hashlib.sha256(prefix.encode()).hexdigest()[:12], "full_prompt": prefix + tail}
+
+
+res = build_aerobrain_v08_prompt("AeroCart Refund Rules v1", ["R1:Best", "R2:2nd", "R3:Weak", "R4:3rd"], "Refund?", "12:00:01")
+print("Prefix Hash:", res["prefix_hash"], "| Order:", sandwich_order(["R1", "R2", "R3", "R4", "R5"]))
+```
+
+### Java 17 Equivalent
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+public class AeroBrainContextDemo {
+    public static List<String> sandwichOrder(List<String> rankedFacts) {
+        List<String> head = new ArrayList<>();
+        List<String> tail = new ArrayList<>();
+        for (int i = 0; i < rankedFacts.size(); i++) {
+            // Place #1, #3, #5 at the start (primacy) and #2, #4 at the end (recency!)
+            if (i % 2 == 0) head.add(rankedFacts.get(i));
+            else tail.add(0, rankedFacts.get(i));
+        }
+        head.addAll(tail);
+        return head;
+    }
+
+    public static void main(String[] args) {
+        List<String> ranked = List.of("R1:Best", "R2:SecondBest", "R3:Third", "R4:Fourth", "R5:Fifth");
+        System.out.println("Edge-Sandwich Order: " + sandwichOrder(ranked)); // [R1, R3, R5, R4, R2]
+    }
+}
+```
+
+Look at the output of `sandwich_order(["R1", "R2", "R3", "R4", "R5"])`: **`["R1", "R3", "R5", "R4", "R2"]`**! Our `#1` best fact sits at the very start, `#2` sits at the very end right above `<query>`, and `#5` (the weakest fact) sits safely in the middle!
+
+## ⚡ Step 3: Where It Breaks in Real Life — Hidden Cache Busters in Multi-Turn Agents
+
+Even when engineers put timestamps at the bottom, three sneaky bugs quietly destroy KV Prefix Caching in production:
+1. **Unordered Tool Dictionaries / Sets**: If your agent registers MCP tools from a Python `set` or unsorted map, Pod A serializes `[search_flights, refund_ticket]` while Pod B serializes `[refund_ticket, search_flights]`—breaking the prefix hash at Token #80!
+2. **"Sliding-Window" History Truncation on Every Turn**: Suppose a 15-turn coding agent drops Turn #1 on every step (`[Sys, T2, T3, T4]` $\to$ `[Sys, T3, T4, T5]`). Dropping `T2` shifts the position index of `T3, T4, T5` leftward—**invalidating 100% of your cached conversation history on every single turn**! Instead, keep history strictly **append-only** (paying 80–90% discounted cache hits) until you hit a high-water mark (e.g. `64k` tokens), then compact once!
 
 ```json contrast
 {
-  "title": "Cache-Busting Context Dump vs Prefix-Aligned + Sandwich-Ranked Context Architecture",
-  "naiveTitle": "Timestamp @ Line 1 + 50 Unsorted Chunks",
+  "title": "Cache-Busting Context Dump vs. 4-Tier Prefix Stack + Edge-Sandwich Context",
+  "naiveTitle": "Timestamp @ Line 1 + Sliding Window Every Turn",
   "naiveMetric": "0% Cache Hit · $48/1k Calls · 3.1s TTFT",
   "naivePoints": [
     "Injects dynamic request_id, timestamp, and RAG chunks inside the top of the System Prompt, busting 100% of KV caches",
-    "Serializes MCP tool definitions from an unordered hash set, shuffling tool order across pods and invalidating Radix trees",
-    "Dumps top-50 noisy vector chunks in descending order so critical multi-hop evidence sinks into the dead middle"
+    "Serializes MCP tool definitions without sorting by name, shuffling tool order across pods and invalidating Radix trees",
+    "Drops the oldest chat message on every single turn, shifting token offsets and forcing full prefill recomputation every step"
   ],
   "staffTitle": "4-Tier Prefix Stack + Edge-Sandwich Rerank",
-  "staffMetric": "89% Cache Hit · $7/1k Calls · 260ms TTFT",
+  "staffMetric": "89% Cache Hit · $7/1k Calls · 240ms TTFT",
   "staffPoints": [
-    "Locks byte-deterministic System + Sorted Tools at token 0; validates prefix hash stability in CI unit tests!",
-    "Prunes top-50 recall down to top-6 high-signal chunks via Cross-Encoder reranking, placing Rank #1 first & Rank #2 last!",
-    "Repeats core grounding/citation constraints right after retrieved context ('Instruction Sandwich') next to the decode cursor"
+    "Locks byte-deterministic System + Canonically Sorted Tools at Token 0; validates prefix hash stability in CI unit tests!",
+    "Keeps multi-turn chat history strictly append-only until watermark compaction so every turn reuses 100% of prior turns' KV pages",
+    "Places Rank #1 evidence first & Rank #2 last ('Edge Sandwich'), followed by an instruction reminder next to the decode cursor"
   ]
 }
 ```
+
+Use the **Interactive KV-Cache & Context Simulator** below to watch how 16-token Radix blocks cache or invalidate as prompt layers change.
+
+## 🚀 Step 4: Staff Engineer Deep-Dive — Radix Block-Hash Physics & `TTFT`/`TPOT` SLA Math
+
+In `vLLM` Automatic Prefix Caching and `SGLang` `RadixAttention`, the KV-Cache is partitioned into fixed-size pages of $B = 16$ tokens. Why can't Block $b$ be hashed solely by its own 16 tokens? Because under causal self-attention and Rotary Position Embeddings (`RoPE`), the key-value tensors $(K_i, V_i)$ inside Block $b$ are a function of **every preceding block $0, \dots, b-1$**! Therefore, engines compute a **cryptographic hash chain** from block $0$:
+
+$$H_0 = \text{Hash}\big(\text{ModelID} \parallel t_{0..15}\big), \qquad H_b = \text{Hash}\big(H_{b-1} \parallel t_{16b \dots 16b+15}\big)$$
+
+Any single-token mutation in block $k$ cascades through $H_k, H_{k+1}, \dots$, forcing recomputation of all downstream blocks. Given total prompt length $L = L_{\text{cached}} + L_{\text{uncached}}$ and generated output length $N_{\text{out}}$, end-to-end latency and per-request dollar cost follow:
+
+$$T_{\text{total}} = T_{\text{retrieval}} + \underbrace{\left(T_{\text{queue}} + \frac{L_{\text{uncached}}}{R_{\text{prefill}}}\right)}_{\text{TTFT (Prefill-Bound)}} + \underbrace{(N_{\text{out}} - 1) \times \text{TPOT}}_{\text{Decode (Memory-Bandwidth-Bound)}}$$
+
+$$\text{Cost}_{\text{req}} = \frac{L_{\text{cached}}}{10^6} P_{\text{in}}(1 - d_{\text{cache}}) + \frac{L_{\text{uncached}}}{10^6} P_{\text{in}} + \frac{N_{\text{out}}}{10^6} P_{\text{out}}$$
+
+where $d_{\text{cache}} \in [0.50, 0.90]$ is the cached-input discount (50%–90% off on cloud APIs, or saved GPU prefill FLOPs on self-hosted clusters).
 
 | Latency / Cost Metric | Governing Formula & Bottleneck | Interactive Chat Target | Async Batch / Agent Target |
 | :--- | :--- | :--- | :--- |
@@ -107,11 +216,8 @@ Even when models advertise `128k–1M` context windows, **effective reasoning re
 | **`TPOT` / `ITL` (Per Output Token)** | `WeightBytes / HBM_Bandwidth` (Memory-Bound) | `< 35 ms/tok` (`~28 tok/s` > human reading speed!) | Throughput-optimized (`tokens/sec/$`) |
 | **Prefix Cache Hit Rate** | `CachedInputTokens / TotalInputTokens` | **`>= 80%`** on multi-turn & tool agents | **`>= 90%`** (sort batch jobs by shared document prefix!) |
 
----
+### Python 3 Production Blueprint: Deterministic Prefix-Cache Composer, U-Curve Sandwich Packer & SLA Calculator
 
-## 3. Dual-Language Production Blueprints: Prefix-Cache Builder, Sandwich Packer & SLA Simulator
-
-### Python 3 Blueprint: Deterministic Prefix-Cache Composer, U-Curve Sandwich Packer & SLA Calculator
 ```python
 from __future__ import annotations
 from dataclasses import dataclass
@@ -190,7 +296,7 @@ def estimate_turn_latency_and_cost(
     prefill_tok_per_sec: float = 18_000.0,
     tpot_ms: float = 22.0,
     input_price_per_1m: float = 2.50,
-    cached_input_discount: float = 0.80,   # 80% discount (e.g. $0.50 / 1M cached tokens)
+    cached_input_discount: float = 0.80,
     output_price_per_1m: float = 10.00,
 ) -> Dict[str, float]:
     ttft_ms = 35.0 + (uncached_tail_tokens / prefill_tok_per_sec) * 1000.0
@@ -211,7 +317,8 @@ def estimate_turn_latency_and_cost(
     }
 ```
 
-### Java 17 Blueprint: 16-Token Block-Hash Radix Prefix Analyzer & U-Curve Evidence Arranger
+### Java 17 Equivalent
+
 ```java
 package com.hub.ai.context;
 
@@ -281,11 +388,11 @@ public final class PrefixCacheAndContextEngine {
 }
 ```
 
-> [!WARNING] **Staff Interview Gotcha — Load-Balancer Routing Destroys Self-Hosted `vLLM` / `SGLang` Prefix Caches!** Suppose you meticulously engineer byte-identical prefixes, deploy `8` `vLLM` GPU replicas behind a naive **Round-Robin Kubernetes Service**, and run multi-turn `ReAct` agents (`10` steps per task). Turn 1 lands on `Pod-3` (populating `Pod-3`'s HBM KV-Cache); Turn 2 gets round-robined to `Pod-7` (**cold cache miss**—recomputing prefill from scratch while wasting duplicate HBM across all 8 pods!). **Invariant:** Multi-replica LLM clusters MUST use **Prefix-Aware / Session-Affinity L7 Routing** (`SGLang Router`, `vLLM Production Stack`, or consistent hashing on `tenant_id` / first-256-token hash with load-bounded spillover) to maximize cluster-wide KV-Cache locality!
+> [!WARNING]
+> **Staff Interview Gotcha — Round-Robin Load Balancers Destroy Self-Hosted `vLLM` / `SGLang` Prefix Caches!**
+> Suppose you engineer byte-identical prefixes, deploy `8` `vLLM` GPU replicas behind a standard **Round-Robin Kubernetes Service**, and run 10-turn agent sessions. Turn 1 lands on `Pod-3` (populating `Pod-3`'s HBM KV-Cache); Turn 2 gets round-robined to `Pod-7` (**cold cache miss**—recomputing prefill from scratch while duplicating HBM across all 8 pods!). **Fix:** Multi-replica LLM clusters MUST use **Prefix-Aware L7 Routing** (`SGLang Router`, `vLLM Production Stack`, or consistent hashing with bounded load on the first-256-token prefix hash) to route matching prefixes to the GPU replica already holding those KV blocks!
 
----
-
-## 4. Scenario Retrieval-Practice Mastery Gate
+**Up Next in Chapter 09 (`AeroBrain v0.9`)**: Look at `<retrieved_evidence>` in our prompt builder above—how does AeroBrain actually **find** the right 5 paragraphs out of 50,000 AeroCart policy pages, runbooks, and flight manuals in under 15 milliseconds (especially when a user searches for an exact error code like `ERR_BAG_TAG_8841`)? In Chapter 09, we'll build **Hybrid RAG (`Breadcrumb Chunking + HNSW + Okapi BM25 + Reciprocal Rank Fusion`)**!
 
 ```json quiz
 [

@@ -1,0 +1,178 @@
+{
+  "courseId": "09-sql-and-data-engineering",
+  "version": "2.0",
+  "title": "09. SQL, PostgreSQL & Data Validation Engineering",
+  "projectThread": "AeroLedger (v0.1 -> v1.0): Evolving AeroCart's booking, seat-inventory, and payment verification layer from a Day-0 relational schema into a 100,000-RPS MVCC-isolated, index-tuned, Stripe-grade double-entry ledger & Kafka-to-Warehouse reconciliation suite.",
+  "officialSources": [
+    {
+      "name": "PostgreSQL 17 Official Documentation (SQL, Indexes, Concurrency Control & EXPLAIN)",
+      "url": "https://www.postgresql.org/docs/current/index.html"
+    },
+    {
+      "name": "SQLite Official Documentation (Query Planner, WAL Mode & STRICT Tables)",
+      "url": "https://www.sqlite.org/docs.html"
+    },
+    {
+      "name": "Python 3 DB-API 2.0 (sqlite3) Official Reference",
+      "url": "https://docs.python.org/3/library/sqlite3.html"
+    },
+    {
+      "name": "Java SE 17 java.sql (JDBC 4.3) API Specification",
+      "url": "https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/module-summary.html"
+    }
+  ],
+  "canonicalReferences": [
+    {
+      "title": "Use The Index, Luke! — A Guide to Database Performance for Developers",
+      "author": "Markus Winand",
+      "url": "https://use-the-index-luke.com/"
+    },
+    {
+      "title": "Designing Data-Intensive Applications (Ch. 3 Storage & Retrieval; Ch. 7 Transactions)",
+      "author": "Martin Kleppmann",
+      "url": "https://dataintensive.net/"
+    }
+  ],
+  "bigTechCaseStudies": [
+    {
+      "org": "Stripe Engineering",
+      "topic": "Immutable Double-Entry Ledgers, Idempotency Keys & Clearing Account Reconciliation",
+      "url": "https://stripe.com/blog/idempotency"
+    },
+    {
+      "org": "GitLab Database Engineering",
+      "topic": "Zero-Downtime PostgreSQL Migrations (Expand-Contract, NOT VALID + VALIDATE CONSTRAINT, CREATE INDEX CONCURRENTLY)",
+      "url": "https://docs.gitlab.com/development/database/add_foreign_key_to_existing_column/"
+    },
+    {
+      "org": "Airline GDS & Uber Inventory Engineering",
+      "topic": "Eliminating Seat 12A & Dispatch Double-Allocation via SELECT ... FOR UPDATE SKIP LOCKED and Unique Partial Indexes",
+      "url": "https://www.postgresql.org/docs/current/explicit-locking.html"
+    }
+  ],
+  "chapters": [
+    {
+      "chapterNumber": 1,
+      "slug": "sql-01-day0-relational-schemas-keys-and-crud",
+      "file": "01-day0-relational-schemas-keys-and-crud.md",
+      "prerequisites": [],
+      "competencies": [
+        "DDL (CREATE TABLE, PRIMARY KEY, FOREIGN KEY, UNIQUE, CHECK)",
+        "Integer cents vs IEEE-754 float money bug",
+        "Parameterized SQL queries vs SQL injection",
+        "Three-valued NULL logic (IS NULL, COALESCE, IS DISTINCT FROM)"
+      ]
+    },
+    {
+      "chapterNumber": 2,
+      "slug": "sql-02-joins-set-operations-and-fanout-traps",
+      "file": "02-joins-set-operations-and-fanout-traps.md",
+      "prerequisites": ["sql-01-day0-relational-schemas-keys-and-crud"],
+      "competencies": [
+        "INNER, LEFT, FULL OUTER, and ANTI-JOIN (LEFT JOIN ... IS NULL / NOT EXISTS)",
+        "Why NOT IN silently returns 0 rows when subquery contains NULL",
+        "Accidental 1:N join fan-out inflating SUM() and COUNT() in QA assertions"
+      ]
+    },
+    {
+      "chapterNumber": 3,
+      "slug": "sql-03-aggregations-having-ctes-and-cohort-assertions",
+      "file": "03-aggregations-having-ctes-and-cohort-assertions.md",
+      "prerequisites": ["sql-02-joins-set-operations-and-fanout-traps"],
+      "competencies": [
+        "Logical SQL execution order (FROM -> WHERE -> GROUP BY -> HAVING -> SELECT -> ORDER BY)",
+        "Conditional aggregation via FILTER (WHERE ...) / CASE WHEN",
+        "Readable Common Table Expressions (WITH) vs correlated subqueries"
+      ]
+    },
+    {
+      "chapterNumber": 4,
+      "slug": "sql-04-window-functions-ranking-lag-and-dedup",
+      "file": "04-window-functions-ranking-lag-and-dedup.md",
+      "prerequisites": ["sql-03-aggregations-having-ctes-and-cohort-assertions"],
+      "competencies": [
+        "ROW_NUMBER vs RANK vs DENSE_RANK for duplicate event detection",
+        "LAG and LEAD for order state-machine transition audits",
+        "ROWS BETWEEN vs RANGE BETWEEN window frame gotchas"
+      ]
+    },
+    {
+      "chapterNumber": 5,
+      "slug": "sql-05-btree-composite-indexes-and-sargability",
+      "file": "05-btree-composite-indexes-and-sargability.md",
+      "prerequisites": ["sql-03-aggregations-having-ctes-and-cohort-assertions"],
+      "competencies": [
+        "B+Tree page geometry, leaf-node doubly linked lists, and O(log_B N) lookups",
+        "Composite index leftmost-prefix & equality-before-range rule",
+        "Sargability traps (wrapping indexed columns in functions) and Covering INCLUDE / Partial Indexes"
+      ]
+    },
+    {
+      "chapterNumber": 6,
+      "slug": "sql-06-explain-analyze-query-plans-and-join-algorithms",
+      "file": "06-explain-analyze-query-plans-and-join-algorithms.md",
+      "prerequisites": [
+        "sql-02-joins-set-operations-and-fanout-traps",
+        "sql-05-btree-composite-indexes-and-sargability"
+      ],
+      "competencies": [
+        "Reading EXPLAIN (ANALYZE, BUFFERS) shared hit vs shared read and row-estimate skew",
+        "Nested Loop vs Hash Join vs Merge Join cost physics",
+        "Diagnosing work_mem disk spills and stale pg_statistic histograms (ANALYZE)"
+      ]
+    },
+    {
+      "chapterNumber": 7,
+      "slug": "sql-07-acid-mvcc-isolation-and-seat-double-booking",
+      "file": "07-acid-mvcc-isolation-and-seat-double-booking.md",
+      "prerequisites": ["sql-01-day0-relational-schemas-keys-and-crud"],
+      "competencies": [
+        "MVCC tuple versioning (xmin/xmax) and Read Committed vs Repeatable Read vs Serializable",
+        "Lost Update and Write Skew anomalies on Airline Seat 12A",
+        "Pessimistic SELECT ... FOR UPDATE SKIP LOCKED vs Optimistic CAS version checks"
+      ]
+    },
+    {
+      "chapterNumber": 8,
+      "slug": "sql-08-zero-downtime-migrations-jsonb-and-constraints",
+      "file": "08-zero-downtime-migrations-jsonb-and-constraints.md",
+      "prerequisites": [
+        "sql-05-btree-composite-indexes-and-sargability",
+        "sql-07-acid-mvcc-isolation-and-seat-double-booking"
+      ],
+      "competencies": [
+        "PostgreSQL ACCESS EXCLUSIVE lock outages during naive ALTER TABLE",
+        "Expand-Contract migrations, CREATE INDEX CONCURRENTLY, and NOT VALID + VALIDATE CONSTRAINT",
+        "JSONB semi-structured metadata and GIN indexing vs relational columns"
+      ]
+    },
+    {
+      "chapterNumber": 9,
+      "slug": "sql-09-synthetic-test-data-seeding-and-db-isolation",
+      "file": "09-synthetic-test-data-seeding-and-db-isolation.md",
+      "prerequisites": [
+        "sql-07-acid-mvcc-isolation-and-seat-double-booking",
+        "sql-08-zero-downtime-migrations-jsonb-and-constraints"
+      ],
+      "competencies": [
+        "SAVEPOINT/ROLLBACK fixtures vs TRUNCATE vs Tenant-UUID parallel DB isolation",
+        "Deterministic seeded data factories satisfying deep FK graphs",
+        "Connection pool sizing (HikariCP / psycopg_pool) across 32 CI workers"
+      ]
+    },
+    {
+      "chapterNumber": 10,
+      "slug": "sql-10-event-to-warehouse-reconciliation-and-data-qa",
+      "file": "10-event-to-warehouse-reconciliation-and-data-qa.md",
+      "prerequisites": [
+        "sql-04-window-functions-ranking-lag-and-dedup",
+        "sql-09-synthetic-test-data-seeding-and-db-isolation"
+      ],
+      "competencies": [
+        "Stripe-grade immutable double-entry ledger invariant (SUM(debits) == SUM(credits))",
+        "Transactional Outbox / Kafka CDC completeness & orphan reconciliation SQL",
+        "Automated Warehouse/Lakehouse freshness, null-rate, and schema-drift CI gates"
+      ]
+    }
+  ]
+}

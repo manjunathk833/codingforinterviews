@@ -4,40 +4,77 @@ course_id: 06-ai-engineering-qa-focused
 track: ai-engineering
 volume: "06. Zero to Mastery: AI Engineering — QA Focused"
 module_number: 2
-module_title: "Module 2: RAG Evaluation & Hallucination Gates"
+module_title: "Module 2: RAG Evaluation & Hallucination Gates (AeroEval v0.3 → v0.4)"
 chapter_number: 4
-level_tag: "Mid → Staff AI QA"
-title: "Subtle Hallucination Mechanics: Negation Flips, Numeric Entity Swaps & Abstention QA"
-summary: "Catching the 0.94-cosine killers: NLI cross-encoder contradiction logits, currency/date/SKU entity grounding, exact citation span verification, and Confusion Matrices for Abstention."
+level_tag: "🌿 Mid → Staff AI QA"
+title: "Build AeroEval v0.4: Negation Flips, Numeric Entity Swaps, Citation Laundering & Abstention QA"
+summary: "Catching the subtle 0.94-cosine killers: how AeroEval v0.4 uses per-citation span verification, numeric entity subset guards, NLI Cross-Encoder contradiction logits, and the 2x2 Abstention Confusion Matrix."
 reading_time_minutes: 23
 visualizer_id: "ai-rag-triad-gate"
 lab_path: "ai-engineering/01-rag-triad-evaluator"
-tags: ["ai-engineering", "ai-qa", "nli", "negation-trap", "entity-swap", "abstention", "citation-verification"]
+tags: ["ai-engineering", "ai-qa", "aeroeval", "nli", "negation-trap", "entity-swap", "abstention", "citation-verification"]
 ---
 
-# Subtle Hallucination Mechanics: Negation Flips, Numeric Entity Swaps & Abstention QA
+# Build AeroEval v0.4: Negation Flips, Numeric Entity Swaps, Citation Laundering & Abstention QA
+
+```json continuity
+{
+  "previously": "In Chapter 03, we built `AeroEval v0.3` with the 3-way RAG Triad (`Context Recall@K`, `Atomic Claim Faithfulness`, and `Answer Relevance`) to separate Retriever bugs from Generator hallucinations.",
+  "painPoint": "A clever bug slipped right past `AeroEval v0.3`'s word-overlap check! Chunk A said `'Silver flyers pay $25; Gold flyers pay $0'`, and `AeroBrain` replied `'Silver flyers pay $0 [doc_cookie_banner]'`. Every word (`Silver`, `$0`) existed somewhere in the context window, and `[doc_cookie_banner]` was a real retrieved doc ID—yet the price was swapped and the citation was fake!",
+  "unlock": "Upgrade to `AeroEval v0.4`: verify each claim strictly against its SPECIFIC cited document span, enforce Numeric/Entity Subset guards, apply Cross-Encoder NLI Contradiction detection, and calibrate the 2x2 Abstention Matrix!"
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "Slide 1 / 4 · Catching 'Citation Laundering'",
+    "caption": "Suppose retrieval fetches 5 chunks (doc_1..doc_5). AeroBrain writes a claim from doc_5 but tags it with [doc_1] (which is just a legal footer!). Checking the whole concatenated context misses this—AeroEval v0.4 checks each claim ONLY against the exact doc_i it cited!",
+    "code": "# ✗ Naive: check if claim is supported by \" \".join(all_chunks)\n# ✓ AeroEval v0.4: check if claim is supported specifically by chunk_map[cited_doc_id]!"
+  },
+  {
+    "time": "0:26",
+    "badge": "Slide 2 / 4 · Numeric & Entity Subset Guard",
+    "caption": "Before calling any neural model, extract every dollar amount, percentage, and date from the claim. If the claim says '$25' or '48 hours' and that exact number isn't inside the cited chunk, fail in <1ms!",
+    "code": "claim_nums = set(re.findall(r\"\\$?\\d+(?:\\.\\d+)?%?\", claim))\nspan_nums  = set(re.findall(r\"\\$?\\d+(?:\\.\\d+)?%?\", cited_chunk_text))\nassert claim_nums.issubset(span_nums), f\"Invented number: {claim_nums - span_nums}\""
+  },
+  {
+    "time": "0:53",
+    "badge": "Slide 3 / 4 · Why Cross-Encoder NLI Beats Bi-Encoders on Swaps",
+    "caption": "When 'Silver pays $25; Gold pays $0' turns into 'Silver pays $0', all numbers exist in the chunk! A Cross-Encoder NLI model attends across '[CLS] Premise [SEP] Claim [SEP]' token-by-token, spiking P(Contradiction) > 0.95!",
+    "code": "# Bi-Encoder pools Premise and Claim separately -> misses who pays $0.\n# Cross-Encoder (DeBERTa-v3-MNLI) attends 'Silver' <-> '$0' -> CONTRADICTION!"
+  },
+  {
+    "time": "1:20",
+    "badge": "Slide 4 / 4 · The 2x2 Abstention Balance",
+    "caption": "When policy evidence is missing, AeroBrain MUST abstain ('Insufficient policy evidence'). We track both Abstention Recall (on unanswerable questions) AND False Refusal Rate (on answerable questions)!",
+    "code": "# Unanswerable query -> Must abstain (Abstention Recall >= 95%)\n# Answerable query   -> Must answer! (False Refusal Rate <= 3%)"
+  }
+]
+```
 
 ```json pretraining
 [
   {
     "term": "Bi-Encoder Anisotropy Trap",
     "formula": "cos(E('allowed'), E('not allowed')) ≈ 0.94",
-    "meaning": "Contrastively trained dense embeddings cluster sentences by shared domain nouns, rendering single-token polarity flips nearly invisible."
+    "meaning": "Standard vector embeddings compress each sentence into one summary list of numbers separately, losing track of which price belongs to which customer tier or whether 'not' flipped the rule."
   },
   {
     "term": "NLI Cross-Encoder Logits",
     "formula": "P(Contradiction | Premise ⊕ Hypothesis)",
-    "meaning": "Jointly attending across context and claim tokens inside a DeBERTa-MNLI cross-encoder detects scope, quantifier, and negation inversions."
+    "meaning": "A specialized verifier model that reads the policy paragraph and the AI's sentence side-by-side at the same time to output probabilities for Entailment, Neutral, or Contradiction."
   },
   {
     "term": "Entity Subset Invariant",
-    "formula": "Entities(Answer) ⊆ Entities(Context ∪ Query)",
-    "meaning": "Every numeric figure, currency amount, ISO date, and SKU code in the generated answer must trace to context or a verified tool calculation."
+    "formula": "Entities(Claim) ⊆ Entities(CitedChunk)",
+    "meaning": "Every dollar figure, percentage, date, or flight code in an AI sentence must appear inside the specific document chunk cited by that sentence."
   },
   {
     "term": "Abstention F1 Balance",
     "formula": "Abstention Recall vs. False Refusal Rate",
-    "meaning": "Ensuring the model says 'Insufficient policy evidence' when context is missing without refusing valid answerable queries."
+    "meaning": "Balancing two opposite risks: making sure the AI admits 'I don't have that policy' when docs are missing, without becoming a lazy bot that refuses valid questions."
   }
 ]
 ```
@@ -56,31 +93,98 @@ tags: ["ai-engineering", "ai-qa", "nli", "negation-trap", "entity-swap", "absten
 }
 ```
 
-## Part I — The Four High-Severity Hallucination Archetypes
+## 🌱 Step 1: Plain-English Story — The Four Sneakiest Hallucinations in Production
 
-Blatant creative fabrications (*"Airlines give free helicopter rides"*) are already rare in modern frontier models at low temperature. Production incidents in financial, legal, and healthcare AI are overwhelmingly caused by **four subtle intrinsic/abstention defects** that evade naive RAG metrics:
+In 2026, modern LLMs rarely invent silly cartoon hallucinations like *"AeroCart offers free submarine rides to Hawaii."*
+Instead, the bugs that trigger real refunds, legal liability, and P1 incidents are **four sneaky, plausible-sounding mistakes**:
 
-1. **Negation & Exception Inversion**: Dropping `"except"`, `"unless"`, `"non-"`, or flipping `"prohibited"` $\to$ `"permitted"` (`0.94+` embedding cosine similarity).
-2. **Numeric / Temporal / Entity Attribute Swap**: Attributing Plan B's `$0` deductible to Plan A, or citing a `2023` sunsetted fee table instead of the `2026` active amendment.
-3. **Citation Laundering (Post-Hoc Hallucinated Attribution)**: Appending a real document ID `[doc_04]` to the end of a sentence when `doc_04` discusses password resets rather than refund windows!
-4. **Unanswerable Extrapolation (Failed Abstention)**: Guessing a plausible policy answer when the retrieved chunks have low relevance or lack a required jurisdiction clause.
+1. **Negation & Exception Flips**: Dropping a single word like `"except"`, `"unless"`, or `"non-"` (`"Tickets are refundable"` instead of `"non-refundable"`).
+2. **Entity / Number Swaps**: Reading *"Silver members pay \$25; Gold members pay \$0"* and telling a Silver member: *"You pay \$0!"* Every word (`Silver`, `$0`) was in the paragraph—just glued to the wrong person!
+3. **Citation Laundering**: Sticking a real footnote `[doc_2]` at the end of a sentence to look trustworthy, when `doc_2` is actually a password-reset guide that says nothing about baggage fees!
+4. **Confident Guessing on Missing Docs (Failed Abstention)**: When a passenger asks about a brand-new volcano insurance policy that isn't in the database yet, the AI guesses a plausible policy instead of saying *"I don't have enough policy information to answer that."*
 
 ```mermaid
 flowchart LR
-  Ans["Generated Claim + Inline Citation [doc_i]"] -->|Step 1| Span["Citation Span Lookup (Fetch Exact doc_i Text)"]
-  Span -->|Step 2| Num["Deterministic Entity/Numeric Subset Gate"]
-  Num -->|Step 3| NLI["Cross-Encoder NLI (Premise=doc_i, Hyp=Claim)"]
-  NLI -->|P_entail >= 0.80 & P_contra < 0.05| Pass["Verified Grounded Claim"]
-  NLI -.->|Contradiction or Unanswerable| Block["Trigger Abstention / Safe Fallback"]
+  Claim["Claim + Footnote [doc_i]"] -->|1. Lookup| Span["Fetch ONLY doc_i Text (Block Laundering)"]
+  Span -->|2. Regex Gate| Num["Numbers & Dates in Claim ⊆ doc_i?"]
+  Num -->|3. Cross-Encoder| NLI["DeBERTa NLI: Premise=doc_i vs Claim"]
+  NLI -->|Entailed & Not Contradicted| Pass["✓ Verified Grounded Claim"]
+  NLI -.->|Contradiction / Missing| Block["✗ Block & Trigger Safe Abstention"]
 ```
 
----
+Let's upgrade **`AeroEval v0.4`** to catch all four of these sneaky killers!
 
-## Part II — NLI Cross-Encoders vs. Bi-Encoders & Abstention Calibration
+## 🔨 Step 2: First Lines of Code — Citation-Scoped Numeric & Polarity Verifier
 
-Why does a **Cross-Encoder NLI model** (`cross-encoder/nli-deberta-v3-base`, `~18ms` on GPU / `~65ms` on CPU) catch negation flips and entity swaps that a `3072`-dim Bi-Encoder misses?
-- A **Bi-Encoder** compresses Premise $P$ and Hypothesis $H$ into **two separate pooling vectors** $u = E(P)$ and $v = E(H)$ *before* they ever see each other—destroying fine-grained word-to-word modifier alignment (`"Tier-1"` $\leftrightarrow$ `"$25"`).
-- A **Cross-Encoder** concatenates `[CLS] Premise [SEP] Hypothesis [SEP]` and runs **full self-attention across every token pair** in all 12–24 Transformer layers, directly attending from `"not"` or `"Tier-1"` in the claim to `"$25"` in the cited span!
+Look how `AeroEval v0.4` stops **Citation Laundering** and **Invented Numbers** in 15 lines: instead of checking the whole context blob, it pulls **only** the specific chunk `cited_doc_id` and verifies that every number (`$25`, `24%`) and negation polarity matches that exact span!
+
+```python
+import re
+
+NUM_RE = re.compile(r"\$?\d+(?:\.\d+)?%?")
+NEG_WORDS = {"not", "no", "never", "non-refundable", "prohibited", "unless"}
+
+
+def verify_claim_against_cited_doc(claim: str, cited_doc_id: str, chunk_map: dict[str, str]) -> str:
+    """AeroEval v0.4: Verifies claim strictly against its cited chunk (blocks citation laundering)."""
+    if cited_doc_id not in chunk_map:
+        return "FAIL_UNKNOWN_DOC_ID"
+    span = chunk_map[cited_doc_id]
+    # 1. Every number/currency in the claim must appear in the specifically cited chunk!
+    if not set(NUM_RE.findall(claim)).issubset(set(NUM_RE.findall(span))):
+        return "FAIL_UNGROUNDED_NUMBER_OR_LAUNDERED_CITATION"
+    # 2. Check negation polarity flip between claim and cited span
+    claim_neg = bool(set(claim.lower().split()) & NEG_WORDS)
+    span_neg = bool(set(span.lower().split()) & NEG_WORDS)
+    return "FAIL_NEGATION_FLIP" if (claim_neg != span_neg) else "PASS"
+
+
+chunks = {"doc_1": "Password reset link expires in 10 minutes.", "doc_2": "Bag fee is not waived ($35)."}
+print(verify_claim_against_cited_doc("Bag fee is $35", "doc_1", chunks))  # Caught laundering!
+```
+
+### Java 17 Equivalent
+
+```java
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class AeroEvalV04SpanCheck {
+    private static final Pattern NUM_RE = Pattern.compile("\\$?\\d+(?:\\.\\d+)?%?");
+    private static final Set<String> NEG_WORDS = Set.of("not", "no", "never", "non-refundable", "prohibited");
+
+    public static String verifyClaim(String claim, String citedDocId, Map<String, String> chunkMap) {
+        String span = chunkMap.get(citedDocId);
+        if (span == null) return "FAIL_UNKNOWN_DOC_ID";
+        if (!extractNums(span).containsAll(extractNums(claim))) {
+            return "FAIL_UNGROUNDED_NUMBER_OR_LAUNDERED_CITATION";
+        }
+        boolean claimNeg = Arrays.stream(claim.toLowerCase(Locale.ROOT).split("\\s+")).anyMatch(NEG_WORDS::contains);
+        boolean spanNeg = Arrays.stream(span.toLowerCase(Locale.ROOT).split("\\s+")).anyMatch(NEG_WORDS::contains);
+        return (claimNeg != spanNeg) ? "FAIL_NEGATION_FLIP" : "PASS";
+    }
+
+    private static Set<String> extractNums(String s) {
+        Set<String> nums = new HashSet<>();
+        Matcher m = NUM_RE.matcher(s);
+        while (m.find()) nums.add(m.group());
+        return nums;
+    }
+}
+```
+
+## ⚡ Step 3: Where It Breaks in Real Life — Entity Swaps & The "Paranoid Refusal" Trap
+
+Our regex and negation check above is super fast, **but two real-world edge cases still break it**:
+
+1. **Edge Case 1: Cross-Entity Swaps Inside the Same Chunk**
+   Suppose `doc_2` says: *"Silver flyers pay \$25; Gold flyers pay \$0."*
+   And `AeroBrain` says: *"Silver flyers pay \$0 [doc_2]."*
+   Notice that `$0` **is** inside `doc_2`, and neither sentence has `"not"`! To catch that `$0` was attached to the wrong tier (`Silver` instead of `Gold`), we need a **Cross-Encoder NLI Model** (`DeBERTa-v3-MNLI`) that reads `[CLS] doc_2 [SEP] claim [SEP]` with full token-to-token attention.
+2. **Edge Case 2: Fixing Hallucinations by Refusing Everything!**
+   To stop `AeroBrain` from guessing on missing policies, a developer adds to the prompt: *"If you are even 1% unsure, refuse to answer!"*
+   Suddenly, **Abstention Recall** on unanswerable questions hits `100%`—**because the bot is now refusing 40% of normal, answerable customer questions too (`False Refusal Rate = 40%`)!**
 
 ```json contrast
 {
@@ -104,19 +208,30 @@ Why does a **Cross-Encoder NLI model** (`cross-encoder/nli-deberta-v3-base`, `~1
 }
 ```
 
-### The Abstention Trade-Off Table
+## 🚀 Step 4: Staff Engineer Deep-Dive — Cross-Encoder NLI Logits & Abstention Confusion Math
+
+Why does a **Cross-Encoder NLI model** (`cross-encoder/nli-deberta-v3-base`, `~18ms` on GPU) catch entity swaps that a `3072`-dim Bi-Encoder misses?
+A Bi-Encoder compresses Premise $P$ and Hypothesis $H$ into two separate vectors $u = E(P)$ and $v = E(H)$ *before* comparing them. A Cross-Encoder feeds the concatenated token sequence $[ \text{CLS}, P, \text{SEP}, H, \text{SEP} ]$ through multi-head self-attention across all layers, outputting three logits $(z_{\text{entail}}, z_{\text{neutral}}, z_{\text{contra}})$:
+
+$$P(\text{Contradiction} \mid P, H) = \frac{\exp(z_{\text{contra}})}{\exp(z_{\text{entail}}) + \exp(z_{\text{neutral}}) + \exp(z_{\text{contra}})}$$
+
+A claim $H$ citing chunk $P$ passes if and only if:
+
+$$\text{Entities}_{\text{num}}(H) \subseteq \text{Entities}_{\text{num}}(P) \;\land\; P(\text{Entailment} \mid P, H) \ge 0.75 \;\land\; P(\text{Contradiction} \mid P, H) < 0.10$$
+
+And across our Golden Suite's **Unanswerable ($\mathcal{U}$)** and **Answerable ($\mathcal{A}$)** strata, we gate **both** sides of the **Abstention Confusion Matrix**:
+
+$$\text{Abstention Recall} = \frac{|\{x \in \mathcal{U} : \text{Abstained}(f(x))\}|}{|\mathcal{U}|} \ge 0.95, \qquad \text{False Refusal Rate (FRR)} = \frac{|\{x \in \mathcal{A} : \text{Abstained}(f(x))\}|}{|\mathcal{A}|} \le 0.03$$
 
 | Query Ground-Truth State | Model Answers Factually | Model Abstains (`"Insufficient Policy Evidence"`) | QA Classification & Production Impact |
 | :--- | :--- | :--- | :--- |
-| **Answerable** *(Gold evidence present in top-$K$)* | **True Answer (`TP`)** — Ideal outcome | **False Refusal (`FN`)** — Frustrates users; degrades utility if $>5\%$ | Tune retrieval threshold & avoid overly paranoid refusal prompts |
-| **Unanswerable** *(Missing policy / out-of-scope)* | **Hallucinated Guess (`FP`)** — **Critical Liability Bug!** | **True Abstention (`TN`)** — Safe graceful escalation | Gate CI on **Abstention Recall $\ge 95\%$** on unanswerable stratum |
+| **Answerable ($\mathcal{A}$)** *(Gold evidence present in top-$K$)* | **True Answer (`TP`)** — Ideal outcome | **False Refusal (`FN`)** — Frustrates users; degrades utility if $>3\%$ | Tune retrieval threshold & avoid overly paranoid refusal prompts |
+| **Unanswerable ($\mathcal{U}$)** *(Missing policy / out-of-scope)* | **Hallucinated Guess (`FP`)** — **Critical Liability Bug!** | **True Abstention (`TN`)** — Safe graceful escalation | Gate CI on **Abstention Recall $\ge 95\%$** on unanswerable stratum |
 
----
+### Production Blueprint: Citation-Scoped Entity Guard, Polarity Verifier & Abstention Scorer
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Citation-Scoped Entity Guard, Polarity Verifier & Abstention Scorer
 ```python
+from __future__ import annotations
 from dataclasses import dataclass
 import re
 
@@ -192,7 +307,8 @@ def score_abstention_matrix(eval_outcomes: list[tuple[bool, str]]) -> dict:
     }
 ```
 
-### Java 17 Blueprint: NLI Contradiction & Abstention Gate
+### Java 17 Equivalent
+
 ```java
 import java.util.*;
 import java.util.regex.Matcher;
@@ -237,9 +353,7 @@ public final class HallucinationPolarityGate {
 > **Staff Interview Gotcha — Never Evaluate Citation Faithfulness Against the Concatenated Context Window**:
 > If your pipeline retrieves 8 chunks (`doc_1` .. `doc_8`), and the model outputs *"Refunds are instant [doc_2]"*, verifying the claim against `" ".join(all_8_chunks)` hides **Citation Laundering** when `doc_2` is actually a cookie banner and `doc_7` was a deprecated draft! Always verify each claim **strictly against the union of chunks explicitly cited on that claim**, so clickable UI footnotes are 100% trustworthy for human auditors.
 
----
-
-## Part IV — End-of-Chapter Mastery Check
+**Up Next in Chapter 05**: What about open-ended reasoning, tone, or comparing two candidate prompts (`Prompt V1` vs. `Prompt V2`) where we use an **LLM-as-a-Judge**? Why do naive LLM judges flip their vote `25%` of the time just because you swapped which answer was listed first? In Chapter 05, we'll build **`AeroEval v0.5`: LLM-Judge Position-Swap Debiasing & Evidence-First Binary Rubrics**!
 
 ```json quiz
 [

@@ -251,6 +251,7 @@ In practice, when $N \ge 200$ tests and $K \le 16$ shards, LPT using rolling 7-d
 Notice how our production planner assigns a safe fallback (`default_unseen_ms = 2500.0`, the repo's 75th percentile) to brand-new tests that have no history yet—so a newly added PR with 10 browser tests never defaults to `0ms` and lands on a single shard!
 
 ```python
+from __future__ import annotations
 import heapq
 from dataclasses import dataclass, field
 from typing import Iterable

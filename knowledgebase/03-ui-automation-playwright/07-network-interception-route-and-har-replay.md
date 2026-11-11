@@ -17,27 +17,64 @@ tags: ["network-interception", "page-route", "route-fetch", "har-replay", "expec
 
 # Network Interception (`route`), API Augmentation & HAR Replay
 
+```json continuity
+{
+  "previously": "In Chapter 6, we upgraded AeroBot v0.6 with Zero-UI API Auth and `storageState.json` hydration, booting every browser test already logged in within 12 milliseconds.",
+  "painPoint": "Now we need to test what happens when AeroCart's flight checkout API returns a rare `HTTP 503 Service Unavailable` error or when a flight has `'Only 1 seat left!'`—but we cannot crash the real staging server on demand without breaking everyone else's tests!",
+  "unlock": "We will upgrade AeroBot to v0.7 with `page.route()` network interception, live `route.fetch()` response patching, and HAR replay so we can simulate any server response right inside the browser tab!"
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "1. The Browser Mailroom",
+    "caption": "Imagine sitting inside your browser's mailroom. Whenever React sends a letter to the backend server, Playwright's page.route lets you intercept that letter and hand back any reply you want!",
+    "code": "page.route('**/api/v1/checkout', lambda r: r.fulfill(status=503))"
+  },
+  {
+    "time": "0:25",
+    "badge": "2. Stale Mock Trap",
+    "caption": "If you replace the whole API response with a 200-line fake JSON file, what happens when the backend team renames 'price' to 'amountCents'? Your fake JSON stays green in CI while production crashes!",
+    "code": "# DANGER: Hardcoded mock hides backend schema changes!"
+  },
+  {
+    "time": "0:50",
+    "badge": "3. Live route.fetch() Patching",
+    "caption": "Instead of faking the whole JSON, route.fetch calls the real backend server, takes the real live JSON response, edits just 'seats_left = 1', and hands it to the browser!",
+    "code": "real = route.fetch()\ndata = real.json(); data['seats_left'] = 1\nroute.fulfill(response=real, json=data)"
+  },
+  {
+    "time": "1:15",
+    "badge": "4. Pre-Armed Network Waits",
+    "caption": "Always open your expect_response listener block BEFORE clicking the button, so a fast 2-millisecond local response never finishes before you start listening!",
+    "code": "with page.expect_response('**/api/v1/checkout'):\n    page.get_by_role('button', name='Pay').click()"
+  }
+]
+```
+
 ```json pretraining
 [
   {
-    "term": "Pure `route.fulfill()` Stubbing",
-    "formula": "Intercept(URL) -> Return Synthetic { status: 503 | 429 | [] } (0 Backend RTT)",
-    "meaning": "Deterministically verifies UI empty states, retry banners, and skeleton loaders that are nearly impossible to trigger on demand against a live backend."
+    "term": "`route.fulfill()` (Synthetic Reply)",
+    "formula": "Intercept(URL) -> Return { status: 503 | 429 | [] } Instantly",
+    "meaning": "Intercepts a browser request before it even leaves your laptop and replies with a fake status code or JSON body—perfect for testing error banners and empty screens."
   },
   {
-    "term": "Hybrid `route.fetch()` Augmentation",
-    "formula": "Real Backend `fetch()` -> Patch 1 Field (`stock: 1`) -> `fulfill(response)`",
-    "meaning": "Fetches the real live microservice payload so 99% of schema fields stay authentic and drift-free, while surgically overriding one edge-case field!"
+    "term": "`route.fetch()` (Live Response Patching)",
+    "formula": "Fetch Real Backend JSON -> Edit 1 Field (`seats_left: 1`) -> `fulfill`",
+    "meaning": "Lets the request hit the real server first so 99% of the data is genuine, then tweaks just one field right before the browser reads it."
   },
   {
-    "term": "Pre-Action `expect_response` Listener",
-    "formula": "with page.expect_response(pred): button.click()  [Register BEFORE Trigger!]",
-    "meaning": "Subscribing to the network event stream *before* clicking guarantees a fast 3ms loopback response can never race ahead of listener registration."
+    "term": "Pre-Armed `expect_response`",
+    "formula": "with page.expect_response(url): button.click()",
+    "meaning": "Starting to listen for a network reply BEFORE clicking a button so a super-fast local server reply is never missed."
   },
   {
-    "term": "Sanitized HAR Replay (`route_from_har`)",
-    "formula": "Record `.har` (Scrub Auth) -> Replay Offline with `not_found='abort'`",
-    "meaning": "Replays complex multi-endpoint GraphQL/REST waterfalls deterministically while immediately failing if the UI makes an unexpected unrecorded call."
+    "term": "HAR Replay (`route_from_har`)",
+    "formula": "Record Network Tape (`.har`) -> Replay Offline with `not_found='abort'`",
+    "meaning": "Recording a whole sequence of API calls into a `.har` archive file and playing them back offline like a cassette tape."
   }
 ]
 ```
@@ -56,24 +93,82 @@ tags: ["network-interception", "page-route", "route-fetch", "har-replay", "expec
 }
 ```
 
-## Part I — First-Principles Mental Model: Surgical Control of the Browser Network Seam
+---
 
-Trying to test every UI state—`HTTP 503 Service Unavailable` toast, `HTTP 429 Rate Limit` countdown, `"Only 1 seat left!"` urgency badge, `8,000ms` slow-network skeleton shimmer, and empty-account onboarding—by mutating a real Postgres database and crashing real Kubernetes pods is slow, destructive, and flaky.
+## 🌱 Step 1: Plain-English Story — The Mailroom Sticker Trick
 
-Playwright intercepts requests directly inside the browser's network stack (`context.route()` across all tabs/popups, or `page.route()` on a single tab) with **four distinct tactical modes**:
+Suppose you want to verify two tricky screens in **AeroCart**:
+1. What does the passenger see if the payment server crashes with `HTTP 503 Service Unavailable` right when they click **"Pay Now"**?
+2. Does the orange **"Only 1 seat left at this fare!"** urgency badge appear when a flight has `seats_left: 1`?
 
-1. **`route.fulfill()` (Pure Synthetic Stub)**: Short-circuits the network completely. Ideal for `500`/`503`/`429` error banners, empty-state arrays (`[]`), and blocking noisy third-party ad/analytics scripts (`route.abort()`).
-2. **`route.fetch()` + JSON Mutation (Response Augmentation — Staff Favorite!)**: Instead of maintaining a 200-line hardcoded fake JSON file that silently drifts from backend schema changes, `resp = route.fetch()` forwards the request to the **real backend**, parses `data = resp.json()`, patches just `data["seats_remaining"] = 1`, and passes `route.fulfill(response=resp, json=data)` back to the UI!
-3. **`route_from_har(..., not_found="abort")` (Hermetic Waterfall Replay)**: Replays recorded HTTP Archive fixtures for complex analytics dashboards. Setting `not_found="abort"` ensures new unrecorded API calls fail loudly rather than leaking out to staging!
-4. **LIFO Route Precedence**: In Playwright, **later-registered `page.route` handlers run first** (LIFO stack!), delegating upstream via `route.fallback()` (not `route.continue_()`, which immediately sends to the wire!).
+If you try to test those by unplugging the real staging database or booking 179 out of 180 seats in Postgres before every test, your tests will be slow, brittle, and ruin the staging server for your teammates.
+
+Instead, Playwright's **`page.route()`** lets **`AeroBot v0.7`** sit right inside the browser tab's **mailroom**:
+- **Full Replacement (`route.fulfill`)**: When React tries to send `POST /api/v1/checkout`, `AeroBot` intercepts the envelope at the browser door and immediately hands back a `503 Service Unavailable` note—the real server never even knows!
+- **The Mailroom Sticker Trick (`route.fetch` + patch)**: When React asks for flight details, `AeroBot` lets the mailman fetch the real letter from the backend server (`route.fetch()`), opens the envelope, places a small sticker over `"seats_left": 42` so it reads `"seats_left": 1`, and hands the real letter to React!
 
 ```mermaid
 flowchart LR
-  UI["React fetch('/api/flights')"] -->|Intercepted in Browser| Router["Playwright Route Handler Stack"]
-  Router -->|Mode A: Chaos 503| Fulfill["route.fulfill(status=503)"]
-  Router -->|Mode B: Drift-Free Patch| Fetch["route.fetch() -> Real API"]
-  Fetch -->|Mutate `seats=1`| Mutated["route.fulfill(response, json)"]
+  UI["1. React fetch('/api/flights')"] --> Route["2. Playwright page.route()"]
+  Route --> Fulfill["Mode A: route.fulfill(status=503)"]
+  Route --> Fetch["Mode B: route.fetch() Real API"]
+  Fetch --> Patch["3. Patch seats_left=1 & fulfill()"]
 ```
+
+---
+
+## 🔨 Step 2: First Lines of Code — Intercepting & Patching in `AeroBot v0.7`
+
+Let's write a 15-line snippet for **`AeroBot v0.7`** that uses the Mailroom Sticker Trick (`route.fetch()`) to test the `"Only 1 seat left!"` badge without faking the rest of the flight JSON.
+
+```python
+# aerobot_v07_route_patch.py — Live API response patching via route.fetch()
+from playwright.sync_api import Page, Route, expect
+
+def test_aerobot_v07_scarcity_badge(page: Page) -> None:
+    def patch_one_seat_left(route: Route) -> None:
+        real_resp = route.fetch()          # 1. Fetch real JSON from live backend
+        data = real_resp.json()
+        data["seats_left"] = 1             # 2. Override ONLY the scarcity field
+        route.fulfill(response=real_resp, json=data)
+
+    page.route("**/api/v1/flights/FL-402/availability", patch_one_seat_left)
+    page.goto("http://127.0.0.1:3000/flights/FL-402")
+    expect(page.get_by_test_id("scarcity-pill")).to_have_text("Only 1 seat left at this fare!")
+```
+
+### Java 17 Equivalent
+
+```java
+// AeroBotV07RoutePatchTest.java — Live API response patching in Java 17
+import com.google.gson.*;
+import com.microsoft.playwright.*;
+import java.nio.charset.StandardCharsets;
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
+public class AeroBotV07RoutePatchTest {
+    void verifyScarcityBadge(Page page) {
+        page.route("**/api/v1/flights/FL-402/availability", route -> {
+            APIResponse real = route.fetch();
+            JsonObject json = JsonParser.parseString(real.text()).getAsJsonObject();
+            json.addProperty("seats_left", 1);
+            route.fulfill(new Route.FulfillOptions().setResponse(real)
+                    .setBodyBytes(json.toString().getBytes(StandardCharsets.UTF_8)));
+        });
+        page.navigate("http://127.0.0.1:3000/flights/FL-402");
+        assertThat(page.getByTestId("scarcity-pill")).hasText("Only 1 seat left at this fare!");
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — Stale Mocks, Listener Races & Handler Starvation
+
+As our team writes more network tests with `AeroBot v0.7`, three real-world bugs bite us:
+1. **Silent Schema Drift from Static JSON Files**: A teammate replaces the entire `/api/v1/flights` response with a hardcoded `mock_flights.json` file containing `"priceCents": 19900`. A week later, the backend team renames `"priceCents"` to `"totalAmountCents"`. Every test using `mock_flights.json` stays 100% green in CI, and production crashes with `$NaN`! Using `route.fetch()` prevents this because 99% of the response still comes from the live server.
+2. **The 2ms Localhost Listener Race**: A developer clicks `"Pay Now"` on line 1 and calls `page.expect_response(...)` on line 2. On a fast local container, the HTTP response finishes in 2ms *before* line 2 starts listening, causing a 30-second timeout!
+3. **`route.continue_()` Starving Earlier Mocks**: Playwright runs route handlers in **LIFO order** (newest registered runs first). If a logging handler registered second calls `route.continue_()` instead of `route.fallback()`, it sends the request straight to the internet and skips the mock handler registered first!
 
 ```json contrast
 {
@@ -97,7 +192,17 @@ flowchart LR
 
 ---
 
-## Part II — Network Interception Mode Selection Matrix
+## 🚀 Step 4: Staff Engineer Deep-Dive — Drift Probability, Route Matrix & Chaos Recovery
+
+### 1. Schema Drift Detection Coverage Under Response Augmentation
+
+Let a microservice response contain $F_{\text{total}}$ schema fields, and suppose $F_{\text{patched}}$ fields are overridden during a test. Under pure static stubbing ($F_{\text{patched}} = F_{\text{total}}$), live contract coverage $C_{\text{contract}}$ is $0\%$. Under `route.fetch()` augmentation where only $F_{\text{patched}} = 1$ field is mutated:
+
+$$C_{\text{contract}} = \frac{F_{\text{total}} - F_{\text{patched}}}{F_{\text{total}}} = 1 - \frac{1}{F_{\text{total}}}$$
+
+For a 25-field flight payload ($F_{\text{total}} = 25, F_{\text{patched}} = 1$), `route.fetch()` preserves $C_{\text{contract}} = \frac{24}{25} = 96\%$ live contract verification while still achieving $100\%$ determinism on the target edge case.
+
+### 2. Network Interception Mode Selection Matrix
 
 Use the **`pw-network-auth-sharding`** simulator to trace `route.fulfill()`, `route.fetch()` JSON patching, and LIFO `route.fallback()` chaining.
 
@@ -108,11 +213,8 @@ Use the **`pw-network-auth-sharding`** simulator to trace `route.fulfill()`, `ro
 | **Inject Global `traceparent` / Block Ads** | `route.fallback(headers=...)` / `route.abort()` | `context.route` (covers popups & SW!) | Using `route.continue_()` instead of `route.fallback()` when stacking multiple handlers. |
 | **Hermetic Complex Dashboard** | `page.route_from_har(har, not_found="abort")` | `page` / `context` | Recording raw `Authorization` headers into Git-tracked `.har` files—always scrub! |
 
----
+### 3. Production Blueprints: `503 -> 200` Chaos Retry & Pre-Armed Synchronization (Python 3 & Java 17)
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
-
-### Python 3 Blueprint: Drift-Free `route.fetch()` Augmentation, `503` Recovery & Armed `expect_response`
 ```python
 from __future__ import annotations
 from playwright.sync_api import Page, Route, expect
@@ -157,7 +259,8 @@ def test_ui_graceful_retry_on_transient_503_then_200(page: Page) -> None:
     expect(page.get_by_role("heading", name="Booking Confirmed")).to_be_visible()
 ```
 
-### Java 17 Blueprint: `APIResponse` Fetch-Augmentation & Race-Free `waitForResponse` Callback
+#### Java 17 Equivalent
+
 ```java
 package com.aerocart.qa.network;
 
@@ -200,9 +303,9 @@ public final class NetworkInterceptionPatterns {
 > **Staff Interview Gotcha — `route.continue_()` vs `route.fallback()` Handler Starvation**:
 > Suppose a base fixture registers `page.route("**/api/**", mock_catalog)` first, and your test registers `page.route("**/api/**", inject_trace_header)` second. Because Playwright evaluates route handlers in **LIFO order** (newest registered runs first!), `inject_trace_header` executes *first*. If `inject_trace_header` calls **`route.continue_(headers=...)`**, Playwright immediately dispatches the request onto the network and **completely skips `mock_catalog`!** Always call **`route.fallback(headers=...)`** inside middleware/header handlers so earlier-registered mocks still intercept the request!
 
----
+**Up Next in Chapter 8:** `AeroBot v0.7` now controls HTTP calls, but AeroCart has a **10-minute seat-hold countdown timer** and a **live WebSocket price ticker**! Waiting 10 real minutes in CI for a seat hold to expire would ruin our test speed. In Chapter 8, we will build **`AeroBot v0.8`** with `page.clock` time travel and `page.route_web_socket()` live frame injection!
 
-## Part IV — Scenario Retrieval-Practice Mastery Gate
+---
 
 ```json quiz
 [

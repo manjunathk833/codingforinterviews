@@ -128,6 +128,18 @@ TEXTBOOK_COURSES_CATALOG: List[Dict[str, Any]] = [
         "pillBg": "#F3F4F6",
         "tagline": "Linux virtual memory, post-GC RSS leak slopes, TCP SYN backlogs, TLS 1.3/HTTP2, B+Trees vs LSM-Trees, SQLite WAL isolation, CAS atomics & epoll/cgroups.",
     },
+    {
+        "courseId": "09-sql-and-data-engineering",
+        "priorityRank": 9,
+        "title": "09. SQL, PostgreSQL & Data Validation Engineering",
+        "shortTitle": "SQL, Postgres & Data QA",
+        "levelSpan": "Absolute Zero → Staff Data & Ledger QA",
+        "plannedModules": 3,
+        "plannedChapters": 10,
+        "accentColor": "#0F766E",
+        "pillBg": "#CCFBF1",
+        "tagline": "AeroLedger (v0.1→v1.0): 3VL NULL safety, 1:N join fan-out, window dedup/LAG, B+Tree sargability, EXPLAIN (ANALYZE, BUFFERS), MVCC FOR UPDATE SKIP LOCKED, zero-downtime migrations & Stripe double-entry ledgers.",
+    },
 ]
 
 COURSE_BY_ID: Dict[str, Dict[str, Any]] = {c["courseId"]: c for c in TEXTBOOK_COURSES_CATALOG}
@@ -144,6 +156,7 @@ FOLDER_TO_COURSE_ID: Dict[str, str] = {
     "system-design": "07-distributed-system-design",
     "08-core-cs-internals": "08-core-cs-internals",
     "core-cs": "08-core-cs-internals",
+    "09-sql-and-data-engineering": "09-sql-and-data-engineering",
 }
 
 TRACK_DEFINITIONS: List[Dict[str, Any]] = [
@@ -327,6 +340,17 @@ WORKBENCH_CATALOG: List[Dict[str, Any]] = [
         "invariant": "Balance K parallel CI shards in O(N log K) via LPT min-heap bin packing and compute safe reverse-AST test impact closures.",
         "relatedChapter": "sdet-07-ci-sharding-and-bin-packing",
     },
+    {
+        "id": "wb-sql-data-reconciliation",
+        "title": "10. AeroLedger SQL Grain, Seat-12A Locking & Double-Entry Reconciliation",
+        "category": "SQL & Data Validation",
+        "stack": "Python 3 sqlite3 WAL & Java 17 JDBC",
+        "folderPath": "frameworks/data-validation/01-sql-reconciliation-and-isolation",
+        "verifyCmd": [sys.executable, "frameworks/data-validation/01-sql-reconciliation-and-isolation/reference_solution.py"],
+        "cliDisplay": "python3 frameworks/data-validation/01-sql-reconciliation-and-isolation/reference_solution.py",
+        "invariant": "Prevent 1:N join fan-out, deduplicate webhooks with ROW_NUMBER(), enforce covering B-Tree plans, serialize 16-thread Seat-12A claims, and assert SUM(debits) == SUM(credits).",
+        "relatedChapter": "sql-10-event-to-warehouse-reconciliation-and-data-qa",
+    },
 ]
 
 
@@ -406,16 +430,17 @@ def split_markdown_into_steps(markdown_body: str) -> List[Dict[str, Any]]:
             chunk = leading + "\n\n" + chunk
         raw_sections.append((m.group(1).strip(), chunk))
 
-    # Consolidate into at most 4 predictable progressive steps
-    if len(raw_sections) > 4:
-        merged_tail = "\n\n".join(ch for _, ch in raw_sections[3:])
-        raw_sections = raw_sections[:3] + [(raw_sections[3][0], merged_tail)]
+    # Consolidate into at most 5 predictable progressive steps (4-step v1 or 5-step Hiring-Grade v2)
+    if len(raw_sections) > 5:
+        merged_tail = "\n\n".join(ch for _, ch in raw_sections[4:])
+        raw_sections = raw_sections[:4] + [(raw_sections[4][0], merged_tail)]
 
     default_short = [
         "🌱 1. Plain-English Story",
-        "🔨 2. First Lines of Code",
-        "⚡ 3. Real-World & Sim",
-        "🚀 4. Staff Deep-Dive",
+        "🔨 2. Starter & CLI",
+        "🛠️ 3. Practitioner & Sim",
+        "🏢 4. Big Tech & Blueprint",
+        "📋 5. Cheat-Sheet & Pitch",
     ]
     steps_out: List[Dict[str, Any]] = []
     for idx, (heading, chunk) in enumerate(raw_sections):
@@ -426,11 +451,11 @@ def split_markdown_into_steps(markdown_body: str) -> List[Dict[str, Any]]:
         clean_short = re.sub(r"^(?:Part\s+[IVXLC]+|\d+\.)\s*[—:-]?\s*", "", clean_short).strip()
         if len(clean_short) > 26:
             clean_short = clean_short[:24].rstrip() + "…"
-        badge_prefix = ["🌱 1.", "🔨 2.", "⚡ 3.", "🚀 4."][min(idx, 3)]
+        badge_prefix = ["🌱 1.", "🔨 2.", "🛠️ 3.", "🏢 4.", "📋 5."][min(idx, 4)]
         steps_out.append(
             {
                 "stepNumber": idx + 1,
-                "shortLabel": f"{badge_prefix} {clean_short}" if clean_short else default_short[min(idx, 3)],
+                "shortLabel": f"{badge_prefix} {clean_short}" if clean_short else default_short[min(idx, 4)],
                 "title": heading,
                 "markdown": chunk,
                 "estMinutes": max(2, min(6, round(words / 165) + 1)),
@@ -527,6 +552,8 @@ def parse_markdown_frontmatter_and_quizzes(
         "visualizer_id": "arch-endpoint-cloud-sync",
         "lab_path": "",
         "tags": [fallback_track],
+        "prerequisites": [],
+        "primary_sources": [],
     }
 
     body = raw_md
@@ -541,9 +568,9 @@ def parse_markdown_frontmatter_and_quizzes(
                 k, v = line.split(":", 1)
                 key = k.strip()
                 val = v.strip()
-                if key == "tags" and val.startswith("["):
+                if key in ("tags", "prerequisites", "primary_sources") and val.startswith("["):
                     try:
-                        meta["tags"] = json.loads(val)
+                        meta[key] = json.loads(val)
                     except Exception:
                         pass
                 elif key in ("chapter_number", "reading_time_minutes", "module_number"):
@@ -666,6 +693,8 @@ def ensure_initialized(db_path: pathlib.Path = DEFAULT_DB_PATH) -> None:
                     visualizer_id TEXT,
                     lab_path TEXT,
                     tags_json TEXT NOT NULL,
+                    prerequisites_json TEXT NOT NULL DEFAULT '[]',
+                    primary_sources_json TEXT NOT NULL DEFAULT '[]',
                     continuity_json TEXT NOT NULL DEFAULT '{}',
                     walkthrough_json TEXT NOT NULL DEFAULT '[]',
                     pretraining_json TEXT NOT NULL DEFAULT '[]',
@@ -762,6 +791,8 @@ def ensure_initialized(db_path: pathlib.Path = DEFAULT_DB_PATH) -> None:
                 ("walkthrough_json", "TEXT NOT NULL DEFAULT '[]'"),
                 ("pretraining_json", "TEXT NOT NULL DEFAULT '[]'"),
                 ("prediction_prompt_json", "TEXT NOT NULL DEFAULT '{}'"),
+                ("prerequisites_json", "TEXT NOT NULL DEFAULT '[]'"),
+                ("primary_sources_json", "TEXT NOT NULL DEFAULT '[]'"),
             ]
             migrated = False
             for col_name, col_sql in new_col_defs:
@@ -852,9 +883,10 @@ def _sync_filesystem_locked(conn: sqlite3.Connection) -> None:
                 slug, course_id, track, volume, module_number, module_title,
                 chapter_number, level_tag, title, summary,
                 reading_time_minutes, video_url, visualizer_id, lab_path, tags_json,
+                prerequisites_json, primary_sources_json,
                 continuity_json, walkthrough_json, pretraining_json, prediction_prompt_json,
                 markdown_body, quizzes_json, source_path, sha256, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 slug,
@@ -872,6 +904,8 @@ def _sync_filesystem_locked(conn: sqlite3.Connection) -> None:
                 parsed["visualizer_id"],
                 lab_path,
                 json.dumps(parsed["tags"]),
+                json.dumps(parsed.get("prerequisites", [])),
+                json.dumps(parsed.get("primary_sources", [])),
                 json.dumps(parsed["continuity"]),
                 json.dumps(parsed["walkthrough"]),
                 json.dumps(parsed["pretraining"]),
@@ -1343,6 +1377,8 @@ def get_kb_chapter(slug: str, db_path: pathlib.Path = DEFAULT_DB_PATH) -> Tuple[
             "visualizerId": row["visualizer_id"],
             "labPath": row["lab_path"],
             "tags": json.loads(row["tags_json"]),
+            "prerequisites": json.loads(row["prerequisites_json"] or "[]"),
+            "primarySources": json.loads(row["primary_sources_json"] or "[]"),
             "continuity": continuity_out,
             "walkthrough": walkthrough_synced,
             "steps": split_markdown_into_steps(row["markdown_body"]),
@@ -1357,6 +1393,196 @@ def get_kb_chapter(slug: str, db_path: pathlib.Path = DEFAULT_DB_PATH) -> Tuple[
             "prevChapter": prev_ch,
             "nextChapter": next_ch,
             "relatedNews": related_news[:4],
+        }
+    finally:
+        conn.close()
+
+
+def get_kb_course_compendium(
+    course_id: str, db_path: pathlib.Path = DEFAULT_DB_PATH
+) -> Tuple[int, Dict[str, Any]]:
+    """
+    Compile an entire Textbook Course (`Ch 01 -> Ch N`) into a single-page, unabridged
+    Master Revision Compendium in one SQLite pass (`~2-5ms`).
+
+    Retains 100% of deep technical text, mental models, Mermaid diagrams, Naive-vs-Staff
+    contrast matrices, dual-language code blueprints, Staff equations, trade-off tables,
+    Staff gotchas, vocabulary, and Self-Check Q&A explanations while stripping out
+    video/audio walkthrough players, simulator widgets, and quiz submission forms.
+    """
+    t0 = time.perf_counter()
+    ensure_initialized(db_path)
+    conn = _get_connection(db_path)
+    try:
+        target_course = (course_id or "01-zero-to-staff-sdet").strip()
+        course_row = conn.execute(
+            "SELECT * FROM kb_courses WHERE course_id = ?", (target_course,)
+        ).fetchone()
+        if course_row is None:
+            return 404, {"error": f"Course '{target_course}' not found"}
+
+        rows = conn.execute(
+            """
+            SELECT c.*, COALESCE(a.mastered, 0) AS mastered
+            FROM kb_chapters c
+            LEFT JOIN kb_quiz_attempts a ON a.slug = c.slug
+            WHERE c.course_id = ? AND c.slug NOT LIKE 'lab-%'
+            ORDER BY c.module_number ASC, c.chapter_number ASC, c.slug ASC
+            """,
+            (target_course,),
+        ).fetchall()
+
+        chapters_compiled: List[Dict[str, Any]] = []
+        red_thread_map: List[Dict[str, Any]] = []
+        master_glossary: List[Dict[str, Any]] = []
+        seen_terms: set[str] = set()
+
+        total_words = 0
+        total_reading_mins = 0
+        total_code_blocks = 0
+        total_mermaid = 0
+        total_math = 0
+        total_qa = 0
+
+        for idx, row in enumerate(rows):
+            md = row["markdown_body"]
+            words = len(md.split())
+            code_blocks = len(re.findall(r"```(?:python|java)\b", md, flags=re.IGNORECASE))
+            mermaids = len(re.findall(r"```mermaid\b", md, flags=re.IGNORECASE))
+            maths = len(re.findall(r"\$\$[\s\S]*?\$\$", md))
+
+            total_words += words
+            total_reading_mins += int(row["reading_time_minutes"] or 15)
+            total_code_blocks += code_blocks
+            total_mermaid += mermaids
+            total_math += maths
+
+            raw_cont = json.loads(row["continuity_json"] or "{}")
+            continuity_out = {
+                "previously": raw_cont.get("previously")
+                or (
+                    f"Ch {rows[idx - 1]['chapter_number']:02d}: {rows[idx - 1]['title']}"
+                    if idx > 0
+                    else f"Course Start — {course_row['title']}"
+                ),
+                "painPoint": raw_cont.get("painPoint") or row["summary"],
+                "unlock": raw_cont.get("unlock") or row["summary"],
+            }
+
+            pretraining = json.loads(row["pretraining_json"] or "[]")
+            for pt in pretraining:
+                tk = str(pt.get("term", "")).strip().lower()
+                if tk and tk not in seen_terms:
+                    seen_terms.add(tk)
+                    master_glossary.append(
+                        {
+                            "term": pt.get("term", ""),
+                            "formula": pt.get("formula", ""),
+                            "meaning": pt.get("meaning", ""),
+                            "chapterNumber": row["chapter_number"],
+                            "chapterSlug": row["slug"],
+                        }
+                    )
+
+            qa_key: List[Dict[str, Any]] = []
+            poe = json.loads(row["prediction_prompt_json"] or "{}")
+            if poe.get("question") and poe.get("options"):
+                opts = poe.get("options") or []
+                aidx = int(poe.get("answerIndex", 0))
+                qa_key.append(
+                    {
+                        "id": f"{row['slug']}-poe",
+                        "kind": "Architecture Prediction",
+                        "question": poe["question"],
+                        "correctAnswer": opts[aidx] if 0 <= aidx < len(opts) else "",
+                        "options": opts,
+                        "answerIndex": aidx,
+                        "explanation": poe.get("explanation", ""),
+                    }
+                )
+            for q in json.loads(row["quizzes_json"] or "[]"):
+                opts = q.get("options") or []
+                aidx = int(q.get("answerIndex", 0))
+                qa_key.append(
+                    {
+                        "id": q.get("id", ""),
+                        "kind": "Staff Scenario Check",
+                        "question": q.get("question", ""),
+                        "correctAnswer": opts[aidx] if 0 <= aidx < len(opts) else "",
+                        "options": opts,
+                        "answerIndex": aidx,
+                        "explanation": q.get("explanation", ""),
+                    }
+                )
+            total_qa += len(qa_key)
+
+            red_thread_map.append(
+                {
+                    "chapterNumber": row["chapter_number"],
+                    "moduleNumber": row["module_number"],
+                    "moduleTitle": row["module_title"],
+                    "slug": row["slug"],
+                    "title": row["title"],
+                    "painPoint": continuity_out["painPoint"],
+                    "unlock": continuity_out["unlock"],
+                    "readingTimeMinutes": row["reading_time_minutes"],
+                }
+            )
+
+            chapters_compiled.append(
+                {
+                    "slug": row["slug"],
+                    "chapterNumber": row["chapter_number"],
+                    "moduleNumber": row["module_number"],
+                    "moduleTitle": row["module_title"],
+                    "levelTag": row["level_tag"],
+                    "title": row["title"],
+                    "summary": row["summary"],
+                    "readingTimeMinutes": row["reading_time_minutes"],
+                    "wordCount": words,
+                    "labPath": row["lab_path"] or "",
+                    "tags": json.loads(row["tags_json"] or "[]"),
+                    "prerequisites": json.loads(row["prerequisites_json"] or "[]"),
+                    "primarySources": json.loads(row["primary_sources_json"] or "[]"),
+                    "mastered": bool(row["mastered"]),
+                    "continuity": continuity_out,
+                    "pretraining": pretraining,
+                    "steps": split_markdown_into_steps(md),
+                    "markdownBody": md,
+                    "selfCheckKey": qa_key,
+                }
+            )
+
+        latency_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        return 200, {
+            "course": {
+                "courseId": course_row["course_id"],
+                "priorityRank": course_row["priority_rank"],
+                "title": course_row["title"],
+                "shortTitle": course_row["short_title"],
+                "levelSpan": course_row["level_span"],
+                "plannedModules": course_row["planned_modules"],
+                "plannedChapters": course_row["planned_chapters"],
+                "publishedChapters": len(chapters_compiled),
+                "accentColor": course_row["accent_color"],
+                "pillBg": course_row["pill_bg"],
+                "tagline": course_row["tagline"],
+            },
+            "latencyMs": latency_ms,
+            "stats": {
+                "chapterCount": len(chapters_compiled),
+                "totalWords": total_words,
+                "totalReadingMinutes": total_reading_mins,
+                "reviseEstimatedMinutes": max(15, round(total_reading_mins * 0.55)),
+                "totalCodeBlocks": total_code_blocks,
+                "totalMermaidDiagrams": total_mermaid,
+                "totalDisplayEquations": total_math,
+                "totalGlossaryTerms": len(master_glossary),
+                "totalSelfCheckQuestions": total_qa,
+            },
+            "redThreadMap": red_thread_map,
+            "masterGlossary": master_glossary,
+            "chapters": chapters_compiled,
         }
     finally:
         conn.close()

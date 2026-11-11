@@ -17,29 +17,155 @@ tags: ["api-automation", "tcp", "tls-1.3", "http2", "connection-pooling", "time-
 
 # TCP Handshakes, TLS 1.3 ECDHE & HTTP/2 Connection Pooling
 
+```json continuity
+{
+  "previously": "Welcome to Day 1 of Course 04! Zero prior networking background needed. Throughout this course, we will build AeroClient — evolving a 5-line flight-search script into a Staff-grade HTTP/2, OAuth2, Pydantic, GraphQL, gRPC, and Pact API test harness.",
+  "painPoint": "Our very first 5-line test calls requests.get() inside a 500-iteration loop. Even though the AeroCart server processes each query in 4ms, every test call takes 42ms and crashes around call #28,000 with 'Cannot assign requested address'.",
+  "unlock": "We will build AeroClient v0.1 with warm connection pooling and HTTP/2 multiplexing so 1,000 API checks share a single encrypted wire tube in milliseconds."
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "1. The Cold Call Tax",
+    "caption": "Imagine driving to the airport, going through security, and throwing your car away after buying a single cup of coffee. That is what calling requests.get() without a session pool does on every API request.",
+    "code": "# ❌ Cold unpooled call: dials a brand-new TCP + TLS socket every time!\nresp = requests.get('https://api.aerocart.internal/v1/flights')"
+  },
+  {
+    "time": "0:22",
+    "badge": "2. First 10 Lines (AeroClient v0.1)",
+    "caption": "By wrapping our HTTP calls inside a reusable Session in Python or HttpClient in Java 17, we dial the server once and keep the encrypted phone line open on the desk.",
+    "code": "# ✅ AeroClient v0.1: Keep the socket warm across all checks\nsession = requests.Session()\nresp = session.get('https://api.aerocart.internal/v1/flights')"
+  },
+  {
+    "time": "0:48",
+    "badge": "3. The 60-Second Port Graveyard",
+    "caption": "When you close a socket without pooling, Linux locks that local port in a 60-second quarantine called TIME_WAIT so stray packets don't confuse future calls. At 500 calls a second, you run out of all 28,232 ports in under a minute.",
+    "code": "OSError: [Errno 99] Cannot assign requested address\n# 28,232 ephemeral ports stuck in 60s TIME_WAIT!"
+  },
+  {
+    "time": "1:12",
+    "badge": "4. HTTP/2 & Stale Socket Safety",
+    "caption": "Staff engineers upgrade the warm pool to HTTP/2 so 100 concurrent calls interleave over one socket, and set client idle eviction to 45 seconds so we never write to a socket the load balancer just hung up on.",
+    "code": "adapter = HTTPAdapter(pool_connections=8, pool_maxsize=32, pool_block=True)\n# Set idle eviction (45s) < AWS ALB idle timeout (60s)"
+  }
+]
+```
+
 ```json pretraining
 [
   {
     "term": "Cold Socket Penalty",
-    "formula": "T_cold = 1 RTT (TCP) + 1 RTT (TLS 1.3) + T_CPU",
-    "meaning": "Every unpooled HTTPS call pays two full network round-trips plus X25519 elliptic-curve math before sending byte zero of JSON."
+    "formula": "1 TCP Trip + 1 TLS Trip before byte zero",
+    "meaning": "Every time you call an HTTPS URL without a connection pool, your computer has to play two full rounds of network ping-pong with the server just to say hello and lock the padlock before your actual API data can leave."
   },
   {
-    "term": "Ephemeral Port Ceiling",
-    "formula": "N_TIME_WAIT = RPS * T_MSL_2 (≈ RPS * 60s)",
-    "meaning": "Closed client sockets linger in kernel TIME_WAIT for 60s on Linux; exceeding ~28,232 sockets triggers EADDRNOTAVAIL."
+    "term": "Ephemeral Port Ceiling (TIME_WAIT)",
+    "formula": "RPS × 60s quarantine ≤ 28,232 local ports",
+    "meaning": "When your script hangs up a network connection, the operating system puts that local plug number into a 60-second cooling-off quarantine so late stray packets don't mix into a new call. Open and close too fast, and you run out of plugs."
   },
   {
     "term": "HTTP/2 Stream Multiplexing",
-    "formula": "1 TCP Socket -> M Concurrent Streams (Frame ID 1, 3, 5...)",
-    "meaning": "Interleaves binary HEADERS and DATA frames with HPACK header compression over one warm TLS session."
+    "formula": "1 Open Socket → 100 Parallel Requests",
+    "meaning": "Instead of needing 100 separate phone lines for 100 parallel tests, HTTP/2 tags each message chunk with a stream number so all 100 conversations travel simultaneously down a single warm cable."
   },
   {
-    "term": "TCP-Layer HoL Trap",
-    "formula": "1 Dropped TCP Segment -> Stalls All M HTTP/2 Streams",
-    "meaning": "The OS kernel enforces strict byte-order delivery across the entire TCP byte stream, motivating QUIC/HTTP/3 over UDP."
+    "term": "Stale Keep-Alive Race",
+    "formula": "Client Idle TTL (45s) < Server Idle TTL (60s)",
+    "meaning": "If a server hangs up an idle phone line at exactly 60 seconds, and your test tries to speak into that same line at 60.000 seconds, your request crashes. Always hang up from the client side a few seconds earlier (like 45s)."
   }
 ]
+```
+
+## 🌱 Step 1: Plain-English Story — The Phone Call That Hung Up After Every Sentence
+
+Imagine you work at the AeroCart travel desk and need to verify the gate numbers for 100 departing flights.
+
+If you call the airline headquarters, wait for the receptionist to pick up, read your badge number, verify your security passphrase, ask *"What gate is Flight 101?"*, and **immediately slam the phone down** — how long will it take to check all 100 flights? You will spend 90% of your morning listening to the dial tone and repeating your security passphrase 100 times in a row!
+
+Worse still, imagine your office switchboard has a safety rule: every time someone hangs up an extension line, that line is locked in a **60-second cooling-off quarantine** to make sure the previous caller really disconnected. If your team makes and hangs up 500 one-question calls per second, within a single minute every extension in the building is locked in quarantine and nobody can dial out at all.
+
+That is *exactly* what happens when a beginner API test script calls `requests.get("https://...")` inside a loop:
+1. **The TCP Handshake (1 Round-Trip)**: Your computer knocks on the server's door, the server waves back, and your computer confirms the connection is live.
+2. **The TLS 1.3 Security Handshake (1 Round-Trip)**: Both sides swap mathematical lockboxes so no eavesdropper on the internet can read your flight bookings.
+3. **The Hang-Up Penalty**: Without a **connection pool**, your script hangs up the socket right after reading the JSON response, burning two full network round-trips on the next call and piling up dead sockets in the operating system's 60-second quarantine.
+
+```mermaid
+flowchart LR
+  Script["AeroClient v0.1 Script"] --> Pool["Warm Connection Pool"]
+  Pool --> Handshake["Dial Once: TCP + TLS 1.3"]
+  Handshake --> Pipe["1 Warm Encrypted Pipe"]
+  Pipe --> API["AeroCart API Server"]
+```
+
+---
+
+## 🔨 Step 2: First Lines of Code — Building `AeroClient v0.1` with a Warm Session
+
+Let's write our very first working version of **`AeroClient` (`v0.1`)**. Instead of opening and throwing away a socket on every assertion, we hold onto a single persistent session object so our second, third, and hundredth API checks skip the handshake completely.
+
+```python
+import requests
+
+class AeroClientV01:
+    def __init__(self, base_url: str) -> None:
+        self.base_url = base_url.rstrip("/")
+        # Open a reusable connection pool instead of one-off sockets
+        self.session = requests.Session()
+
+    def get_flight(self, flight_id: str) -> dict:
+        resp = self.session.get(f"{self.base_url}/v1/flights/{flight_id}", timeout=3.0)
+        resp.raise_for_status()
+        return resp.json()
+```
+
+### Java 17 Equivalent
+
+```java
+import java.net.URI;
+import java.net.http.*;
+
+public class AeroClientV01 {
+    private final HttpClient pool = HttpClient.newBuilder()
+        .version(HttpClient.Version.HTTP_2) // Share one warm HTTP/2 pipe!
+        .build();
+
+    public String getFlight(String baseUrl, String flightId) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl + "/v1/flights/" + flightId)).GET().build();
+        return pool.send(req, HttpResponse.BodyHandlers.ofString()).body();
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — Port Exhaustion & The 32-Thread Pool Trap
+
+Our `AeroClient v0.1` works great on a single laptop thread. Now let's scale up to our nightly CI run where **32 parallel test workers** fire 600 checks per second against the staging cluster (`19ms` network round-trip time):
+
+1. **Unpooled Scripts Crash at Second 48 (`EADDRNOTAVAIL`)**: An unpooled script creates 600 sockets per second and closes them immediately. Linux keeps every closed client socket in `TIME_WAIT` for `60 seconds`. Since a Linux machine only has `28,232` ephemeral ports (`32768–60999`), at $28,232 / 600 \approx 47\text{ seconds}$ the runner runs out of local ports and crashes with `OSError: [Errno 99] Cannot assign requested address`.
+2. **Default `requests.Session()` Pool Overflow**: Even with `requests.Session()`, Python's underlying `urllib3` pool defaults to `pool_maxsize=10` and `pool_block=False`. When 32 threads share that session, 22 overflow threads silently create temporary sockets and **immediately close them** after every call — bringing back the exact same handshake latency and `TIME_WAIT` port exhaustion!
+
+```json contrast
+{
+  "title": "Per-Call Ephemeral Sockets vs Warm Pooled HTTP/2 Client",
+  "naiveTitle": "requests.get() or Default Unsized Pool",
+  "naiveMetric": "+38ms/req · 28k TIME_WAIT Exhaustion",
+  "naivePoints": [
+    "Allocates a fresh OS file descriptor, TCP 3-way handshake, and X25519 TLS 1.3 key derivation on every assertion",
+    "Saturates Linux ip_local_port_range (32768-60999) at >470 RPS, throwing intermittent EADDRNOTAVAIL",
+    "Default urllib3 pool_maxsize=10 silently discards sockets from threads 11..32 after every request"
+  ],
+  "staffTitle": "Session-Scoped Pool + HTTP/2 ALPN",
+  "staffMetric": "0ms Handshake · 1 Socket / 100 Streams",
+  "staffPoints": [
+    "Negotiates TLS 1.3 + ALPN h2 once per worker fixture; amortizes handshake across 10,000+ API calls",
+    "HPACK header compression shrinks repetitive 1.8KB Bearer JWT headers down to indexed 2-byte references",
+    "Explicit pool_maxsize >= worker_threads with pool_block=True and client idle eviction below server timeout"
+  ]
+}
 ```
 
 ```json poe
@@ -56,56 +182,23 @@ tags: ["api-automation", "tcp", "tls-1.3", "http2", "connection-pooling", "time-
 }
 ```
 
-## 1. First-Principles Wire Physics: What Happens Before `POST /orders`
-
-When a junior automation script calls `requests.get("https://api.aerocart.internal/v1/cart")` inside a loop, it treats HTTP like an instantaneous function call. At the Linux kernel and NIC level, an unpooled HTTPS request executes a multi-stage state machine before a single byte of application JSON leaves user space:
-
-1. **DNS Resolution (`UDP/53` or OS Cache)**: `getaddrinfo()` resolves hostname to IPv4/IPv6 (`0.5ms–25ms` if uncached).
-2. **TCP 3-Way Handshake (`1 RTT`)**: Client sends `SYN (seq=x)` $\to$ Server replies `SYN-ACK (seq=y, ack=x+1)` $\to$ Client sends `ACK (ack=y+1)`.
-3. **TLS 1.3 Cryptographic Handshake (`1 RTT` + CPU)**: Unlike TLS 1.2 (which required `2 RTTs` to agree on a cipher suite before exchanging Diffie-Hellman parameters), **TLS 1.3 (RFC 8446)** optimistically embeds the client's ephemeral `X25519` ECDHE `key_share` extension inside the initial `ClientHello`. The server computes the shared master secret immediately, returning `ServerHello`, `EncryptedExtensions`, `Certificate`, `CertificateVerify`, and `Finished` in a single flight.
-4. **Socket Teardown & `TIME_WAIT` (`60s` Kernel Retention)**: Without keep-alive pooling, closing the socket sends `FIN-ACK`. The party initiating the active close (your test client when `Connection: close` is sent) transitions the `(src_ip, src_port, dst_ip, dst_port)` 4-tuple into `TIME_WAIT` for $2 \times \text{MSL}$ (`60 seconds` on Linux) to absorb delayed duplicate packets on the wire.
-
-With a typical cross-region or staging RTT of `19ms`, `1 RTT (TCP) + 1 RTT (TLS 1.3) = 38ms` of pure handshake latency—often **3x slower** than the microservice's actual `11ms` database query!
-
-```mermaid
-sequenceDiagram
-  participant Test as Unpooled vs Pooled Client
-  participant Kernel as Linux TCP/IP + Ephemeral Pool
-  participant Edge as Envoy / API Gateway (TLS 1.3)
-
-  Test->>Kernel: socket() + connect() [Cold Call]
-  Kernel->>Edge: 1. TCP SYN (seq=x) [RTT #1 Starts]
-  Edge-->>Kernel: 2. TCP SYN-ACK (seq=y, ack=x+1)
-  Kernel->>Edge: 3. TCP ACK + TLS 1.3 ClientHello (X25519 key_share) [RTT #2 Starts]
-  Edge-->>Kernel: 4. TLS 1.3 ServerHello + CertVerify + Finished (ALPN: h2)
-  Test->>Edge: 5. Warm Pool: Multiplexed HTTP/2 HEADERS+DATA Frames (0 Handshake RTT!)
-```
-
 ---
 
-## 2. HTTP/1.1 Keep-Alive vs. HTTP/2 Multiplexing vs. TCP HoL Blocking
+## 🚀 Step 4: Staff Engineer Deep-Dive — Handshake Latency Math, TLS 1.3 ECDHE & Production Blueprints
 
-Pooling sockets is necessary, but the wire framing protocol determines how many sockets a 32-worker parallel test runner needs:
+### 1. Cold vs. Warm Wire Latency & `TIME_WAIT` Queueing Math
 
-```json contrast
-{
-  "title": "Per-Call Ephemeral Sockets vs Warm Pooled HTTP/2 Client",
-  "naiveTitle": "requests.get() Inside Test Loops",
-  "naiveMetric": "+38ms/req · 28k TIME_WAIT Exhaustion",
-  "naivePoints": [
-    "Allocates a fresh OS file descriptor, TCP 3-way handshake, and X25519 TLS 1.3 key derivation on every assertion",
-    "Saturates Linux ip_local_port_range (32768-60999) at >470 RPS, throwing intermittent EADDRNOTAVAIL",
-    "Masks server p99 regressions behind client-side TLS CPU and handshake jitter"
-  ],
-  "staffTitle": "Session-Scoped Pool + HTTP/2 ALPN",
-  "staffMetric": "0ms Handshake · 1 Socket / 100 Streams",
-  "staffPoints": [
-    "Negotiates TLS 1.3 + ALPN h2 once per worker fixture; amortizes handshake across 10,000+ API calls",
-    "HPACK header compression shrinks repetitive 1.8KB Bearer JWT headers down to indexed 2-byte references",
-    "Explicit pool limits, keep-alive idle eviction (< server keepalive_timeout), and separate connect/read timeouts"
-  ]
-}
-```
+When an unpooled HTTPS call executes over a network path with round-trip time $\text{RTT}$, total request latency $T_{\text{cold}}$ includes both transport and cryptographic setup before application processing $T_{\text{app}}$:
+
+$$T_{\text{cold}} = \underbrace{1 \cdot \text{RTT}}_{\text{TCP SYN/SYN-ACK}} + \underbrace{1 \cdot \text{RTT} + T_{\text{ECDHE}}}_{\text{TLS 1.3 1-RTT Handshake}} + \underbrace{1 \cdot \text{RTT} + T_{\text{app}}}_{\text{HTTP Request/Response}} = 3 \cdot \text{RTT} + T_{\text{ECDHE}} + T_{\text{app}}$$
+
+Why does **TLS 1.3 (RFC 8446)** require only $1 \cdot \text{RTT}$ whereas **TLS 1.2** required $2 \cdot \text{RTT}$? In TLS 1.3, the client optimistically embeds its ephemeral Diffie-Hellman public key (`X25519` `key_share` extension) inside the very first `ClientHello` packet. The server computes the shared master secret immediately and replies with `ServerHello`, `EncryptedExtensions`, `Certificate`, `CertificateVerify`, and `Finished` in a single flight, negotiating `ALPN: h2` at the same time.
+
+By Little's Law, the steady-state number of client sockets $N_{\text{TW}}$ trapped in the kernel's `TIME_WAIT` table ($2 \times \text{MSL} = 60\text{s}$ on Linux) at unpooled request rate $\lambda$ is:
+
+$$N_{\text{TW}} = \lambda \cdot T_{\text{TIME\_WAIT}} \le P_{\text{max}} - P_{\text{min}} + 1 \implies \lambda_{\text{ceiling}} = \frac{60999 - 32768 + 1}{60\text{s}} \approx 470.5\text{ req/s}$$
+
+### 2. Wire Protocol Trade-Off Matrix
 
 | Protocol & Strategy | Handshake Cost (Warm) | Max Concurrent In-Flight / Socket | Header Overhead | Dominant Bottleneck & Failure Mode |
 | :--- | :--- | :--- | :--- | :--- |
@@ -114,13 +207,9 @@ Pooling sockets is necessary, but the wire framing protocol determines how many 
 | **HTTP/2 (`ALPN: h2`)** | `0 RTT` | `100–250` streams (`SETTINGS_MAX_CONCURRENT_STREAMS`) | Binary **HPACK** (`~20 B` delta) | **TCP-Layer Head-of-Line Blocking**: 1 lost packet stalls all 100 streams |
 | **HTTP/3 (`QUIC / UDP`)** | `0 RTT` (`0-RTT` resumption) | `100+` independent QUIC streams | Binary **QPACK** | Higher user-space UDP crypto CPU (`sendmsg`/`GSO`) & corporate firewall UDP blocks |
 
----
+### 3. Dual-Language Production Blueprints: `AeroClient` Wire-Telemetry Pool
 
-## 3. Dual-Language Production Blueprints: Pooled Wire-Telemetry Clients
-
-A Staff-grade API client instruments **cold vs. warm socket reuse** and sets client idle eviction strictly **below** the upstream load balancer's idle timeout (e.g., AWS ALB default `60s` $\to$ client `keepalive_expiry = 45s`) to eliminate half-closed `ConnectionResetError` flakes.
-
-### Python 3 Blueprint: Thread-Safe Pooled Adapter with Handshake & Pool Metrics
+#### Python 3 Blueprint: Thread-Safe Pooled Adapter with Handshake & Socket Reuse Telemetry
 ```python
 from __future__ import annotations
 from dataclasses import dataclass
@@ -142,7 +231,7 @@ class WireTimingReport:
 
 class InstrumentedPooledClient:
     """
-    Production HTTP connection pool tuned for parallel CI workers:
+    Production AeroClient HTTP connection pool tuned for 32+ parallel CI workers:
     - Reuses warm TLS 1.3 sockets across thousands of API assertions.
     - Enables TCP_NODELAY to disable Nagle's 40ms delayed-ACK interaction on small JSON payloads.
     """
@@ -191,7 +280,7 @@ class InstrumentedPooledClient:
         self.session.close()
 ```
 
-### Java 17 Blueprint: `java.net.http.HttpClient` with TLS 1.3, HTTP/2 & Tuned Keep-Alive
+#### Java 17 Blueprint: `java.net.http.HttpClient` with TLS 1.3, HTTP/2 & Tuned Keep-Alive
 ```java
 package com.aerocart.api.wire;
 
@@ -270,7 +359,8 @@ public final class PooledHttp2GatewayClient implements AutoCloseable {
 
 ---
 
-## 4. Scenario Retrieval-Practice Mastery Gate
+### Up Next in Chapter 02
+Now that `AeroClient v0.1` holds a warm connection pool, what happens when a momentary Wi-Fi or load-balancer hiccup drops the response to `POST /v1/checkouts`? If `AeroClient` retries blindly, it charges the flyer's credit card twice! In **Chapter 02**, we will upgrade to **`AeroClient v0.2`** with **Idempotency-Key envelopes, ETag conditional caching, and keyset cursor pagination**.
 
 ```json quiz
 [

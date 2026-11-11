@@ -17,27 +17,64 @@ tags: ["storage-state", "authentication", "api-request-context", "multi-persona"
 
 # Zero-UI Auth, `storageState.json` Hydration & Multi-Persona Flows
 
+```json continuity
+{
+  "previously": "In Chapter 5, we upgraded AeroBot v0.5 with Page Object Components (`SeatMapDrawer`) and functional fixture factories so 100 checkout tests stay DRY and readable.",
+  "painPoint": "Every one of our 100 AeroBot tests starts by opening `/login`, typing a username and password, and waiting 3.5 seconds for the login redirect—wasting nearly 6 minutes just logging in over and over!",
+  "unlock": "We will upgrade AeroBot to v0.6 with Zero-UI API Auth and `storageState.json` hydration, logging in once in 40 milliseconds and booting every test already signed in within 12 milliseconds!"
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "1. The Wristband Shortcut",
+    "caption": "Typing your password into the login screen before every single test is like waiting in the ticket booth line before every ride at a theme park. Instead, get your VIP wristband once at the gate and walk straight onto every ride!",
+    "code": "# 1 API call -> save VIP wristband (.auth/buyer.json)\napi.storage_state(path='.auth/buyer.json')"
+  },
+  {
+    "time": "0:22",
+    "badge": "2. 12ms Context Boot",
+    "caption": "Playwright's storageState snapshots your browser's cookies and localStorage into a tiny JSON file. Passing that file to browser.new_context boots a fresh tab already logged in within 12 milliseconds!",
+    "code": "ctx = browser.new_context(\n    storage_state='.auth/buyer.json'\n)"
+  },
+  {
+    "time": "0:48",
+    "badge": "3. Worker Account Collision",
+    "caption": "If 16 parallel workers share the exact same buyer account on the backend database, Worker 2's 'Empty Cart' test will accidentally delete Worker 5's checkout cart! Every parallel worker needs its own test account.",
+    "code": "# Partition per worker: buyer-gw0, buyer-gw1...\nemail = f'buyer.{worker_id}@aerocart.test'"
+  },
+  {
+    "time": "1:12",
+    "badge": "4. Multi-Persona Choreography",
+    "caption": "Because each BrowserContext has its own isolated cookie jar, AeroBot v0.6 can open a Buyer tab and a Support Agent tab side-by-side in the same test to verify live refund approvals in real time!",
+    "code": "buyer_ctx = browser.new_context(storage_state=buyer_json)\nagent_ctx = browser.new_context(storage_state=agent_json)"
+  }
+]
+```
+
 ```json pretraining
 [
   {
-    "term": "Login Tax Math",
-    "formula": "500 Tests * 3.5s UI Login = 1,750s (29.1 min) Wasted vs 1 Setup + 12ms Hydrate",
-    "meaning": "Driving the SSO/MFA UI form 500 times tests login 499 redundant times and exposes all 500 tests to IdP network jitter and CAPTCHA rate limits."
+    "term": "The UI Login Tax",
+    "formula": "500 Tests * 3.5s UI Login = 29 Minutes Wasted vs 1 API Call + 12ms Hydrate",
+    "meaning": "Typing into the login page before all 500 tests tests the login box 499 extra times for no reason, slowing down your suite and breaking everything if the login page hiccups."
   },
   {
-    "term": "`storageState` Snapshot Schema",
-    "formula": "{ cookies: [...HttpOnly/SameSite], origins: [{ origin, localStorage: [...] }] }",
-    "meaning": "Playwright serializes both `HttpOnly` browser cookies AND per-origin `localStorage` keys to JSON, hydrating new `BrowserContext`s before navigation #1."
+    "term": "`storageState.json` (The VIP Wristband)",
+    "formula": "{ cookies: [...], origins: [{ origin, localStorage: [...] }] }",
+    "meaning": "A small JSON snapshot file where Playwright saves your logged-in browser cookies and localStorage keys so future browser tabs can start already signed in."
   },
   {
-    "term": "Shared-Jar `APIRequestContext`",
-    "formula": "context.request.post('/api/login') -> Mutates BrowserContext Cookie Jar Directly!",
-    "meaning": "Executing an API login via `context.request` automatically populates `Set-Cookie` headers into the bound `BrowserContext` in ~40ms with zero UI rendering."
+    "term": "`APIRequestContext` (Headless API Login)",
+    "formula": "playwright.request.new_context() -> POST /api/login (40ms)",
+    "meaning": "Playwright's built-in HTTP client that can log in directly against your backend API in 40 milliseconds without even opening a visual login page."
   },
   {
     "term": "Worker-Scoped Account Partitioning",
-    "formula": "gw0 -> buyer_0.json | gw1 -> buyer_1.json  [Zero Cross-Worker Cart/Token Races]",
-    "meaning": "Read-only tests can share one `storageState.json`, but stateful tests mutating server-side carts/settings MUST use per-worker auth identities!"
+    "formula": "Worker gw0 -> buyer_0@test | Worker gw1 -> buyer_1@test",
+    "meaning": "Giving each parallel test runner its own dedicated user account in the database so two tests running at the same time never overwrite each other's shopping cart."
   }
 ]
 ```
@@ -52,31 +89,99 @@ tags: ["storage-state", "authentication", "api-request-context", "multi-persona"
     "JSON files cannot store JWT strings longer than 256 bytes"
   ],
   "answerIndex": 1,
-    "explanation": "By W3C Web Storage spec, `sessionStorage` is bound to a single top-level browsing tab session rather than persistent profile storage, so `storage_state` intentionally omits it. Capturing `JSON.stringify(sessionStorage)` once and registering `context.add_init_script` restores `sessionStorage` on origin load in <2ms."
+  "explanation": "By W3C Web Storage spec, `sessionStorage` is bound to a single top-level browsing tab session rather than persistent profile storage, so `storage_state` intentionally omits it. Capturing `JSON.stringify(sessionStorage)` once and registering `context.add_init_script` restores `sessionStorage` on origin load in <2ms."
 }
 ```
 
-## Part I — First-Principles Mental Model: Authenticate Once per Worker/Persona, Hydrate in 12ms
+---
 
-Suppose your suite has 500 E2E UI specs:
-- **5 specs** in `tests/auth/test_login_and_mfa.py` actually verify the Login UI, password validation, OAuth redirect, and TOTP MFA challenge.
-- **495 specs** test Search, Seat Selection, Checkout, Refunds, and Admin Dashboards.
+## 🌱 Step 1: Plain-English Story — The Theme Park VIP Wristband
 
-If all 495 downstream specs type credentials into `/login`, click `'Sign In'`, wait for Okta/Auth0 redirects, and wait for dashboard bundles:
-1. **Latency Explosion**: `495 * 3.5s = 28.8 minutes` of pure redundant login animations.
-2. **Single Point of Failure Amplification**: A 2-second rate-limit hiccup on your staging Identity Provider fails 100% of cart and search tests.
+Imagine visiting a theme park with 500 roller coasters. At the first ride, you wait 4 minutes at the ticket booth, show your ID, pay, and get a paper ticket. Now imagine if **every single ride** forced you to walk all the way back to the front gate and wait in that 4-minute ticket booth line again! You would spend 33 hours standing in ticket lines before riding everything once.
 
-### The Two Staff Zero-UI Auth Architectures
-1. **API Login $\to$ `storageState` File Hydration**: A worker-scoped setup fixture sends a single `POST /api/v1/auth/login` via `playwright.request.new_context()`, receives `Set-Cookie` (or writes the returned JWT into `localStorage`), exports `.auth/buyer-gw0.json` (git-ignored + mode `0600`!), and every test creates `browser.new_context(storage_state=auth_file)` in **12ms**—landing on `/checkout` already authenticated!
-2. **Multi-Persona Concurrent Collaboration**: Need to verify that when a **Support Agent** clicks `'Approve Refund'` in the Admin Portal, the **Customer** sees `'Refund Issued'` appear live via WebSocket on their Order page? Spawn `customer_ctx = browser.new_context(storage_state=customer_auth)` and `agent_ctx = browser.new_context(storage_state=agent_auth)` side-by-side inside the **same test**!
+That is what happens when `AeroBot v0.5` logs in through the `/login` UI screen before every checkout, seat-map, and refund test:
+- **2 tests** in `test_login.py` actually test the login screen itself.
+- **498 tests** just want to be signed in so they can test flights, seats, and refunds!
+
+Instead of waiting in the UI login line 498 times, **Zero-UI Auth** works like a **Theme Park VIP Wristband**:
+1. Before the suite starts, `AeroBot v0.6` sends one fast HTTP `POST /api/v1/auth/login` request directly to the server (taking just 40 milliseconds, no browser screen needed).
+2. It saves the resulting login cookies and browser storage into a tiny file called `.auth/buyer.json`—our **VIP Wristband**.
+3. Every test simply clips on `.auth/buyer.json` when opening its `BrowserContext` (`browser.new_context(storage_state=".auth/buyer.json")`), starting on `/checkout` already logged in within **12 milliseconds**!
 
 ```mermaid
 flowchart LR
-  Setup["Worker Setup: POST /api/auth/login (40ms)"] -->|Export Cookies + localStorage| File[".auth/buyer-gw0.json (chmod 600)"]
-  File -->|Hydrate in 12ms| Ctx1["Test 1 BrowserContext"]
-  File -->|Hydrate in 12ms| Ctx2["Test 2 BrowserContext"]
-  AgentFile[".auth/agent-gw0.json"] -->|Multi-Persona Test| AgentCtx["Support Agent Context"]
+  API["1. API Login POST (40ms)"] --> JSON["2. Save Wristband (.auth/buyer.json)"]
+  JSON --> T1["3a. Test 1 Context (12ms)"]
+  JSON --> T2["3b. Test 2 Context (12ms)"]
+  Agent["Agent Wristband (.auth/agent.json)"] --> Multi["4. Multi-Persona Test"]
 ```
+
+---
+
+## 🔨 Step 2: First Lines of Code — Minting & Wearing `AeroBot v0.6`'s Wristband
+
+Let's write a 15-line snippet for **`AeroBot v0.6`** that logs in via Playwright's headless `APIRequestContext`, saves `.auth/buyer.json`, and boots a browser page that lands directly on `/orders` already signed in.
+
+```python
+# aerobot_v06_storage_state.py — Minting and hydrating storageState in 12ms
+from playwright.sync_api import Browser, Playwright, expect
+
+def test_aerobot_v06_zero_ui_login(playwright: Playwright, browser: Browser) -> None:
+    # 1. Fast 40ms API login (zero UI rendering!) -> save VIP wristband
+    api = playwright.request.new_context(base_url="http://127.0.0.1:3000")
+    api.post("/api/v1/auth/login", data={"email": "buyer@aerocart.test", "role": "buyer"})
+    api.storage_state(path=".auth/buyer.json")
+    api.dispose()
+
+    # 2. Boot a fresh BrowserContext wearing the wristband in 12ms!
+    ctx = browser.new_context(storage_state=".auth/buyer.json")
+    page = ctx.new_page()
+    page.goto("http://127.0.0.1:3000/orders")
+    expect(page.get_by_test_id("user-greeting")).to_have_text("Welcome, buyer@aerocart.test")
+    ctx.close()
+```
+
+### Java 17 Equivalent
+
+```java
+// AeroBotV06StorageStateTest.java — Minting and hydrating storageState in Java 17
+import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.RequestOptions;
+import java.nio.file.Paths;
+import java.util.Map;
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
+public class AeroBotV06StorageStateTest {
+    void verifyZeroUiAuthHydration(Playwright pw, Browser browser) {
+        APIRequestContext api = pw.request().newContext(
+                new APIRequest.NewContextOptions().setBaseURL("http://127.0.0.1:3000"));
+        api.post("/api/v1/auth/login", RequestOptions.create().setData(
+                Map.of("email", "buyer@aerocart.test", "role", "buyer")));
+        api.storageState(new APIRequestContext.StorageStateOptions().setPath(Paths.get(".auth/buyer.json")));
+        api.dispose();
+
+        BrowserContext ctx = browser.newContext(
+                new Browser.NewContextOptions().setStorageStatePath(Paths.get(".auth/buyer.json")));
+        Page page = ctx.newPage();
+        page.navigate("http://127.0.0.1:3000/orders");
+        assertThat(page.getByTestId("user-greeting")).hasText("Welcome, buyer@aerocart.test");
+        ctx.close();
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — The Shared Shopping Cart Collision
+
+Our `AeroBot v0.6` wristband made tests 200x faster to sign in! Excited, we turn on **16 parallel test workers** (`pytest -n 16`), all wearing the exact same `.auth/buyer.json` wristband (`buyer@aerocart.test`, database `user_id = 42`).
+
+Suddenly, tests start failing randomly:
+- **Worker 3** runs `test_add_flight_to_cart` and expects `"1 item in cart"`.
+- At the exact same millisecond, **Worker 7** runs `test_empty_entire_cart`, which sends `DELETE /api/v1/cart` to the backend database for `user_id = 42`!
+- Worker 3's cart is wiped out mid-test on the backend database!
+
+Why did `BrowserContext` isolation not save us? Because `BrowserContext` isolates **client-side browser memory** (cookies and tabs on your laptop), NOT **server-side database rows**! If 16 browsers log into the same `user_id = 42` account on the server, they all share the same database shopping cart. Furthermore, if a developer accidentally commits `.auth/buyer.json` to Git, live session cookies are leaked to the world!
 
 ```json contrast
 {
@@ -100,7 +205,19 @@ flowchart LR
 
 ---
 
-## Part II — Auth State Storage Mechanisms & Trade-Offs
+## 🚀 Step 4: Staff Engineer Deep-Dive — Login Tax Math, Storage Matrix & Multi-Persona Flows
+
+### 1. Quantitative Login Tax Amortization Model
+
+For a suite of $N_{\text{tests}}$ total tests run across $W$ parallel workers, compare per-test UI login time $T_{\text{ui\_login}} \approx 3500\text{ ms}$ against per-worker API setup $T_{\text{api\_auth}} \approx 40\text{ ms}$ and per-test context hydration $T_{\text{hydrate}} \approx 12\text{ ms}$:
+
+$$\Delta T_{\text{saved}} = N_{\text{tests}} \cdot T_{\text{ui\_login}} - \left( W \cdot T_{\text{api\_auth}} + N_{\text{tests}} \cdot T_{\text{hydrate}} \right)$$
+
+For $N_{\text{tests}} = 500$ and $W = 16$ workers:
+
+$$\Delta T_{\text{saved}} = 500(3.5\text{ s}) - \left( 16(0.04\text{ s}) + 500(0.012\text{ s}) \right) = 1750\text{ s} - 6.64\text{ s} = 1743.36\text{ s} \approx 29.06\text{ minutes saved!}$$
+
+### 2. Auth State Storage Mechanisms & Trade-Offs
 
 Use the **`pw-network-auth-sharding`** interactive simulator to inspect how `storageState.json` hydrates cookies and `localStorage` across parallel worker personas.
 
@@ -111,16 +228,14 @@ Use the **`pw-network-auth-sharding`** interactive simulator to inspect how `sto
 | **`IndexedDB` (Firebase Auth)** | **Opt-in** (`indexed_db=True`) | Pass `indexed_db=True` when saving `storage_state` | Supported in modern Playwright (`>=1.51`); else `add_init_script`. |
 | **`window.sessionStorage`** | **No** (Tab-scoped) | Inject JSON snapshot via `context.add_init_script(...)` | Guard script check `if (window.location.origin === TARGET_ORIGIN)`! |
 
----
+### 3. Production Blueprints: Worker-Scoped Auth + Multi-Persona Collaboration (Python 3 & Java 17)
 
-## Part III — Production Implementation Blueprints (Python 3 & Java 17)
+Because each `BrowserContext` has an isolated cookie jar, `AeroBot v0.6` can spawn a **Buyer** context and a **Support Agent** context inside the **exact same test** to verify real-time multi-user workflows!
 
-### Python 3 Blueprint: Worker-Scoped API Auth Hydration + Multi-Actor Buyer/Agent Collaboration Test
 ```python
 from __future__ import annotations
 import os
 import pathlib
-from typing import Generator
 import pytest
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, expect
 
@@ -186,7 +301,8 @@ def test_agent_refund_reflects_live_on_buyer_screen(
         buyer_ctx.close()
 ```
 
-### Java 17 Blueprint: `APIRequestContext` Zero-UI Auth Seed & Multi-Persona Context Hydration
+#### Java 17 Equivalent
+
 ```java
 package com.aerocart.qa.auth;
 
@@ -226,9 +342,9 @@ public final class StorageStateAuthProvisioner {
 > **Staff Interview Gotcha — Single-Use Refresh Token Rotation Invalidating Shared `storageState.json`**:
 > Modern OAuth 2.1 / Auth0 configurations often enable **Refresh Token Rotation with Reuse Detection**: the moment Test #1's silent token refresh consumes `refresh_token_v1` to obtain `refresh_token_v2`, the auth server marks `refresh_token_v1` as **spent**—and when Test #2 boots from the static `.auth/user.json` and presents `refresh_token_v1` again, the auth server detects "token replay" and **revokes the entire user session family (`401 Unauthorized`)**! Solution: issue adequately scoped access-token TTLs (`30m`) for test runs so silent refresh doesn't fire mid-shard, AND mint **distinct sessions per parallel worker** (`buyer-gw0`..`buyer-gw15`).
 
----
+**Up Next in Chapter 7:** `AeroBot v0.6` boots authenticated tests in 12ms, but what happens when a third-party payment gateway (`Stripe` or `Adyen`) goes down on staging or returns a rare `HTTP 503` error? In Chapter 7, we will build **`AeroBot v0.7`** with `page.route()` network interception, API response patching, and deterministic HAR replay!
 
-## Part IV — Scenario Retrieval-Practice Mastery Gate
+---
 
 ```json quiz
 [

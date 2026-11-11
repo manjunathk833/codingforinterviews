@@ -6,7 +6,7 @@ volume: "04. Zero to Mastery: API & API Automation"
 module_number: 3
 module_title: "Module 3: Multi-Protocol (GraphQL, gRPC) & Async Sagas"
 chapter_number: 8
-level_tag: "Senior → Staff"
+level_tag: "Beginner → Staff"
 title: "Asynchronous Saga Polling (202 Accepted) & HMAC-SHA256 Webhook Verification"
 summary: "Testing distributed eventual consistency without Thread.sleep(): 202 Accepted + Location status state machines, bounded deadline polling with terminal-state short-circuiting on AeroCart PENDING -> CONFIRMED | COMPENSATED sagas, and constant-time HMAC-SHA256 webhook signature & replay verification."
 reading_time_minutes: 22
@@ -17,29 +17,160 @@ tags: ["api-automation", "async-saga", "202-accepted", "webhooks", "hmac-sha256"
 
 # Asynchronous Saga Polling (202 Accepted) & HMAC-SHA256 Webhook Verification
 
+```json continuity
+{
+  "previously": "In Chapter 07, we upgraded AeroClient v0.7 with binary Protobuf wire-frame inspection, reserved-tag compatibility gates, and mandatory gRPC deadline propagation.",
+  "painPoint": "When a flyer clicks 'Buy Ticket' on AeroCart, reserving the seat and settling international bank payment takes 2 to 4 seconds. Checkout now returns HTTP 202 Accepted immediately and runs a background Saga. Teammates added time.sleep(5) to every checkout test—making CI take 45 minutes and still failing randomly—while an unsigned payment webhook let a spoofed curl request mark unpaid orders as PAID!",
+  "unlock": "We will upgrade AeroClient to v0.8 with a zero-sleep Terminal-State Saga Poller that exits the millisecond an order reaches CONFIRMED or COMPENSATED, plus a constant-time HMAC-SHA256 Webhook Verifier."
+}
+```
+
+```json walkthrough
+[
+  {
+    "time": "0:00",
+    "badge": "1. The Coffee Pager (202)",
+    "caption": "Instead of freezing the checkout line for 4 seconds while the credit card bank responds, AeroCart hands you a buzzer (HTTP 202 Accepted + Location URL) and finishes the work in the background.",
+    "code": "POST /v1/checkouts -> 202 Accepted\nLocation: /v1/operations/op-42"
+  },
+  {
+    "time": "0:24",
+    "badge": "2. First Zero-Sleep Poll",
+    "caption": "In AeroClient v0.8, we replace blind time.sleep(5) calls with a tight polling loop that checks the Location URL and stops the instant status hits CONFIRMED or FAILED_COMPENSATED.",
+    "code": "if state in (\"CONFIRMED\", \"FAILED_COMPENSATED\"): return snapshot"
+  },
+  {
+    "time": "0:50",
+    "badge": "3. Compensation & Spoofing",
+    "caption": "What if Seat 14A is locked, and then the credit card declines? The Saga MUST run a compensating refund to unlock Seat 14A! And webhooks must be signed so hackers cannot fake payment callbacks.",
+    "code": "sig = HMAC_SHA256(secret, f\"{timestamp}.{raw_body_bytes}\")"
+  },
+  {
+    "time": "1:15",
+    "badge": "4. Constant-Time HMAC",
+    "caption": "At Staff scale, AeroClient v0.8 verifies webhook signatures over raw unparsed bytes using hmac.compare_digest and rejects replayed packets older than 300 seconds.",
+    "code": "assert hmac.compare_digest(expected_mac, header_mac) and abs(now - ts) <= 300"
+  }
+]
+```
+
 ```json pretraining
 [
   {
     "term": "202 Accepted Contract",
     "formula": "POST /v1/checkout -> 202 + Location: /v1/operations/{op_id}",
-    "meaning": "Decouples durable command ingestion from multi-step downstream Saga execution (Inventory -> Payment -> Fulfillment)."
+    "meaning": "An HTTP response that says 'We safely wrote down your order request, we are working on it in the background, and here is the URL where you can check its progress.'"
   },
   {
     "term": "Terminal Short-Circuit",
     "formula": "Stop Poll Immediately on status ∈ {CONFIRMED, FAILED_COMPENSATED}",
-    "meaning": "Never wait out a 15s polling timeout when a saga deterministically enters a terminal compensated failure state at t=80ms!"
+    "meaning": "Teaching your test poller to stop waiting the exact millisecond a background job finishes—whether it succeeded or permanently failed—so tests never waste 15 seconds waiting on a dead job."
   },
   {
     "term": "HMAC Replay Binding",
     "formula": "sig = HMAC_SHA256(secret, timestamp + \".\" + raw_utf8_bytes)",
-    "meaning": "Signing timestamp + exact unparsed wire bytes prevents both payload tampering and captured-packet replay (>300s skew rejected)."
+    "meaning": "Stamping both the current clock time and the exact message bytes with a secret cryptographic seal so a hacker cannot modify the message or resend yesterday's receipt."
   },
   {
     "term": "Constant-Time Compare",
-    "formula": "hmac.compare_digest(expected_mac, actual_mac)  // O(L) Fixed",
-    "meaning": "Eliminates byte-by-byte early-exit timing side channels that otherwise let attackers forge HMACs in 256 * 32 probes."
+    "formula": "hmac.compare_digest(expected_mac, actual_mac) // Fixed Time",
+    "meaning": "Checking EVERY character of a secret signature in the exact same amount of time, instead of stopping early on the first wrong letter, so hackers cannot guess the signature letter-by-letter using a stopwatch."
   }
 ]
+```
+
+## 🌱 Step 1: Plain-English Story — The Coffee Shop Buzzer & The Wax-Sealed Messenger
+
+Imagine ordering a complex specialty latte during morning rush hour.
+If the cashier stood frozen at the register for 4 minutes while the barista steamed the milk, the line would stretch around the block (`Thread Starvation`). Instead, the cashier takes your order, hands you a **plastic buzzer (`HTTP 202 Accepted` + `Location: /orders/42/status`)**, and immediately helps the next customer.
+
+Behind the counter, making your order is a 3-step **Saga**:
+1. **Reserve Pastry**: Grab the last almond croissant from the display case (`INVENTORY_RESERVED`).
+2. **Charge Card**: Run your credit card (`PAYMENT_CAPTURED`).
+3. **Confirm Order**: Buzz your pager (`CONFIRMED`)!
+
+What if Step 2 fails because your credit card is declined? The barista cannot just leave that last almond croissant sitting on the back counter forever! They must run a **Compensating Action**—putting the croissant *back* into the display case so another customer can buy it (`FAILED_COMPENSATED`).
+
+And what if the credit card bank sends a courier (`Webhook`) to tell the coffee shop `"Order #42 is paid!"`? Anyone on the street could put on a courier hat and shout `"Order #42 is paid!"` for free coffee. So the bank stamps every message with a **secret wax seal (`HMAC-SHA256`)** tied to the exact minute it was sent.
+
+```mermaid
+flowchart LR
+  Client["AeroClient v0.8"] -->|POST /checkouts| API["202 Accepted + Location"]
+  API -->|Async Saga| Orch["Reserve Seat -> Charge Card"]
+  Orch -->|Card Declined!| Comp["Compensate: Unlock Seat"]
+  Orch -->|Signed Webhook| Hook["HMAC-SHA256 Verifier"]
+  Client -->|Bounded Poll| API
+```
+
+---
+
+## 🔨 Step 2: First Lines of Code — `AeroClient v0.8` Zero-Sleep Poller & HMAC Starter
+
+Let's evolve **`AeroClient`** to `v0.8`. Instead of calling `time.sleep(5)` and hoping the background saga finished, we write a clean polling loop that checks the `Location` endpoint every `50ms` and exits the instant it sees either `"CONFIRMED"` or `"FAILED_COMPENSATED"`, alongside a 4-line `HMAC-SHA256` signature check.
+
+```python
+import hashlib, hmac, time
+
+def poll_and_verify_webhook(fetch_status, secret: str, ts: int, raw_body: bytes, sig: str) -> str:
+    """AeroClient v0.8 starter: terminal-aware saga poll + constant-time HMAC check."""
+    expected = hmac.new(secret.encode(), f"{ts}.".encode() + raw_body, hashlib.sha256).hexdigest()
+    assert hmac.compare_digest(expected, sig), "Invalid webhook HMAC signature!"
+    deadline = time.monotonic() + 5.0
+    while time.monotonic() < deadline:
+        status = fetch_status()
+        if status in ("CONFIRMED", "FAILED_COMPENSATED"):
+            return status
+        time.sleep(0.05)
+    raise TimeoutError("Saga did not reach a terminal state within 5.0s")
+```
+
+### Java 17 Equivalent
+
+```java
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+public class AeroSagaStarter {
+    public static boolean verifyWebhookHmac(String secret, long ts, byte[] rawBody, byte[] sigBytes) throws Exception {
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        mac.update((ts + ".").getBytes(StandardCharsets.US_ASCII));
+        byte[] expected = mac.doFinal(rawBody);
+        return MessageDigest.isEqual(expected, sigBytes); // Constant-time comparison
+    }
+}
+```
+
+---
+
+## ⚡ Step 3: Where It Breaks in Real Life — Timeout Hangs, Leaked Inventory & JSON Re-Serialization Bugs
+
+Why do naive async tests and webhook receivers fail in production?
+
+1. **Polling Blindly Through Terminal Failures**: If a test writes `await().atMost(15, SECONDS).until(() -> status.equals("CONFIRMED"))` and the payment fails at `40ms` (`status = "FAILED_COMPENSATED"`), the test keeps hammering the server for the remaining `14.96 seconds` before throwing a generic timeout error!
+2. **Unverified Saga Compensation (Ghost Inventory Locks)**: When a credit card declines in Step 2 of a checkout saga, teams often assert that `status == "FAILED_COMPENSATED"`—but forget to assert that **available seat inventory returned to its initial count** (`8 -> 10`).
+3. **JSON Parse-Before-HMAC & `==` Timing Leaks**: If a webhook server parses the incoming JSON into a dictionary and re-serializes it (`json.dumps(data)`) before computing the HMAC, whitespace or key-order changes break legitimate signatures! And comparing signatures with standard `==` exits on the first mismatched byte, leaking a timing side channel.
+
+```json contrast
+{
+  "title": "Fixed sleep(5) & Naive Webhook Receivers vs AeroClient v0.8 Terminal Pollers & Raw HMAC",
+  "naiveTitle": "time.sleep(5) + '==' Parsed JSON MAC",
+  "naiveMetric": "41m Wasted CI · Flaky Rebalances · Replay Bug",
+  "naivePoints": [
+    "Hardcodes sleep(5) before GET /orders: wastes 98% wall-clock time on healthy runs and flakes under GC/Kafka jitter",
+    "Keeps polling until timeout even when saga already transitioned to terminal FAILED_COMPENSATED at 60ms",
+    "Verifies webhook HMAC without signing the Unix timestamp, allowing attackers to replay a valid $50 refund webhook 100 times!"
+  ],
+  "staffTitle": "AeroClient v0.8 Poller + Timestamped Raw HMAC",
+  "staffMetric": "95ms Median Poll · 0 Replay / Timing Leaks",
+  "staffPoints": [
+    "Polls with capped backoff (50ms -> 400ms), exits the instant CONFIRMED arrives, and fails-fast on COMPENSATED",
+    "Verifies compensating transaction invariant: payment failure MUST restore reserved SKU inventory back to pre-saga count",
+    "Signs 't.<raw_bytes>', enforces |now - t| <= 300s clock window, deduplicates event_id, and uses compare_digest()"
+  ]
+}
 ```
 
 ```json poe
@@ -56,66 +187,35 @@ tags: ["api-automation", "async-saga", "202-accepted", "webhooks", "hmac-sha256"
 }
 ```
 
-## 1. Event-Driven Sagas (`202 Accepted`) & Why `sleep(5)` Ruins CI Suites
-
-Modern commerce architectures (`AeroCart` Checkout) avoid distributed two-phase commits (`2PC`) across microservices. Instead, `POST /v1/checkouts` writes an Outbox command, returns **`202 Accepted`** in `9ms` with `Location: /v1/checkouts/chk-88/status` and `Retry-After: 1`, and progresses asynchronously through a **Choreographed or Orchestrated Saga**:
-
-`PENDING` $\to$ `INVENTORY_RESERVED` $\to$ `PAYMENT_CAPTURED` $\to$ **`CONFIRMED`** *(or on payment decline: `PAYMENT_FAILED` $\to$ **`COMPENSATED`** releasing the reserved inventory!)*
-
-Testing async sagas with `time.sleep(5.0)` creates the classic dual failure: if the runner finishes in `90ms`, you waste `4.91s` on every single test (`500 tests = 41 minutes` of pure idle CPU); if Kafka consumer rebalance takes `5.2s` once a week, the test flakes! Staff engineers use **bounded monotonic deadline polling with terminal-state short-circuiting** AND **ephemeral local callback listeners** for webhook push verification.
-
-```mermaid
-sequenceDiagram
-  participant Test as Saga & Webhook Harness
-  participant API as AeroCart Checkout API
-  participant Saga as Outbox + Kafka Orchestrator
-  participant Hook as Ephemeral Local Webhook Sink
-
-  Test->>API: POST /v1/checkouts (Idempotency-Key: k-9)
-  API-->>Test: 202 Accepted + Location: /v1/operations/op-42
-  Saga->>Saga: Reserve Stock -> Capture Card -> Emit Event
-  Saga->>Hook: POST /webhooks (X-Signature: t=1731...,v1=8a4f...)
-  Test->>API: Poll Location (50ms->100ms->200ms) Until Terminal
-  API-->>Test: 200 OK {status: "CONFIRMED", orderId: "ord-77"}
-  Test->>Hook: Assert Constant-Time HMAC + Replay Protection + Event ID
-```
-
 ---
 
-## 2. Polling Anti-Patterns vs. Bounded Saga Harnesses & Webhook Security
+## 🚀 Step 4: Staff Engineer Deep-Dive — Saga Compensation Invariants, Cryptographic MAC Math & Blueprints
 
-```json contrast
-{
-  "title": "Fixed sleep(5) & Naive Webhook Receivers vs Terminal Saga Pollers & HMAC Guards",
-  "naiveTitle": "time.sleep(5) + '==' Parsed JSON MAC",
-  "naiveMetric": "41m Wasted CI · Flaky Rebalances · Replay Bug",
-  "naivePoints": [
-    "Hardcodes sleep(5) before GET /orders: wastes 98% wall-clock time on healthy runs and flakes under GC/Kafka jitter",
-    "Keeps polling until timeout even when saga already transitioned to terminal FAILED_COMPENSATED at 60ms",
-    "Verifies webhook HMAC without signing the Unix timestamp, allowing attackers to replay a valid $50 refund webhook 100 times!"
-  ],
-  "staffTitle": "Terminal-Aware Poller + Timestamped Raw HMAC",
-  "staffMetric": "95ms Median Poll · 0 Replay / Timing Leaks",
-  "staffPoints": [
-    "Polls with capped backoff (50ms -> 400ms), exits the instant CONFIRMED arrives, and fails-fast on COMPENSATED",
-    "Verifies compensating transaction invariant: payment failure MUST restore reserved SKU inventory back to pre-saga count",
-    "Signs 't.<raw_bytes>', enforces |now - t| <= 300s clock window, deduplicates event_id, and uses compare_digest()"
-  ]
-}
-```
+### 1. Formal Saga Conservation Law & Constant-Time HMAC Security
 
-| Verification Dimension | `202` Status Resource Polling | Outbound Webhook Delivery | Mandatory Failure-Mode Test |
+In a distributed $M$-step saga $S = (T_1, T_2, \dots, T_M)$ with compensating transactions $(C_1, C_2, \dots, C_{M-1})$, if forward step $T_k$ fails ($1 < k \le M$), the orchestrator must execute compensating steps in **strict reverse topological order** ($C_{k-1} \to C_{k-2} \to \dots \to C_1$) so net conserved resource state $\Delta R$ (e.g., reserved flight seats + captured funds) returns to zero:
+
+$$\text{On Failure at } T_k: \quad \sum_{i=1}^{k-1} \Delta R(T_i) + \sum_{i=k-1}^{1} \Delta R(C_i) = 0 \implies R_{\text{post-compensation}} \equiv R_{\text{pre-saga}}$$
+
+For outbound and inbound **Webhooks**, the cryptographic authentication tag $\tau$ binds the secret key $K$, the Unix epoch timestamp $t$, and the exact unparsed wire byte array $B_{\text{raw}}$:
+
+$$\tau = \text{HMAC-SHA256}\!\left(K,\; \text{ASCII}(t) \,\|\, \text{"."} \,\|\, B_{\text{raw}}\right), \qquad \text{Valid} \iff \left(|t_{\text{now}} - t| \le \Delta_{\max}\right) \land \left(\bigoplus_{i=0}^{31} (\tau_i \oplus \hat{\tau}_i) = 0\right)$$
+
+Notice why constant-time bitwise XOR accumulation ($\bigoplus_{i=0}^{31} (\tau_i \oplus \hat{\tau}_i) = 0$, implemented by `hmac.compare_digest` and `MessageDigest.isEqual`) is critical: a naive byte-by-byte `==` loop exits at index $j$ where $\tau_j \ne \hat{\tau}_j$, reducing a brute-force forgery from $2^{256}$ operations to just $256 \times 32 = 8,192$ timing probes!
+
+### 2. Async Saga & Webhook Verification Matrix
+
+| Verification Dimension | `202` Status Resource Polling | Outbound Webhook Delivery | Mandatory `AeroClient v0.8` Test |
 | :--- | :--- | :--- | :--- |
 | **Transport Contract** | `202 Accepted` + `Location` + `Retry-After` | `POST` to consumer URL within `5s` timeout | Webhook consumer returns `500` $\to$ verify sender retries with exponential backoff |
 | **Deduplication** | `op_id` is immutable & idempotent to `GET` | Consumer deduplicates by unique `event_id` (`evt_...`) | Deliver identical `event_id` twice $\to$ assert consumer applies side effect **once** |
 | **Security & Integrity** | Tenant-scoped `Location` (`BOLA` protected) | `HMAC-SHA256(secret, f"{ts}.{raw_body}")` + dual-key rotation (`v1=...`) | Send timestamp `t = now - 600s` with valid HMAC $\to$ assert `401` replay rejection |
 | **Saga Compensation** | Terminal state exposes `failureReason` + `compensated: true` | Emits `checkout.compensated` event | Trigger `card_declined` fixture $\to$ assert stock count returns to initial baseline |
 
----
+### 3. Dual-Language Production Blueprints: `AeroClient v0.8` Poller & Webhook Verifier
 
-## 3. Dual-Language Production Blueprints: Terminal Saga Poller & Webhook Verifier
+#### Python 3 Blueprint: Terminal-State Saga Poller + Constant-Time Webhook HMAC Verifier
 
-### Python 3 Blueprint: Terminal-State Saga Poller + Constant-Time Webhook HMAC Verifier
 ```python
 from __future__ import annotations
 from dataclasses import dataclass
@@ -225,7 +325,8 @@ class WebhookSecurityVerifier:
         return WebhookVerificationResult(True, "ACCEPTED")
 ```
 
-### Java 17 Blueprint: Terminal-Aware Saga Poller & Constant-Time `MessageDigest.isEqual` HMAC
+#### Java 17 Blueprint: Terminal-Aware Saga Poller & Constant-Time `MessageDigest.isEqual` HMAC
+
 ```java
 package com.aerocart.api.saga;
 
@@ -305,7 +406,9 @@ public final class AsyncSagaAndWebhookHarness {
 
 ---
 
-## 4. Scenario Retrieval-Practice Mastery Gate
+### Up Next in Chapter 09: OpenAPI 3.1 Schema Governance, Breaking-Change Diffing & Property Fuzzing
+
+`AeroClient v0.8` can now test synchronous REST, federated GraphQL, binary gRPC, and asynchronous `202` Sagas + Webhooks. But how do we stop 40 backend teams from accidentally renaming JSON fields or shipping unhandled `HTTP 500` crashes on edge-case Unicode/float inputs before our handwritten tests even run? In **Chapter 09**, we will upgrade `AeroClient` to `v0.9` with **OpenAPI 3.1 Breaking-Change Diff Gates** and **Stateful Property-Based Fuzzing (`Schemathesis` / `Hypothesis`)**!
 
 ```json quiz
 [

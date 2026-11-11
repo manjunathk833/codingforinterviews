@@ -606,6 +606,17 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             "view-textbook",
             "view-newsfeed",
             "view-workbench",
+            "setEyeComfortTheme",
+            "toggleZenFullscreen",
+            "toggleKbSidebar",
+            "setKbContentWidth",
+            "toggleCenterContentExpand",
+            "toggleSplitPaneMaximize",
+            "kb-center-article",
+            "kb-peek-drawer",
+            "kb-edge-rail-left",
+            "zen-floating-bar",
+            "minimal-disclosure",
             "/api/kb/search",
             "/api/kb/quiz",
             "/api/newsfeed",
@@ -620,8 +631,8 @@ class TestHubAndArchitectureCI(unittest.TestCase):
         self.assertEqual(courses_res["status_code"], 200)
         payload = courses_res["data"]
         self.assertEqual(payload["sectionTitle"], "Textbook Courses")
-        self.assertEqual(payload["totalCourses"], 8)
-        self.assertEqual(payload["totalPublishedChapters"], 74)
+        self.assertEqual(payload["totalCourses"], 9)
+        self.assertEqual(payload["totalPublishedChapters"], 84)
 
         expected_order = [
             ("01-zero-to-staff-sdet", 12),
@@ -632,14 +643,19 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             ("06-ai-engineering-qa-focused", 10),
             ("07-distributed-system-design", 5),
             ("08-core-cs-internals", 5),
+            ("09-sql-and-data-engineering", 10),
         ]
         actual_order = [(c["courseId"], c["publishedChapters"]) for c in payload["courses"]]
         self.assertEqual(actual_order, expected_order)
 
-        # Verify course-filtered chapters & FTS5 search across new Textbook Courses
+        # Verify course-filtered chapters & FTS5 search across Textbook Courses (including Course 09)
         c01_res = hub_server.dispatch_request("GET", "/api/kb/chapters?course=01-zero-to-staff-sdet")
         self.assertEqual(c01_res["status_code"], 200)
         self.assertEqual(len(c01_res["data"]["chapters"]), 12)
+
+        c09_res = hub_server.dispatch_request("GET", "/api/kb/chapters?course=09-sql-and-data-engineering")
+        self.assertEqual(c09_res["status_code"], 200)
+        self.assertEqual(len(c09_res["data"]["chapters"]), 10)
 
         from urllib.parse import quote
         for q_term, exp_course in (
@@ -648,6 +664,8 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             ("Pact", "04-api-and-api-automation"),
             ("PagedAttention", "05-ai-engineering"),
             ("Rogan-Gladen", "06-ai-engineering-qa-focused"),
+            ("SKIP LOCKED", "09-sql-and-data-engineering"),
+            ("Double-Entry", "09-sql-and-data-engineering"),
         ):
             sr = hub_server.dispatch_request("GET", f"/api/kb/search?q={quote(q_term)}&course={exp_course}")
             self.assertEqual(sr["status_code"], 200)
@@ -699,12 +717,14 @@ class TestHubAndArchitectureCI(unittest.TestCase):
         self.assertEqual(wt_search["status_code"], 200)
         self.assertGreaterEqual(wt_search["data"]["count"], 1)
 
-        # Enforce Rule 03 True-Zero Pedagogy & Udemy Continuity Linter Gate
+        # Enforce Rule 03 Pedagogy, COURSE_MANIFEST.json & Continuity Linter Gate across ALL 84/84 chapters
         from tools.safety import pedagogy_lint
         self.assertEqual(pedagogy_lint.audit_rule_budget(), [])
+        self.assertEqual(len(pedagogy_lint.REQUIRED_TRUE_ZERO_RELPATHS), 84)
+        self.assertIn("09-sql-and-data-engineering", pedagogy_lint.REQUIRED_V2_SOURCED_COURSES)
         upgraded_count, total_count, violations = pedagogy_lint.audit_all_upgraded_chapters()
-        self.assertGreaterEqual(upgraded_count, 22)
-        self.assertEqual(total_count, 74)
+        self.assertEqual(upgraded_count, 84)
+        self.assertEqual(total_count, 84)
         self.assertEqual(violations, {})
 
         # Verify POST /api/kb/walkthrough-audio (stock-analysis TTS + section duration normalization + visual_cues)
@@ -751,6 +771,154 @@ class TestHubAndArchitectureCI(unittest.TestCase):
                 media_dir.parent.rmdir()
             except OSError:
                 pass
+
+    def test_20_course_compendium_single_page_revise_mode(self):
+        """Verify Course-Level Single-Page Master Compendium ('Revise / In-Single-Page' Mode) API & UI across all 9 courses (84/84 chapters, 4-Step v1 + 5-Step v2)."""
+        expected_courses = (
+            ("01-zero-to-staff-sdet", 12, 4),
+            ("02-building-testing-frameworks", 10, 4),
+            ("03-ui-automation-playwright", 10, 4),
+            ("04-api-and-api-automation", 10, 4),
+            ("05-ai-engineering", 12, 4),
+            ("06-ai-engineering-qa-focused", 10, 4),
+            ("07-distributed-system-design", 5, 4),
+            ("08-core-cs-internals", 5, 4),
+            ("09-sql-and-data-engineering", 10, 5),
+        )
+        total_verified_chapters = 0
+        for course_id, exp_chapters, exp_steps in expected_courses:
+            comp_res = hub_server.dispatch_request(f"GET", f"/api/kb/course-compendium?course={course_id}")
+            self.assertEqual(comp_res["status_code"], 200, f"Failed compendium for {course_id}")
+            d = comp_res["data"]
+            self.assertEqual(d["course"]["courseId"], course_id)
+            self.assertEqual(d["stats"]["chapterCount"], exp_chapters)
+            self.assertGreater(d["stats"]["totalWords"], exp_chapters * 1000)
+            self.assertGreaterEqual(d["stats"]["totalCodeBlocks"], exp_chapters * 3)
+            self.assertGreaterEqual(d["stats"]["totalMermaidDiagrams"], exp_chapters)
+            self.assertEqual(len(d["redThreadMap"]), exp_chapters)
+            self.assertGreaterEqual(len(d["masterGlossary"]), exp_chapters * 2)
+            self.assertEqual(len(d["chapters"]), exp_chapters)
+            for ch in d["chapters"]:
+                self.assertEqual(
+                    len(ch["steps"]),
+                    exp_steps,
+                    f"Course {course_id} chapter {ch.get('slug')} has {len(ch['steps'])} steps instead of {exp_steps}",
+                )
+                if exp_steps == 5:
+                    self.assertGreaterEqual(len(ch.get("primarySources", [])), 2, f"{ch.get('slug')} missing primarySources")
+                self.assertTrue(ch["continuity"]["previously"], f"{ch.get('slug')} missing continuity.previously")
+                self.assertTrue(ch["continuity"]["painPoint"], f"{ch.get('slug')} missing continuity.painPoint")
+                self.assertTrue(ch["continuity"]["unlock"], f"{ch.get('slug')} missing continuity.unlock")
+                self.assertGreater(len(ch["markdownBody"]), 500)
+                self.assertGreaterEqual(len(ch["selfCheckKey"]), 3)
+                self.assertNotIn("walkthrough", ch)
+                total_verified_chapters += 1
+
+        self.assertEqual(total_verified_chapters, 84)
+
+        missing = hub_server.dispatch_request("GET", "/api/kb/course-compendium?course=does-not-exist")
+        self.assertEqual(missing["status_code"], 404)
+
+        root_html = hub_server.dispatch_request("GET", "/")["data"]["html"]
+        for token in (
+            "kb-mode-revise",
+            "kb-compendium-container",
+            "openCourseCompendium",
+            "toggleCompendiumLayer",
+            "toggleCompendiumCramPreset",
+            "comp-layer-btn-step5",
+            "switchAllCompendiumCodeLang",
+            "/api/kb/course-compendium",
+        ):
+            self.assertIn(token, root_html)
+
+    def test_21_rules_content_extraction_manifest_to_chapter_mapping_and_snippet_ci(self):
+        """Verify .agents/rules/03 content-extraction structure maps 1-to-1 to COURSE_MANIFEST.json, chapter content, Hub APIs, and snippet_verify."""
+        import json
+        import re
+        from tools.safety import pedagogy_lint, snippet_verify
+
+        # 1. Verify rule & architect agent files codify the 4-Pillar Manifest + 5-Step structure
+        rule_03 = (REPO_ROOT / ".agents/rules/03-true-zero-pedagogy-and-continuity.md").read_text(encoding="utf-8")
+        arch_md = (REPO_ROOT / ".agents/agents/knowledgebase_architect.md").read_text(encoding="utf-8")
+        for required_rule_term in (
+            "COURSE_MANIFEST.json",
+            "primary_sources",
+            "prerequisites",
+            "Step 1",
+            "Step 2",
+            "Step 3",
+            "Step 4",
+            "Step 5",
+            "Subgoal",
+            "60-Second Interview Soundbite",
+            "snippet_verify.py",
+        ):
+            self.assertIn(required_rule_term, rule_03, f"Rule 03 missing '{required_rule_term}'")
+            self.assertIn(required_rule_term, arch_md, f"knowledgebase_architect.md missing '{required_rule_term}'")
+
+        # 2. Verify 0 manifest violations and 1-to-1 Manifest -> Chapter -> API mapping for all v2 courses
+        self.assertEqual(pedagogy_lint.audit_v2_course_manifests(), [])
+        for course_id in pedagogy_lint.REQUIRED_V2_SOURCED_COURSES:
+            manifest_path = REPO_ROOT / "knowledgebase" / course_id / "COURSE_MANIFEST.json"
+            self.assertTrue(manifest_path.exists())
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            project_name = manifest["projectThread"].split()[0].strip()  # e.g. "AeroLedger"
+
+            comp_res = hub_server.dispatch_request("GET", f"/api/kb/course-compendium?course={course_id}")
+            self.assertEqual(comp_res["status_code"], 200)
+            comp_by_slug = {c["slug"]: c for c in comp_res["data"]["chapters"]}
+
+            course_md_paths = [
+                REPO_ROOT / "knowledgebase" / course_id / m_ch["file"] for m_ch in manifest["chapters"]
+            ]
+            snip_stats, snip_errs = snippet_verify.verify_all_snippets(course_md_paths)
+            self.assertEqual(snip_errs, [], f"Snippet verification failed in {course_id}: {snip_errs}")
+            self.assertGreaterEqual(snip_stats["py_stdlib_executed"], len(manifest["chapters"]) * 2)
+            self.assertGreaterEqual(snip_stats["java_stdlib_compiled"], len(manifest["chapters"]) * 2)
+
+            for m_ch in manifest["chapters"]:
+                slug = m_ch["slug"]
+                md_path = REPO_ROOT / "knowledgebase" / course_id / m_ch["file"]
+                self.assertEqual(pedagogy_lint.audit_true_zero_chapter(md_path), [])
+
+                # Verify Hub API response matchesCOURSE_MANIFEST.json 1-to-1
+                ch_res = hub_server.dispatch_request("GET", f"/api/kb/chapter?slug={slug}")
+                self.assertEqual(ch_res["status_code"], 200)
+                api_ch = ch_res["data"]
+                self.assertEqual(api_ch["chapterNumber"], m_ch["chapterNumber"])
+                self.assertEqual(api_ch["prerequisites"], m_ch["prerequisites"])
+                self.assertGreaterEqual(len(api_ch["primarySources"]), 2)
+                self.assertIn(project_name, api_ch["markdownBody"], f"{slug} missing project thread '{project_name}'")
+
+                # Verify 5 extracted steps match the 5-Step Hiring-Grade Mastery Chain
+                steps = api_ch["steps"]
+                self.assertEqual(len(steps), 5)
+                self.assertIn("```bash", steps[1]["markdown"])
+                self.assertIn("Subgoal", steps[1]["markdown"])
+                self.assertIn("contrast", steps[2]["markdown"])
+                self.assertIn("🏢", steps[3]["markdown"])
+                self.assertIn("[!WARNING]", steps[3]["markdown"])
+                self.assertIn("🎙️", steps[4]["markdown"])
+                for src_url in api_ch["primarySources"]:
+                    self.assertIn(src_url, steps[4]["markdown"], f"{slug} Step 5 missing primarySource {src_url}")
+
+                # Verify every manifest competency maps to actual content in the chapter body
+                lower_body = api_ch["markdownBody"].lower()
+                for comp in m_ch["competencies"]:
+                    tokens = [
+                        t.lower()
+                        for t in re.findall(r"[A-Za-z0-9_]{3,}", comp)
+                        if t.lower() not in {"and", "the", "for", "with", "from", "into", "why", "how", "via"}
+                    ]
+                    self.assertTrue(
+                        any(tok in lower_body for tok in tokens),
+                        f"Competency '{comp}' not found in {slug} body",
+                    )
+
+                # Verify Compendium entry preserves identical 5-step + primarySources parity
+                self.assertEqual(len(comp_by_slug[slug]["steps"]), 5)
+                self.assertEqual(comp_by_slug[slug]["primarySources"], api_ch["primarySources"])
 
 
 if __name__ == "__main__":
