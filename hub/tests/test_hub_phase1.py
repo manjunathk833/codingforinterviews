@@ -631,8 +631,8 @@ class TestHubAndArchitectureCI(unittest.TestCase):
         self.assertEqual(courses_res["status_code"], 200)
         payload = courses_res["data"]
         self.assertEqual(payload["sectionTitle"], "Textbook Courses")
-        self.assertEqual(payload["totalCourses"], 9)
-        self.assertEqual(payload["totalPublishedChapters"], 84)
+        self.assertEqual(payload["totalCourses"], 12)
+        self.assertEqual(payload["totalPublishedChapters"], 114)
 
         expected_order = [
             ("01-zero-to-staff-sdet", 12),
@@ -644,6 +644,9 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             ("07-distributed-system-design", 5),
             ("08-core-cs-internals", 5),
             ("09-sql-and-data-engineering", 10),
+            ("10-docker-cicd-and-cloud-infra", 10),
+            ("11-performance-chaos-and-sre", 10),
+            ("12-app-api-and-ai-security", 10),
         ]
         actual_order = [(c["courseId"], c["publishedChapters"]) for c in payload["courses"]]
         self.assertEqual(actual_order, expected_order)
@@ -717,14 +720,20 @@ class TestHubAndArchitectureCI(unittest.TestCase):
         self.assertEqual(wt_search["status_code"], 200)
         self.assertGreaterEqual(wt_search["data"]["count"], 1)
 
-        # Enforce Rule 03 Pedagogy, COURSE_MANIFEST.json & Continuity Linter Gate across ALL 84/84 chapters
+        # Enforce Rule 03 Pedagogy, COURSE_MANIFEST.json & Continuity Linter Gate across ALL 114/114 chapters
         from tools.safety import pedagogy_lint
         self.assertEqual(pedagogy_lint.audit_rule_budget(), [])
-        self.assertEqual(len(pedagogy_lint.REQUIRED_TRUE_ZERO_RELPATHS), 84)
-        self.assertIn("09-sql-and-data-engineering", pedagogy_lint.REQUIRED_V2_SOURCED_COURSES)
+        self.assertEqual(len(pedagogy_lint.REQUIRED_TRUE_ZERO_RELPATHS), 114)
+        for v2_id in (
+            "09-sql-and-data-engineering",
+            "10-docker-cicd-and-cloud-infra",
+            "11-performance-chaos-and-sre",
+            "12-app-api-and-ai-security",
+        ):
+            self.assertIn(v2_id, pedagogy_lint.REQUIRED_V2_SOURCED_COURSES)
         upgraded_count, total_count, violations = pedagogy_lint.audit_all_upgraded_chapters()
-        self.assertEqual(upgraded_count, 84)
-        self.assertEqual(total_count, 84)
+        self.assertEqual(upgraded_count, 114)
+        self.assertEqual(total_count, 114)
         self.assertEqual(violations, {})
 
         # Verify POST /api/kb/walkthrough-audio (stock-analysis TTS + section duration normalization + visual_cues)
@@ -773,7 +782,7 @@ class TestHubAndArchitectureCI(unittest.TestCase):
                 pass
 
     def test_20_course_compendium_single_page_revise_mode(self):
-        """Verify Course-Level Single-Page Master Compendium ('Revise / In-Single-Page' Mode) API & UI across all 9 courses (84/84 chapters, 4-Step v1 + 5-Step v2)."""
+        """Verify Course-Level Single-Page Master Compendium ('Revise / In-Single-Page' Mode) API & UI across all 12 courses (114/114 chapters, 4-Step v1 + 5-Step v2)."""
         expected_courses = (
             ("01-zero-to-staff-sdet", 12, 4),
             ("02-building-testing-frameworks", 10, 4),
@@ -784,6 +793,9 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             ("07-distributed-system-design", 5, 4),
             ("08-core-cs-internals", 5, 4),
             ("09-sql-and-data-engineering", 10, 5),
+            ("10-docker-cicd-and-cloud-infra", 10, 5),
+            ("11-performance-chaos-and-sre", 10, 5),
+            ("12-app-api-and-ai-security", 10, 5),
         )
         total_verified_chapters = 0
         for course_id, exp_chapters, exp_steps in expected_courses:
@@ -814,7 +826,7 @@ class TestHubAndArchitectureCI(unittest.TestCase):
                 self.assertNotIn("walkthrough", ch)
                 total_verified_chapters += 1
 
-        self.assertEqual(total_verified_chapters, 84)
+        self.assertEqual(total_verified_chapters, 114)
 
         missing = hub_server.dispatch_request("GET", "/api/kb/course-compendium?course=does-not-exist")
         self.assertEqual(missing["status_code"], 404)

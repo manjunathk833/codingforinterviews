@@ -1,0 +1,167 @@
+{
+  "courseId": "11-performance-chaos-and-sre",
+  "version": "2.0",
+  "title": "11. Performance, Load, Chaos & Reliability Engineering",
+  "projectThread": "AeroPulse (v0.1 -> v1.0): Evolving AeroCart's reliability harness from a naive single-loop latency ping into an open-loop HdrHistogram load generator, HikariCP/JVM flamegraph profiler, Toxiproxy chaos fault injector, and Google SRE multi-window burn-rate SLO gate.",
+  "officialSources": [
+    {
+      "name": "Grafana k6 Official Documentation (Executors, Arrival Rate, Thresholds & Scenarios)",
+      "url": "https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/"
+    },
+    {
+      "name": "Locust Official Documentation (Distributed Python Load Generation)",
+      "url": "https://docs.locust.io/en/stable/writing-a-locustfile.html"
+    },
+    {
+      "name": "Google Site Reliability Engineering (SRE) Book & Workbook — Alerting on SLOs",
+      "url": "https://sre.google/workbook/alerting-on-slos/"
+    },
+    {
+      "name": "HikariCP Official Concurrency & Connection Pool Sizing Guide",
+      "url": "https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing"
+    }
+  ],
+  "canonicalReferences": [
+    {
+      "title": "Systems Performance: Enterprise and the Cloud (2nd Edition)",
+      "author": "Brendan Gregg",
+      "url": "https://www.brendangregg.com/systems-performance-2nd-edition-book.html"
+    },
+    {
+      "title": "How NOT to Measure Latency (Coordinated Omission & HdrHistogram)",
+      "author": "Gil Tene",
+      "url": "http://hdrhistogram.org/"
+    }
+  ],
+  "bigTechCaseStudies": [
+    {
+      "org": "Netflix Chaos Engineering (ChAP & Chaos Monkey)",
+      "topic": "Automated Fault Injection in Production & Steady-State Hypothesis Verification",
+      "url": "https://netflixtechblog.com/"
+    },
+    {
+      "org": "Shopify & Stripe Resilience Engineering",
+      "topic": "Deterministic TCP Fault Injection with Toxiproxy, Load Shedding & Priority Queues",
+      "url": "https://github.com/Shopify/toxiproxy"
+    }
+  ],
+  "chapters": [
+    {
+      "chapterNumber": 1,
+      "slug": "perf-01-day0-littles-law-percentiles-and-load-taxonomy",
+      "file": "01-day0-littles-law-percentiles-and-load-taxonomy.md",
+      "prerequisites": [],
+      "competencies": [
+        "Why arithmetic average latency hides tail-latency outages vs p50, p95, p99, and p99.9",
+        "Little's Law (L = lambda * W) relating arrival rate, response latency, and in-flight concurrency",
+        "Workload taxonomy: Smoke, Baseline Load, Stress/Breakpoint, Spike, and 24-Hour Soak testing"
+      ]
+    },
+    {
+      "chapterNumber": 2,
+      "slug": "perf-02-coordinated-omission-and-open-vs-closed-loops",
+      "file": "02-coordinated-omission-and-open-vs-closed-loops.md",
+      "prerequisites": ["perf-01-day0-littles-law-percentiles-and-load-taxonomy"],
+      "competencies": [
+        "Gil Tene's Coordinated Omission problem in closed-loop Virtual User load generators",
+        "Open-loop constant-arrival-rate scheduling vs closed-loop VU iteration pacing",
+        "HdrHistogram log-linear bucket quantization and arrival-timestamp latency correction"
+      ]
+    },
+    {
+      "chapterNumber": 3,
+      "slug": "perf-03-k6-and-locust-distributed-load-harnesses",
+      "file": "03-k6-and-locust-distributed-load-harnesses.md",
+      "prerequisites": ["perf-02-coordinated-omission-and-open-vs-closed-loops"],
+      "competencies": [
+        "Grafana k6 ramping-arrival-rate executors, check assertions, and fail-fast CI thresholds",
+        "Distributed Python Locust master-worker gevent coroutines and custom request event hooks",
+        "Preventing load-generator CPU/ephemeral-port exhaustion from skewing client-side telemetry"
+      ]
+    },
+    {
+      "chapterNumber": 4,
+      "slug": "perf-04-connection-pools-hikaricp-and-thread-starvation",
+      "file": "04-connection-pools-hikaricp-and-thread-starvation.md",
+      "prerequisites": ["perf-01-day0-littles-law-percentiles-and-load-taxonomy"],
+      "competencies": [
+        "PostgreSQL & HikariCP pool sizing formula: connections = (core_count * 2) + effective_spindle_count",
+        "Why oversized 500-connection pools degrade throughput via OS context switches and LWLock contention",
+        "Holding DB connections across slow external HTTP calls and connectionAcquisitionTimeoutMs tuning"
+      ]
+    },
+    {
+      "chapterNumber": 5,
+      "slug": "perf-05-cpu-memory-profiling-flamegraphs-and-gc-pauses",
+      "file": "05-cpu-memory-profiling-flamegraphs-and-gc-pauses.md",
+      "prerequisites": ["perf-04-connection-pools-hikaricp-and-thread-starvation"],
+      "competencies": [
+        "Reading Brendan Gregg Flamegraphs: x-axis alphabetical sample width vs y-axis stack depth",
+        "JVM G1GC / ZGC Stop-The-World safepoint pauses, allocation rate, and humongous allocations",
+        "Python GIL contention and async event-loop blocking detection under concurrent load"
+      ]
+    },
+    {
+      "chapterNumber": 6,
+      "slug": "perf-06-soak-testing-memory-leaks-and-fd-exhaustion",
+      "file": "06-soak-testing-memory-leaks-and-fd-exhaustion.md",
+      "prerequisites": ["perf-05-cpu-memory-profiling-flamegraphs-and-gc-pauses"],
+      "competencies": [
+        "Distinguishing healthy GC sawtooth memory oscillations from monotonic post-GC floor growth",
+        "Least-squares linear regression slope (MB/hour) leak gates in accelerated soak tests",
+        "Socket file descriptor (EMFILE) and TIME_WAIT ephemeral port exhaustion detection"
+      ]
+    },
+    {
+      "chapterNumber": 7,
+      "slug": "perf-07-chaos-engineering-scientific-method-and-toxiproxy",
+      "file": "07-chaos-engineering-scientific-method-and-toxiproxy.md",
+      "prerequisites": ["perf-03-k6-and-locust-distributed-load-harnesses"],
+      "competencies": [
+        "Chaos Engineering scientific method: steady-state hypothesis, fault injection, and blast-radius bounds",
+        "Deterministic TCP proxy fault injection with Shopify Toxiproxy (latency, jitter, reset_peer, bandwidth)",
+        "Verifying strict client connect/read deadlines when dependencies hang without closing sockets"
+      ]
+    },
+    {
+      "chapterNumber": 8,
+      "slug": "perf-08-resilience-patterns-circuit-breakers-bulkheads-load-shedding",
+      "file": "08-resilience-patterns-circuit-breakers-bulkheads-load-shedding.md",
+      "prerequisites": [
+        "perf-04-connection-pools-hikaricp-and-thread-starvation",
+        "perf-07-chaos-engineering-scientific-method-and-toxiproxy"
+      ],
+      "competencies": [
+        "Circuit Breaker state machine (CLOSED -> OPEN -> HALF_OPEN) and graceful degradation fallbacks",
+        "Bulkhead thread/semaphore isolation preventing a slow dependency from sinking core checkout",
+        "LIFO queue admission control and priority load shedding during extreme traffic spikes"
+      ]
+    },
+    {
+      "chapterNumber": 9,
+      "slug": "perf-09-sli-slo-error-budgets-and-burn-rate-alerts",
+      "file": "09-sli-slo-error-budgets-and-burn-rate-alerts.md",
+      "prerequisites": ["perf-02-coordinated-omission-and-open-vs-closed-loops"],
+      "competencies": [
+        "Defining user-centric SLIs, SLO targets (99.9% = 43.2m/30d budget), and contractual SLAs",
+        "Error-budget burn rate math (1x steady burn vs 14.4x 2%-budget-in-1-hour critical burn)",
+        "Google SRE multi-window multi-burn-rate alerting (1h + 5m @ 14.4x and 6h + 30m @ 6x)"
+      ]
+    },
+    {
+      "chapterNumber": 10,
+      "slug": "perf-10-continuous-performance-ci-gates-and-changepoints",
+      "file": "10-continuous-performance-ci-gates-and-changepoints.md",
+      "prerequisites": [
+        "perf-06-soak-testing-memory-leaks-and-fd-exhaustion",
+        "perf-08-resilience-patterns-circuit-breakers-bulkheads-load-shedding",
+        "perf-09-sli-slo-error-budgets-and-burn-rate-alerts"
+      ],
+      "competencies": [
+        "Why noisy shared CI runners fail naive single-sample latency assertions",
+        "Mann-Whitney U / Welch t-test baseline vs candidate latency distribution comparison",
+        "Automated pre-release AeroPulse v1.0 performance, soak, and chaos readiness gate"
+      ]
+    }
+  ]
+}

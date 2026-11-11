@@ -336,12 +336,18 @@ def cmd_ci():
             "sys.exit(r1 or r2)"
         ]),
         ("🧩 Stage 3/5: Completed DSA Solutions (Java 17 & Python 3)", [sys.executable, str(REPO_ROOT / "tools/runner.py"), "test-completed"]),
-        ("🏗️ Stage 4/5: SDET System Design, Concurrency & SQL Data-QA Labs", [
+        ("🏗️ Stage 4/5: SDET System Design, Concurrency, SQL, Infra, Perf & Security Labs", [
             sys.executable, "-c",
             "import subprocess, sys; "
-            "r1 = subprocess.run([sys.executable, 'frameworks/sdet-system-design/01-distributed-concurrency-isolation/reference_solution.py']).returncode; "
-            "r2 = subprocess.run([sys.executable, 'frameworks/data-validation/01-sql-reconciliation-and-isolation/reference_solution.py']).returncode; "
-            "sys.exit(r1 or r2)"
+            "labs = ["
+            "'frameworks/sdet-system-design/01-distributed-concurrency-isolation/reference_solution.py',"
+            "'frameworks/data-validation/01-sql-reconciliation-and-isolation/reference_solution.py',"
+            "'frameworks/cicd-infra/01-container-and-sharding-orchestrator/reference_solution.py',"
+            "'frameworks/performance-sre/01-load-coordinated-omission-and-chaos/reference_solution.py',"
+            "'frameworks/security-testing/01-bola-jwt-and-prompt-shield/reference_solution.py'"
+            "]; "
+            "codes = [subprocess.run([sys.executable, p]).returncode for p in labs]; "
+            "sys.exit(next((c for c in codes if c != 0), 0))"
         ]),
         ("🌐 Stage 5/5: Learning Hub, Visualizer & AeroCart Suite CI", [sys.executable, str(REPO_ROOT / "hub/tests/test_hub_phase1.py")]),
     ]

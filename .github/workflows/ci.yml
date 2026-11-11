@@ -81,6 +81,9 @@ jobs:
           python3 frameworks/sdet-system-design/01-distributed-concurrency-isolation/naive_baseline.py
           python3 frameworks/sdet-system-design/01-distributed-concurrency-isolation/reference_solution.py
           python3 frameworks/data-validation/01-sql-reconciliation-and-isolation/reference_solution.py
+          python3 frameworks/cicd-infra/01-container-and-sharding-orchestrator/reference_solution.py
+          python3 frameworks/performance-sre/01-load-coordinated-omission-and-chaos/reference_solution.py
+          python3 frameworks/security-testing/01-bola-jwt-and-prompt-shield/reference_solution.py
           mkdir -p .build/ci-java/01-concurrency
           javac -d .build/ci-java/01-concurrency frameworks/sdet-system-design/01-distributed-concurrency-isolation/Solution.java
           java -ea -cp .build/ci-java/01-concurrency Solution

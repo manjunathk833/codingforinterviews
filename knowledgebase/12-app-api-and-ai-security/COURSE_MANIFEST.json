@@ -1,0 +1,167 @@
+{
+  "courseId": "12-app-api-and-ai-security",
+  "version": "2.0",
+  "title": "12. Application, API & AI Security Testing",
+  "projectThread": "AeroShield (v0.1 -> v1.0): Hardening AeroCart's API, checkout ledger, and AI support agent from an unguarded prototype into a Zero-Trust platform with BOLA/IDOR tenant enforcement, RFC 8725 JWT validation, SSRF socket guards, Stripe HMAC webhooks, OWASP LLM Top 10 prompt shields, and SARIF CI gates.",
+  "officialSources": [
+    {
+      "name": "OWASP API Security Top 10 (2023 Official Specification)",
+      "url": "https://owasp.org/API-Security/editions/2023/en/0x11-t10/"
+    },
+    {
+      "name": "IETF RFC 8725 — JSON Web Token (JWT) Best Current Practices",
+      "url": "https://datatracker.ietf.org/doc/html/rfc8725"
+    },
+    {
+      "name": "OWASP Top 10 for Large Language Model Applications (2025 Official Guide)",
+      "url": "https://genai.owasp.org/llm-top-10/"
+    },
+    {
+      "name": "OWASP Cheat Sheet Series (SQL Injection, XSS, SSRF & REST Security)",
+      "url": "https://cheatsheetseries.owasp.org/"
+    }
+  ],
+  "canonicalReferences": [
+    {
+      "title": "The Web Application Hacker's Handbook & PortSwigger Web Security Academy",
+      "author": "Dafydd Stuttard & Marcus Pinto",
+      "url": "https://portswigger.net/web-security"
+    },
+    {
+      "title": "NIST SP 800-207 Zero Trust Architecture & OASIS SARIF v2.1.0 Standard",
+      "author": "NIST / OASIS",
+      "url": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html"
+    }
+  ],
+  "bigTechCaseStudies": [
+    {
+      "org": "Stripe Security Engineering",
+      "topic": "PCI-DSS Tokenization, Idempotent Payment Intents & Timestamped HMAC Webhook Signatures",
+      "url": "https://docs.stripe.com/webhooks/signatures"
+    },
+    {
+      "org": "Netflix, AWS & Anthropic Security Engineering",
+      "topic": "IMDSv2 Hop-Limit SSRF Defense, Automated AuthZ Matrix Testing & Indirect Prompt-Injection Guardrails",
+      "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html"
+    }
+  ],
+  "chapters": [
+    {
+      "chapterNumber": 1,
+      "slug": "sec-01-day0-threat-modeling-stride-and-proxy-interception",
+      "file": "01-day0-threat-modeling-stride-and-proxy-interception.md",
+      "prerequisites": [],
+      "competencies": [
+        "Why client-side UI validation provides zero security boundary against direct HTTP tampering",
+        "STRIDE threat modeling (Spoofing, Tampering, Repudiation, Info Disclosure, DoS, Elevation of Privilege)",
+        "Intercepting and replaying HTTP/HTTPS traffic via mitmproxy, Burp Suite, and Charles Proxy"
+      ]
+    },
+    {
+      "chapterNumber": 2,
+      "slug": "sec-02-owasp-api-top10-bola-bfla-and-mass-assignment",
+      "file": "02-owasp-api-top10-bola-bfla-and-mass-assignment.md",
+      "prerequisites": ["sec-01-day0-threat-modeling-stride-and-proxy-interception"],
+      "competencies": [
+        "OWASP API1:2023 Broken Object Level Authorization (BOLA / IDOR) composite tenant key enforcement",
+        "OWASP API3:2023 Broken Object Property Level Authorization (Mass Assignment & Excessive Data Exposure)",
+        "OWASP API5:2023 Broken Function Level Authorization (BFLA) persona-by-endpoint matrix testing"
+      ]
+    },
+    {
+      "chapterNumber": 3,
+      "slug": "sec-03-jwt-oauth2-vulnerabilities-and-rfc8725-hardening",
+      "file": "03-jwt-oauth2-vulnerabilities-and-rfc8725-hardening.md",
+      "prerequisites": ["sec-02-owasp-api-top10-bola-bfla-and-mass-assignment"],
+      "competencies": [
+        "RFC 8725 JWT attacks: alg:none signature stripping and RS256-to-HS256 public-key confusion",
+        "JWKS kid header injection/path-traversal and strict iss, aud, exp, and nbf claim validation",
+        "OAuth 2.1 PKCE S256 code_verifier binding and refresh-token rotation reuse detection"
+      ]
+    },
+    {
+      "chapterNumber": 4,
+      "slug": "sec-04-injection-mastery-sqli-nosqli-command-and-ssti",
+      "file": "04-injection-mastery-sqli-nosqli-command-and-ssti.md",
+      "prerequisites": ["sec-01-day0-threat-modeling-stride-and-proxy-interception"],
+      "competencies": [
+        "Parameterized SQL queries vs dynamic ORDER BY / identifier allowlisting when placeholders cannot bind column names",
+        "OS Command Injection via shell=True vs execve argument-array subprocess execution",
+        "NoSQL operator injection ($ne, $gt) and Server-Side Template Injection (SSTI) sandboxing"
+      ]
+    },
+    {
+      "chapterNumber": 5,
+      "slug": "sec-05-browser-security-xss-csrf-cors-and-csp",
+      "file": "05-browser-security-xss-csrf-cors-and-csp.md",
+      "prerequisites": ["sec-01-day0-threat-modeling-stride-and-proxy-interception"],
+      "competencies": [
+        "Reflected, Stored, and DOM-based XSS prevention via context-aware encoding and nonce-based Content-Security-Policy (CSP)",
+        "CSRF mitigation using SameSite=Lax/Strict, HttpOnly, Secure cookies and anti-CSRF tokens",
+        "CORS misconfigurations: why echoing arbitrary Origin headers with Access-Control-Allow-Credentials: true leaks accounts"
+      ]
+    },
+    {
+      "chapterNumber": 6,
+      "slug": "sec-06-ssrf-cloud-metadata-imdsv2-and-webhook-hmac",
+      "file": "06-ssrf-cloud-metadata-imdsv2-and-webhook-hmac.md",
+      "prerequisites": ["sec-02-owasp-api-top10-bola-bfla-and-mass-assignment"],
+      "competencies": [
+        "OWASP API7:2023 SSRF exploitation against cloud metadata (169.254.169.254) and internal RFC 1918 services",
+        "Defeating DNS rebinding and octal/decimal IP bypasses via pre-connect resolved-IP socket validation and AWS IMDSv2 hop-limit=1",
+        "Stripe-style timestamped HMAC-SHA256 webhook verification with constant-time compare_digest and replay windows"
+      ]
+    },
+    {
+      "chapterNumber": 7,
+      "slug": "sec-07-payment-fintech-security-pci-race-and-idempotency",
+      "file": "07-payment-fintech-security-pci-race-and-idempotency.md",
+      "prerequisites": [
+        "sec-02-owasp-api-top10-bola-bfla-and-mass-assignment",
+        "sec-06-ssrf-cloud-metadata-imdsv2-and-webhook-hmac"
+      ],
+      "competencies": [
+        "Server-side price calculation and signed cart quotes preventing negative-quantity and integer-overflow tampering",
+        "Single-redemption coupon TOCTOU race condition testing and atomic SQL state transitions",
+        "PCI-DSS PAN tokenization and strict log-redaction assertions ensuring zero CVV/PAN leakage"
+      ]
+    },
+    {
+      "chapterNumber": 8,
+      "slug": "sec-08-owasp-llm-top10-prompt-injection-and-agency-sandboxes",
+      "file": "08-owasp-llm-top10-prompt-injection-and-agency-sandboxes.md",
+      "prerequisites": ["sec-04-injection-mastery-sqli-nosqli-command-and-ssti"],
+      "competencies": [
+        "OWASP LLM01 Direct vs Indirect Prompt Injection via poisoned RAG documents and customer tickets",
+        "OWASP LLM06 Excessive Agency defense: deterministic policy guards, least-privilege MCP tools, and human-in-the-loop gates",
+        "OWASP LLM02 & LLM05: PII/secret output redaction and sanitizing LLM outputs before SQL/HTML/shell sinks"
+      ]
+    },
+    {
+      "chapterNumber": 9,
+      "slug": "sec-09-supply-chain-security-sca-sbom-and-secret-scanning",
+      "file": "09-supply-chain-security-sca-sbom-and-secret-scanning.md",
+      "prerequisites": ["sec-04-injection-mastery-sqli-nosqli-command-and-ssti"],
+      "competencies": [
+        "Software Composition Analysis (SCA), lockfile SHA-256 integrity pinning, and CycloneDX/SPDX SBOM generation",
+        "Defending against typosquatting and dependency confusion attacks in internal vs public package registries",
+        "Pre-commit and CI secret detection combining regex patterns with Shannon entropy scoring"
+      ]
+    },
+    {
+      "chapterNumber": 10,
+      "slug": "sec-10-devsecops-ci-gates-sast-dast-and-sarif-triage",
+      "file": "10-devsecops-ci-gates-sast-dast-and-sarif-triage.md",
+      "prerequisites": [
+        "sec-07-payment-fintech-security-pci-race-and-idempotency",
+        "sec-08-owasp-llm-top10-prompt-injection-and-agency-sandboxes",
+        "sec-09-supply-chain-security-sca-sbom-and-secret-scanning"
+      ],
+      "competencies": [
+        "Complementary DevSecOps triad: AST-based SAST (Semgrep), OpenAPI DAST (OWASP ZAP), and container/dependency SCA (Trivy)",
+        "OASIS SARIF v2.1.0 schema normalization, fingerprint baseline suppression, and zero-High/Critical PR merge gates",
+        "End-to-end AeroShield v1.0 automated security regression suite across API, Ledger, and AI Agent surfaces"
+      ]
+    }
+  ]
+}

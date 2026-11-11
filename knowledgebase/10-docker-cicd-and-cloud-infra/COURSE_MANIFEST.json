@@ -1,0 +1,169 @@
+{
+  "courseId": "10-docker-cicd-and-cloud-infra",
+  "version": "2.0",
+  "title": "10. Docker, Kubernetes, CI/CD & Quality Infrastructure",
+  "projectThread": "AeroPipe (v0.1 -> v1.0): Evolving AeroCart's build and test execution from a Works-On-My-Machine laptop script into a multi-stage BuildKit container image, Testcontainers hermetic harness, Kubernetes probe-guarded deployment, and 16-shard LPT matrix pipeline with ephemeral PR environments.",
+  "officialSources": [
+    {
+      "name": "Docker BuildKit & Multi-Stage Dockerfile Official Reference",
+      "url": "https://docs.docker.com/build/building/multi-stage/"
+    },
+    {
+      "name": "Testcontainers Official Documentation (Java & Python Lifecycle & Ryuk)",
+      "url": "https://testcontainers.com/guides/introducing-testcontainers/"
+    },
+    {
+      "name": "Kubernetes Official Documentation (Pods, Probes & Container Resource Management)",
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/"
+    },
+    {
+      "name": "GitHub Actions Official Documentation (Matrix Workflows & Dependency Caching)",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/running-variations-of-jobs-in-a-workflow"
+    }
+  ],
+  "canonicalReferences": [
+    {
+      "title": "Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation",
+      "author": "Jez Humble & David Farley",
+      "url": "https://continuousdelivery.com/"
+    },
+    {
+      "title": "Site Reliability Engineering & Software Engineering at Google (Testing & CI Infrastructure)",
+      "author": "Betsy Beyer, Titus Winters et al.",
+      "url": "https://abseil.io/resources/swe-book"
+    }
+  ],
+  "bigTechCaseStudies": [
+    {
+      "org": "Spotify & AtomicJar Engineering",
+      "topic": "Hermetic Integration Testing with Ephemeral Testcontainers & Ryuk Resource Reaping",
+      "url": "https://testcontainers.com/guides/testing-spring-boot-rest-api-using-testcontainers/"
+    },
+    {
+      "org": "Netflix & Uber Developer Platform Engineering",
+      "topic": "Dynamic CI Matrix Sharding, BuildKit Layer Caching & Ephemeral PR Preview Namespaces",
+      "url": "https://docs.docker.com/build/cache/"
+    }
+  ],
+  "chapters": [
+    {
+      "chapterNumber": 1,
+      "slug": "infra-01-day0-containers-namespaces-cgroups-and-images",
+      "file": "01-day0-containers-namespaces-cgroups-and-images.md",
+      "prerequisites": [],
+      "competencies": [
+        "Linux kernel namespaces (pid, net, mnt) vs hardware hypervisor virtual machines",
+        "Control groups (cgroups v2) CPU quota throttling and memory ceiling enforcement",
+        "OverlayFS content-addressed immutable image layers and copy-on-write container layer"
+      ]
+    },
+    {
+      "chapterNumber": 2,
+      "slug": "infra-02-multistage-dockerfiles-layer-caching-and-buildkit",
+      "file": "02-multistage-dockerfiles-layer-caching-and-buildkit.md",
+      "prerequisites": ["infra-01-day0-containers-namespaces-cgroups-and-images"],
+      "competencies": [
+        "Dockerfile instruction ordering and lockfile-first layer cache invalidation rules",
+        "Multi-stage builds separating heavy compiler/SDK stages from minimal runtime images",
+        "BuildKit cache mounts, .dockerignore hygiene, and non-root USER privilege dropping"
+      ]
+    },
+    {
+      "chapterNumber": 3,
+      "slug": "infra-03-docker-compose-networks-volumes-and-healthcheck-dags",
+      "file": "03-docker-compose-networks-volumes-and-healthcheck-dags.md",
+      "prerequisites": ["infra-02-multistage-dockerfiles-layer-caching-and-buildkit"],
+      "competencies": [
+        "Why depends_on default only waits for container process start rather than port readiness",
+        "Docker Compose healthcheck probes with condition: service_healthy startup DAGs",
+        "Bridge DNS service discovery vs host loopback (127.0.0.1) inside multi-container networks"
+      ]
+    },
+    {
+      "chapterNumber": 4,
+      "slug": "infra-04-testcontainers-ephemeral-deps-and-ryuk-reaper",
+      "file": "04-testcontainers-ephemeral-deps-and-ryuk-reaper.md",
+      "prerequisites": ["infra-03-docker-compose-networks-volumes-and-healthcheck-dags"],
+      "competencies": [
+        "Programmatic Testcontainers lifecycle in Python pytest and Java JUnit 5",
+        "Dynamic random host-port mapping (get_exposed_port / getMappedPort) preventing CI port collisions",
+        "Moby Ryuk reaper sidecar container cleanup after SIGKILL or aborted CI runs"
+      ]
+    },
+    {
+      "chapterNumber": 5,
+      "slug": "infra-05-kubernetes-pods-deployments-services-and-probes",
+      "file": "05-kubernetes-pods-deployments-services-and-probes.md",
+      "prerequisites": ["infra-03-docker-compose-networks-volumes-and-healthcheck-dags"],
+      "competencies": [
+        "Kubernetes Pod, Deployment ReplicaSet, Service ClusterIP, and Ingress routing topology",
+        "Decoupling startupProbe, readinessProbe, and livenessProbe to avoid cascading restart storms",
+        "CPU requests/limits (CFS throttling) vs memory requests/limits scheduling semantics"
+      ]
+    },
+    {
+      "chapterNumber": 6,
+      "slug": "infra-06-kubectl-triage-crashloopbackoff-and-oomkilled-137",
+      "file": "06-kubectl-triage-crashloopbackoff-and-oomkilled-137.md",
+      "prerequisites": ["infra-05-kubernetes-pods-deployments-services-and-probes"],
+      "competencies": [
+        "Incident triage workflow using kubectl describe pod, kubectl logs --previous, and kubectl get events",
+        "Exit code 137 (128 + SIGKILL 9) OOMKilled root-cause analysis and JVM MaxRAMPercentage tuning",
+        "Exit code 143 (SIGTERM) graceful shutdown preStop hooks and terminationGracePeriodSeconds"
+      ]
+    },
+    {
+      "chapterNumber": 7,
+      "slug": "infra-07-dynamic-ci-matrix-sharding-and-bin-packing",
+      "file": "07-dynamic-ci-matrix-sharding-and-bin-packing.md",
+      "prerequisites": ["infra-04-testcontainers-ephemeral-deps-and-ryuk-reaper"],
+      "competencies": [
+        "Why alphabetical or file-count test splitting creates straggler CI shards",
+        "Longest-Processing-Time (LPT) greedy min-heap bin packing using historical JUnit timings",
+        "GitHub Actions dynamic strategy.matrix generation from JSON output"
+      ]
+    },
+    {
+      "chapterNumber": 8,
+      "slug": "infra-08-ci-caching-oci-registries-and-hermetic-runners",
+      "file": "08-ci-caching-oci-registries-and-hermetic-runners.md",
+      "prerequisites": [
+        "infra-02-multistage-dockerfiles-layer-caching-and-buildkit",
+        "infra-07-dynamic-ci-matrix-sharding-and-bin-packing"
+      ],
+      "competencies": [
+        "Content-addressable lockfile cache keys with fallback restore-keys in CI pipelines",
+        "Playwright browser binary caching and remote OCI registry BuildKit layer caching",
+        "Docker-in-Docker (DinD) vs Docker-out-of-Docker socket mounting trade-offs on CI runners"
+      ]
+    },
+    {
+      "chapterNumber": 9,
+      "slug": "infra-09-ephemeral-pr-preview-environments-and-gitops",
+      "file": "09-ephemeral-pr-preview-environments-and-gitops.md",
+      "prerequisites": [
+        "infra-05-kubernetes-pods-deployments-services-and-probes",
+        "infra-07-dynamic-ci-matrix-sharding-and-bin-packing"
+      ],
+      "competencies": [
+        "Per-Pull-Request isolated Kubernetes namespaces (pr-142) vs shared staging bottlenecks",
+        "Helm / Kustomize parameterized manifest rendering and synthetic seed jobs",
+        "Automated TTL garbage collection and PR-close namespace teardown hooks"
+      ]
+    },
+    {
+      "chapterNumber": 10,
+      "slug": "infra-10-deployment-gates-blue-green-canary-and-rollbacks",
+      "file": "10-deployment-gates-blue-green-canary-and-rollbacks.md",
+      "prerequisites": [
+        "infra-06-kubectl-triage-crashloopbackoff-and-oomkilled-137",
+        "infra-09-ephemeral-pr-preview-environments-and-gitops"
+      ],
+      "competencies": [
+        "Merging sharded JUnit XML, Allure, and Playwright blob reports across matrix workers",
+        "Progressive delivery gates: Rolling Update vs Blue-Green vs Progressive Canary traffic shifts",
+        "Automated canary error-rate and latency rollback triggers before 100% production promotion"
+      ]
+    }
+  ]
+}

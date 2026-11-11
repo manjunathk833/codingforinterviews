@@ -34,6 +34,9 @@ KB_ROOT = REPO_ROOT / "knowledgebase"
 # Courses enforcing full v2 4-Pillar COURSE_MANIFEST.json + 5-Step Hiring-Grade Mastery Chain
 REQUIRED_V2_SOURCED_COURSES: tuple[str, ...] = (
     "09-sql-and-data-engineering",
+    "10-docker-cicd-and-cloud-infra",
+    "11-performance-chaos-and-sre",
+    "12-app-api-and-ai-security",
 )
 
 REQUIRED_TRUE_ZERO_RELPATHS: tuple[str, ...] = (
@@ -130,6 +133,39 @@ REQUIRED_TRUE_ZERO_RELPATHS: tuple[str, ...] = (
     "09-sql-and-data-engineering/08-zero-downtime-migrations-jsonb-and-constraints.md",
     "09-sql-and-data-engineering/09-synthetic-test-data-seeding-and-db-isolation.md",
     "09-sql-and-data-engineering/10-event-to-warehouse-reconciliation-and-data-qa.md",
+    # Course 10: Docker, Kubernetes, CI/CD & Quality Infrastructure (10/10 v2 5-Step chapters)
+    "10-docker-cicd-and-cloud-infra/01-day0-containers-namespaces-cgroups-and-images.md",
+    "10-docker-cicd-and-cloud-infra/02-multistage-dockerfiles-layer-caching-and-buildkit.md",
+    "10-docker-cicd-and-cloud-infra/03-docker-compose-networks-volumes-and-healthcheck-dags.md",
+    "10-docker-cicd-and-cloud-infra/04-testcontainers-ephemeral-deps-and-ryuk-reaper.md",
+    "10-docker-cicd-and-cloud-infra/05-kubernetes-pods-deployments-services-and-probes.md",
+    "10-docker-cicd-and-cloud-infra/06-kubectl-triage-crashloopbackoff-and-oomkilled-137.md",
+    "10-docker-cicd-and-cloud-infra/07-dynamic-ci-matrix-sharding-and-bin-packing.md",
+    "10-docker-cicd-and-cloud-infra/08-ci-caching-oci-registries-and-hermetic-runners.md",
+    "10-docker-cicd-and-cloud-infra/09-ephemeral-pr-preview-environments-and-gitops.md",
+    "10-docker-cicd-and-cloud-infra/10-deployment-gates-blue-green-canary-and-rollbacks.md",
+    # Course 11: Performance, Load, Chaos & Reliability Engineering (10/10 v2 5-Step chapters)
+    "11-performance-chaos-and-sre/01-day0-littles-law-percentiles-and-load-taxonomy.md",
+    "11-performance-chaos-and-sre/02-coordinated-omission-and-open-vs-closed-loops.md",
+    "11-performance-chaos-and-sre/03-k6-and-locust-distributed-load-harnesses.md",
+    "11-performance-chaos-and-sre/04-connection-pools-hikaricp-and-thread-starvation.md",
+    "11-performance-chaos-and-sre/05-cpu-memory-profiling-flamegraphs-and-gc-pauses.md",
+    "11-performance-chaos-and-sre/06-soak-testing-memory-leaks-and-fd-exhaustion.md",
+    "11-performance-chaos-and-sre/07-chaos-engineering-scientific-method-and-toxiproxy.md",
+    "11-performance-chaos-and-sre/08-resilience-patterns-circuit-breakers-bulkheads-load-shedding.md",
+    "11-performance-chaos-and-sre/09-sli-slo-error-budgets-and-burn-rate-alerts.md",
+    "11-performance-chaos-and-sre/10-continuous-performance-ci-gates-and-changepoints.md",
+    # Course 12: Application, API & AI Security Testing (10/10 v2 5-Step chapters)
+    "12-app-api-and-ai-security/01-day0-threat-modeling-stride-and-proxy-interception.md",
+    "12-app-api-and-ai-security/02-owasp-api-top10-bola-bfla-and-mass-assignment.md",
+    "12-app-api-and-ai-security/03-jwt-oauth2-vulnerabilities-and-rfc8725-hardening.md",
+    "12-app-api-and-ai-security/04-injection-mastery-sqli-nosqli-command-and-ssti.md",
+    "12-app-api-and-ai-security/05-browser-security-xss-csrf-cors-and-csp.md",
+    "12-app-api-and-ai-security/06-ssrf-cloud-metadata-imdsv2-and-webhook-hmac.md",
+    "12-app-api-and-ai-security/07-payment-fintech-security-pci-race-and-idempotency.md",
+    "12-app-api-and-ai-security/08-owasp-llm-top10-prompt-injection-and-agency-sandboxes.md",
+    "12-app-api-and-ai-security/09-supply-chain-security-sca-sbom-and-secret-scanning.md",
+    "12-app-api-and-ai-security/10-devsecops-ci-gates-sast-dast-and-sarif-triage.md",
 )
 
 
