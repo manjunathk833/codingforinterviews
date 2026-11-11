@@ -230,6 +230,14 @@ import pytest
 from playwright.sync_api import BrowserContext, Page
 
 
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[Any]) -> Generator[None, Any, None]:
+    """conftest.py hook: attaches `rep_setup`, `rep_call`, and `rep_teardown` onto `request.node`."""
+    outcome = yield
+    rep = outcome.get_result()
+    setattr(item, f"rep_{rep.when}", rep)
+
+
 @pytest.fixture(scope="function")
 def traced_page(
     context: BrowserContext, request: pytest.FixtureRequest, tmp_path: pathlib.Path

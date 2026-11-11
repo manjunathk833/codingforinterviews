@@ -241,6 +241,7 @@ Now let's formalize the exact mathematical laws and multi-threaded production bl
 ### Production Blueprint: Token Bucket with `Retry-After` + Bounded Ring Buffer (`SHA-256` Dedup)
 
 ```python
+from __future__ import annotations
 from collections import deque
 import hashlib
 import random

@@ -223,6 +223,7 @@ $$\text{UpToDate}(C, V) \iff (T_C > T_V) \lor (T_C = T_V \land I_C \ge I_V)$$
 ### 3. Production Blueprints (Python 3 & Java 17)
 
 ```python
+from __future__ import annotations
 from dataclasses import dataclass
 
 

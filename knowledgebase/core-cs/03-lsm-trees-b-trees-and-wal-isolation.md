@@ -104,6 +104,7 @@ By never overwriting files in place, sequential diary writes fly at full disk sp
 When `python3 apps/aerocart/server.py` opens a default SQLite file, a single writer locks the entire database file and blocks every reader. Switching to `WAL` mode and using an append-first memory buffer fixes reader-writer blocking in 16 lines:
 
 ```python
+from __future__ import annotations
 import sqlite3
 
 def init_aerocart_wal_db(db_path: str = ":memory:") -> sqlite3.Connection:
@@ -225,6 +226,7 @@ At $b = 10$ bits per key ($1.25\text{ bytes/key}$) and $k = 7$ hashes, $P_{\text
 ### 3. Production Blueprints: Mini LSM-Tree + K-Hash Bloom Filter (Python 3 & Java 17)
 
 ```python
+from __future__ import annotations
 import bisect
 
 

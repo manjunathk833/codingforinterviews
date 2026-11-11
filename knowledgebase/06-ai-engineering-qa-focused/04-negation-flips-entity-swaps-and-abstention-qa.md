@@ -231,6 +231,7 @@ $$\text{Abstention Recall} = \frac{|\{x \in \mathcal{U} : \text{Abstained}(f(x))
 ### Production Blueprint: Citation-Scoped Entity Guard, Polarity Verifier & Abstention Scorer
 
 ```python
+from __future__ import annotations
 from dataclasses import dataclass
 import re
 

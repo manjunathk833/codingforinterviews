@@ -43,15 +43,18 @@ jobs:
         run: |
           chmod +x tools/safety/safety_check.sh
           chmod +x tools/safety/pedagogy_lint.py
+          chmod +x tools/safety/snippet_verify.py
+          chmod +x frameworks/data-validation/01-sql-reconciliation-and-isolation/reference_solution.py
           chmod +x run.sh
           chmod +x tools/runner.py
           chmod +x tools/tracker.py
           chmod +x tools/cycle.py
 
-      - name: "🛡️ Stage 1/4: Pre-Push & Secret Safety Audit"
+      - name: "🛡️ Stage 1/4: Pre-Push, Pedagogy Manifest & Executable Snippet Gate"
         run: |
           ./tools/safety/safety_check.sh
-          ./tools/safety/pedagogy_lint.py --strict
+          ./tools/safety/pedagogy_lint.py --report
+          ./tools/safety/snippet_verify.py
 
       - name: "🧩 Stage 2/4: DSA Solutions & Curriculum Trackers"
         run: |
@@ -77,6 +80,7 @@ jobs:
           done
           python3 frameworks/sdet-system-design/01-distributed-concurrency-isolation/naive_baseline.py
           python3 frameworks/sdet-system-design/01-distributed-concurrency-isolation/reference_solution.py
+          python3 frameworks/data-validation/01-sql-reconciliation-and-isolation/reference_solution.py
           mkdir -p .build/ci-java/01-concurrency
           javac -d .build/ci-java/01-concurrency frameworks/sdet-system-design/01-distributed-concurrency-isolation/Solution.java
           java -ea -cp .build/ci-java/01-concurrency Solution
@@ -100,6 +104,7 @@ jobs:
           curl -fsS http://127.0.0.1:8090/api/visualizers | grep -q '"dsa-group-anagrams"'
           curl -fsS http://127.0.0.1:8090/api/tracks | grep -q '"interactive-textbook"'
           curl -fsS http://127.0.0.1:8090/api/kb/courses | grep -q '"Textbook Courses"'
+          curl -fsS "http://127.0.0.1:8090/api/kb/course-compendium?course=09-sql-and-data-engineering" | grep -q '"09-sql-and-data-engineering"'
           curl -fsS "http://127.0.0.1:8090/api/kb/search?q=LSM-Tree" | grep -q '"cs-03-lsm-trees-b-trees-and-wal-isolation"'
           curl -fsS http://127.0.0.1:8090/api/newsfeed | grep -q '"articles"'
           kill $HUB_PID 2>/dev/null || true

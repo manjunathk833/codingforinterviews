@@ -155,8 +155,10 @@ What happens when an engineer wants to test Alice transferring a flight ticket t
 
 ```python
 # BUG: Both pages are created inside the SAME BrowserContext!
-alice_page = context.new_page()
-bob_page = context.new_page()
+def anti_pattern_shared_context(context):
+    alice_page = context.new_page()
+    bob_page = context.new_page()
+    return alice_page, bob_page
 ```
 
 When Alice logs in on `alice_page`, AeroCart sets a `session_id=alice` cookie inside `context`. Five lines later, when Bob logs in on `bob_page`, AeroCart overwrites that exact same cookie jar with `session_id=bob`! When the test switches back to `alice_page` and clicks **"Transfer Ticket"**, Alice's tab secretly sends Bob's cookie—and the test explodes!

@@ -327,13 +327,26 @@ def cmd_test_all(lang: str):
 def cmd_ci():
     """Execute the full local CI suite mirroring .github/workflows/ci.yml."""
     steps = [
-        ("🛡️ Stage 1/4: Pre-Push & Secret Safety Audit", [str(REPO_ROOT / "tools/safety/safety_check.sh")]),
-        ("🧩 Stage 2/4: Completed DSA Solutions (Java 17 & Python 3)", [sys.executable, str(REPO_ROOT / "tools/runner.py"), "test-completed"]),
-        ("🏗️ Stage 3/4: SDET System Design & Concurrency Katas", [sys.executable, str(REPO_ROOT / "frameworks/sdet-system-design/01-distributed-concurrency-isolation/reference_solution.py")]),
-        ("🌐 Stage 4/4: Learning Hub, Visualizer & AeroCart 10-Suite CI", [sys.executable, str(REPO_ROOT / "hub/tests/test_hub_phase1.py")]),
+        ("🛡️ Stage 1/5: Pre-Push & Secret Safety Audit", [str(REPO_ROOT / "tools/safety/safety_check.sh")]),
+        ("📐 Stage 2/5: Pedagogy, Manifest DAG & Executable Snippet Gate", [
+            sys.executable, "-c",
+            "import subprocess, sys; "
+            "r1 = subprocess.run([sys.executable, 'tools/safety/pedagogy_lint.py']).returncode; "
+            "r2 = subprocess.run([sys.executable, 'tools/safety/snippet_verify.py']).returncode; "
+            "sys.exit(r1 or r2)"
+        ]),
+        ("🧩 Stage 3/5: Completed DSA Solutions (Java 17 & Python 3)", [sys.executable, str(REPO_ROOT / "tools/runner.py"), "test-completed"]),
+        ("🏗️ Stage 4/5: SDET System Design, Concurrency & SQL Data-QA Labs", [
+            sys.executable, "-c",
+            "import subprocess, sys; "
+            "r1 = subprocess.run([sys.executable, 'frameworks/sdet-system-design/01-distributed-concurrency-isolation/reference_solution.py']).returncode; "
+            "r2 = subprocess.run([sys.executable, 'frameworks/data-validation/01-sql-reconciliation-and-isolation/reference_solution.py']).returncode; "
+            "sys.exit(r1 or r2)"
+        ]),
+        ("🌐 Stage 5/5: Learning Hub, Visualizer & AeroCart Suite CI", [sys.executable, str(REPO_ROOT / "hub/tests/test_hub_phase1.py")]),
     ]
     print(f"\n{BOLD}{CYAN}======================================================================{RESET}")
-    print(f"{BOLD}{CYAN}   🚀 EXECUTING FULL LOCAL CI VERIFICATION PIPELINE (4 STAGES){RESET}")
+    print(f"{BOLD}{CYAN}   🚀 EXECUTING FULL LOCAL CI VERIFICATION PIPELINE (5 STAGES){RESET}")
     print(f"{BOLD}{CYAN}======================================================================{RESET}")
     for label, cmd in steps:
         print(f"\n{BOLD}{YELLOW}▶ {label}{RESET}")
@@ -342,7 +355,7 @@ def cmd_ci():
             print(f"\n{RED}{BOLD}✗ CI FAILED at stage: {label}{RESET}")
             sys.exit(res.returncode)
     print(f"\n{BOLD}{GREEN}======================================================================{RESET}")
-    print(f"{BOLD}{GREEN}   ✅ ALL 4 CI STAGES PASSED SUCCESSFULLY! READY FOR RELEASE.{RESET}")
+    print(f"{BOLD}{GREEN}   ✅ ALL 5 CI STAGES PASSED SUCCESSFULLY! READY FOR RELEASE.{RESET}")
     print(f"{BOLD}{GREEN}======================================================================{RESET}\n")
 
 

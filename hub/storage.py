@@ -128,6 +128,18 @@ TEXTBOOK_COURSES_CATALOG: List[Dict[str, Any]] = [
         "pillBg": "#F3F4F6",
         "tagline": "Linux virtual memory, post-GC RSS leak slopes, TCP SYN backlogs, TLS 1.3/HTTP2, B+Trees vs LSM-Trees, SQLite WAL isolation, CAS atomics & epoll/cgroups.",
     },
+    {
+        "courseId": "09-sql-and-data-engineering",
+        "priorityRank": 9,
+        "title": "09. SQL, PostgreSQL & Data Validation Engineering",
+        "shortTitle": "SQL, Postgres & Data QA",
+        "levelSpan": "Absolute Zero → Staff Data & Ledger QA",
+        "plannedModules": 3,
+        "plannedChapters": 10,
+        "accentColor": "#0F766E",
+        "pillBg": "#CCFBF1",
+        "tagline": "AeroLedger (v0.1→v1.0): 3VL NULL safety, 1:N join fan-out, window dedup/LAG, B+Tree sargability, EXPLAIN (ANALYZE, BUFFERS), MVCC FOR UPDATE SKIP LOCKED, zero-downtime migrations & Stripe double-entry ledgers.",
+    },
 ]
 
 COURSE_BY_ID: Dict[str, Dict[str, Any]] = {c["courseId"]: c for c in TEXTBOOK_COURSES_CATALOG}
@@ -144,6 +156,7 @@ FOLDER_TO_COURSE_ID: Dict[str, str] = {
     "system-design": "07-distributed-system-design",
     "08-core-cs-internals": "08-core-cs-internals",
     "core-cs": "08-core-cs-internals",
+    "09-sql-and-data-engineering": "09-sql-and-data-engineering",
 }
 
 TRACK_DEFINITIONS: List[Dict[str, Any]] = [
@@ -327,6 +340,17 @@ WORKBENCH_CATALOG: List[Dict[str, Any]] = [
         "invariant": "Balance K parallel CI shards in O(N log K) via LPT min-heap bin packing and compute safe reverse-AST test impact closures.",
         "relatedChapter": "sdet-07-ci-sharding-and-bin-packing",
     },
+    {
+        "id": "wb-sql-data-reconciliation",
+        "title": "10. AeroLedger SQL Grain, Seat-12A Locking & Double-Entry Reconciliation",
+        "category": "SQL & Data Validation",
+        "stack": "Python 3 sqlite3 WAL & Java 17 JDBC",
+        "folderPath": "frameworks/data-validation/01-sql-reconciliation-and-isolation",
+        "verifyCmd": [sys.executable, "frameworks/data-validation/01-sql-reconciliation-and-isolation/reference_solution.py"],
+        "cliDisplay": "python3 frameworks/data-validation/01-sql-reconciliation-and-isolation/reference_solution.py",
+        "invariant": "Prevent 1:N join fan-out, deduplicate webhooks with ROW_NUMBER(), enforce covering B-Tree plans, serialize 16-thread Seat-12A claims, and assert SUM(debits) == SUM(credits).",
+        "relatedChapter": "sql-10-event-to-warehouse-reconciliation-and-data-qa",
+    },
 ]
 
 
@@ -406,16 +430,17 @@ def split_markdown_into_steps(markdown_body: str) -> List[Dict[str, Any]]:
             chunk = leading + "\n\n" + chunk
         raw_sections.append((m.group(1).strip(), chunk))
 
-    # Consolidate into at most 4 predictable progressive steps
-    if len(raw_sections) > 4:
-        merged_tail = "\n\n".join(ch for _, ch in raw_sections[3:])
-        raw_sections = raw_sections[:3] + [(raw_sections[3][0], merged_tail)]
+    # Consolidate into at most 5 predictable progressive steps (4-step v1 or 5-step Hiring-Grade v2)
+    if len(raw_sections) > 5:
+        merged_tail = "\n\n".join(ch for _, ch in raw_sections[4:])
+        raw_sections = raw_sections[:4] + [(raw_sections[4][0], merged_tail)]
 
     default_short = [
         "🌱 1. Plain-English Story",
-        "🔨 2. First Lines of Code",
-        "⚡ 3. Real-World & Sim",
-        "🚀 4. Staff Deep-Dive",
+        "🔨 2. Starter & CLI",
+        "🛠️ 3. Practitioner & Sim",
+        "🏢 4. Big Tech & Blueprint",
+        "📋 5. Cheat-Sheet & Pitch",
     ]
     steps_out: List[Dict[str, Any]] = []
     for idx, (heading, chunk) in enumerate(raw_sections):
@@ -426,11 +451,11 @@ def split_markdown_into_steps(markdown_body: str) -> List[Dict[str, Any]]:
         clean_short = re.sub(r"^(?:Part\s+[IVXLC]+|\d+\.)\s*[—:-]?\s*", "", clean_short).strip()
         if len(clean_short) > 26:
             clean_short = clean_short[:24].rstrip() + "…"
-        badge_prefix = ["🌱 1.", "🔨 2.", "⚡ 3.", "🚀 4."][min(idx, 3)]
+        badge_prefix = ["🌱 1.", "🔨 2.", "🛠️ 3.", "🏢 4.", "📋 5."][min(idx, 4)]
         steps_out.append(
             {
                 "stepNumber": idx + 1,
-                "shortLabel": f"{badge_prefix} {clean_short}" if clean_short else default_short[min(idx, 3)],
+                "shortLabel": f"{badge_prefix} {clean_short}" if clean_short else default_short[min(idx, 4)],
                 "title": heading,
                 "markdown": chunk,
                 "estMinutes": max(2, min(6, round(words / 165) + 1)),
@@ -527,6 +552,8 @@ def parse_markdown_frontmatter_and_quizzes(
         "visualizer_id": "arch-endpoint-cloud-sync",
         "lab_path": "",
         "tags": [fallback_track],
+        "prerequisites": [],
+        "primary_sources": [],
     }
 
     body = raw_md
@@ -541,9 +568,9 @@ def parse_markdown_frontmatter_and_quizzes(
                 k, v = line.split(":", 1)
                 key = k.strip()
                 val = v.strip()
-                if key == "tags" and val.startswith("["):
+                if key in ("tags", "prerequisites", "primary_sources") and val.startswith("["):
                     try:
-                        meta["tags"] = json.loads(val)
+                        meta[key] = json.loads(val)
                     except Exception:
                         pass
                 elif key in ("chapter_number", "reading_time_minutes", "module_number"):
@@ -666,6 +693,8 @@ def ensure_initialized(db_path: pathlib.Path = DEFAULT_DB_PATH) -> None:
                     visualizer_id TEXT,
                     lab_path TEXT,
                     tags_json TEXT NOT NULL,
+                    prerequisites_json TEXT NOT NULL DEFAULT '[]',
+                    primary_sources_json TEXT NOT NULL DEFAULT '[]',
                     continuity_json TEXT NOT NULL DEFAULT '{}',
                     walkthrough_json TEXT NOT NULL DEFAULT '[]',
                     pretraining_json TEXT NOT NULL DEFAULT '[]',
@@ -762,6 +791,8 @@ def ensure_initialized(db_path: pathlib.Path = DEFAULT_DB_PATH) -> None:
                 ("walkthrough_json", "TEXT NOT NULL DEFAULT '[]'"),
                 ("pretraining_json", "TEXT NOT NULL DEFAULT '[]'"),
                 ("prediction_prompt_json", "TEXT NOT NULL DEFAULT '{}'"),
+                ("prerequisites_json", "TEXT NOT NULL DEFAULT '[]'"),
+                ("primary_sources_json", "TEXT NOT NULL DEFAULT '[]'"),
             ]
             migrated = False
             for col_name, col_sql in new_col_defs:
@@ -852,9 +883,10 @@ def _sync_filesystem_locked(conn: sqlite3.Connection) -> None:
                 slug, course_id, track, volume, module_number, module_title,
                 chapter_number, level_tag, title, summary,
                 reading_time_minutes, video_url, visualizer_id, lab_path, tags_json,
+                prerequisites_json, primary_sources_json,
                 continuity_json, walkthrough_json, pretraining_json, prediction_prompt_json,
                 markdown_body, quizzes_json, source_path, sha256, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 slug,
@@ -872,6 +904,8 @@ def _sync_filesystem_locked(conn: sqlite3.Connection) -> None:
                 parsed["visualizer_id"],
                 lab_path,
                 json.dumps(parsed["tags"]),
+                json.dumps(parsed.get("prerequisites", [])),
+                json.dumps(parsed.get("primary_sources", [])),
                 json.dumps(parsed["continuity"]),
                 json.dumps(parsed["walkthrough"]),
                 json.dumps(parsed["pretraining"]),
@@ -1343,6 +1377,8 @@ def get_kb_chapter(slug: str, db_path: pathlib.Path = DEFAULT_DB_PATH) -> Tuple[
             "visualizerId": row["visualizer_id"],
             "labPath": row["lab_path"],
             "tags": json.loads(row["tags_json"]),
+            "prerequisites": json.loads(row["prerequisites_json"] or "[]"),
+            "primarySources": json.loads(row["primary_sources_json"] or "[]"),
             "continuity": continuity_out,
             "walkthrough": walkthrough_synced,
             "steps": split_markdown_into_steps(row["markdown_body"]),
@@ -1506,6 +1542,8 @@ def get_kb_course_compendium(
                     "wordCount": words,
                     "labPath": row["lab_path"] or "",
                     "tags": json.loads(row["tags_json"] or "[]"),
+                    "prerequisites": json.loads(row["prerequisites_json"] or "[]"),
+                    "primarySources": json.loads(row["primary_sources_json"] or "[]"),
                     "mastered": bool(row["mastered"]),
                     "continuity": continuity_out,
                     "pretraining": pretraining,

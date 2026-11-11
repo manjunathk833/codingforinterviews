@@ -24,64 +24,154 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root {
-      --bg-paper: #FAF7F2;
-      --bg-card: #FFFFFF;
-      --bg-subtle: #F3EDE2;
-      --ink-primary: #181615;
-      --ink-secondary: #5C554E;
-      --ink-muted: #8A8178;
-      --accent-terra: #C85A32;
-      --accent-sage: #1E6F5C;
-      --accent-indigo: #5B3FD9;
-      --accent-amber: #B7791F;
+    /* ==========================================================================
+       OPTION 4: ADAPTIVE DUAL-POLARITY ZEN HYBRID — 4 EYE-COMFORT PALETTES
+       Zero #FFFFFF glare · Zero #000000 OLED halation · Borderless Tonal Surfaces
+       ========================================================================== */
+    :root, body[data-theme="sepia"] {
+      --bg-paper: #EDE3D2;        /* 77.6% luminance (-22.4% glare vs #FFFFFF) */
+      --bg-card: #E5D9C4;         /* Primary tonal surface (replaces bordered cards) */
+      --bg-subtle: #DBD0BA;       /* Secondary tonal surface / chip */
+      --bg-elevated: rgba(237, 227, 210, 0.94);
+      --ink-primary: #2B241E;     /* 12.02:1 AAA softened espresso ink */
+      --ink-secondary: #594E43;
+      --ink-muted: #847668;
+      --accent-terra: #B4532A;
+      --accent-terra-soft: rgba(180, 83, 42, 0.13);
+      --accent-sage: #1E6B58;
+      --accent-sage-soft: rgba(30, 107, 88, 0.12);
+      --accent-indigo: #553C9A;
+      --accent-amber: #9C6418;
       --accent-blue: #2B6CB0;
       --accent-crimson: #9B2C2C;
-      --border-warm: #E6DEC8;
-      --shadow-tactile: 0 3px 0 #D8CEB8, 0 8px 20px rgba(24, 22, 21, 0.05);
+      --border-warm: rgba(43, 36, 30, 0.07);
+      --shadow-tactile: none;
+      --reader-font-scale: 1;
     }
 
-    * { box-sizing: border-box; }
+    body[data-theme="oat"] {
+      --bg-paper: #F2ECE1;        /* 84.3% luminance — Flexoki Soft Oat Paper */
+      --bg-card: #EAE2D3;
+      --bg-subtle: #E0D7C5;
+      --bg-elevated: rgba(242, 236, 225, 0.94);
+      --ink-primary: #24211E;     /* 13.62:1 AAA softened charcoal ink */
+      --ink-secondary: #57524B;
+      --ink-muted: #857E75;
+      --accent-terra: #BA5630;
+      --accent-terra-soft: rgba(186, 86, 48, 0.11);
+      --accent-sage: #1E6F5C;
+      --accent-sage-soft: rgba(30, 111, 92, 0.11);
+      --border-warm: rgba(36, 33, 30, 0.07);
+    }
+
+    body[data-theme="ink"] {
+      --bg-paper: #121110;        /* 0.6% luminance — Flexoki Warm Ink (Zero halation) */
+      --bg-card: #1B1917;
+      --bg-subtle: #25221F;
+      --bg-elevated: rgba(18, 17, 16, 0.94);
+      --ink-primary: #CECDC3;     /* 11.81:1 AAA warm parchment ink */
+      --ink-secondary: #9C998E;
+      --ink-muted: #6E6B62;
+      --accent-terra: #DA702C;
+      --accent-terra-soft: rgba(218, 112, 44, 0.16);
+      --accent-sage: #3AA986;
+      --accent-sage-soft: rgba(58, 169, 134, 0.15);
+      --accent-indigo: #9F8FEF;
+      --accent-amber: #D99B26;
+      --accent-blue: #63B3ED;
+      --accent-crimson: #F56565;
+      --border-warm: rgba(206, 205, 195, 0.07);
+    }
+
+    body[data-theme="dusk"] {
+      --bg-paper: #16171A;        /* 0.9% luminance — Linear / Zed Dusk Slate */
+      --bg-card: #1F2126;
+      --bg-subtle: #282B33;
+      --bg-elevated: rgba(22, 23, 26, 0.94);
+      --ink-primary: #D8D6CE;     /* 12.32:1 AAA slate-parchment ink */
+      --ink-secondary: #9A9CA6;
+      --ink-muted: #6C6E78;
+      --accent-terra: #E08256;
+      --accent-terra-soft: rgba(224, 130, 86, 0.16);
+      --accent-sage: #48BB99;
+      --accent-sage-soft: rgba(72, 187, 153, 0.15);
+      --accent-indigo: #A394F7;
+      --accent-amber: #E5A93B;
+      --accent-blue: #68B5F5;
+      --accent-crimson: #F67070;
+      --border-warm: rgba(216, 214, 206, 0.07);
+    }
+
+    * {
+      box-sizing: border-box;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(132, 118, 104, 0.30) transparent;
+    }
+    *::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    *::-webkit-scrollbar-thumb {
+      background: rgba(132, 118, 104, 0.30);
+      border-radius: 99px;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+      background: rgba(132, 118, 104, 0.52);
+    }
 
     body {
       background-color: var(--bg-paper) !important;
       color: var(--ink-primary) !important;
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
-      line-height: 1.6;
+      line-height: 1.68;
       margin: 0;
+      transition: background-color 0.2s ease, color 0.2s ease;
       -webkit-font-smoothing: antialiased;
     }
 
     h1, h2, h3, h4, .font-serif-display {
       font-family: 'Fraunces', Georgia, serif !important;
       color: var(--ink-primary);
-      letter-spacing: -0.01em;
+      letter-spacing: -0.015em;
     }
 
     .mono, .font-mono, code, pre, textarea.font-mono {
       font-family: 'JetBrains Mono', monospace !important;
     }
 
-    /* Reference Topbar & Navigation System (from preview_phase3_hub_ui.html) */
+    /* Neutralize hardcoded white glare & noisy utility borders across all views */
+    .bg-white, .bg-\[\#FFFDF9\], .bg-\[\#FAF7F2\], .bg-\[\#F3EDE2\], .bg-\[\#F4F9FF\] {
+      background-color: var(--bg-subtle) !important;
+      color: var(--ink-primary) !important;
+    }
+    .border-\[\#E6DEC8\], .border-\[\#EFEAE0\], .border-\[\#B7E4D8\], .border-emerald-200, .border-amber-400 {
+      border-color: transparent !important;
+    }
+    .shadow-sm, .wood-tile {
+      box-shadow: none !important;
+    }
+
+    /* Whisper-Quiet Borderless Topbar */
     .topbar {
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(250, 247, 242, 0.96);
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid var(--border-warm);
-      padding: 10px 20px;
+      background: var(--bg-elevated);
+      backdrop-filter: blur(10px);
+      border-bottom: none;
+      padding: 12px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 12px;
       flex-wrap: wrap;
     }
 
     @media (min-width: 1280px) {
-      .topbar {
-        flex-wrap: nowrap;
-      }
+      .topbar { flex-wrap: nowrap; }
     }
 
     .brand {
@@ -89,8 +179,8 @@
       align-items: center;
       gap: 8px;
       font-family: 'Fraunces', serif !important;
-      font-size: 1.12rem;
-      font-weight: 700;
+      font-size: 1.06rem;
+      font-weight: 600;
       color: var(--ink-primary);
       background: transparent;
       border: none;
@@ -100,180 +190,357 @@
     }
 
     .brand-badge {
-      background: var(--accent-terra);
-      color: #FFFFFF;
+      background: var(--accent-terra-soft);
+      color: var(--accent-terra);
       font-family: 'JetBrains Mono', monospace !important;
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       font-weight: 600;
-      padding: 2px 8px;
+      padding: 2px 7px;
       border-radius: 99px;
-      letter-spacing: 0.02em;
     }
 
     .nav-tabs {
       display: flex;
-      gap: 5px;
+      gap: 3px;
       flex-wrap: wrap;
       align-items: center;
     }
 
     .nav-tab {
-      border: 1px solid var(--border-warm);
-      background: var(--bg-card);
+      border: none !important;
+      background: transparent;
       color: var(--ink-secondary);
-      padding: 6px 10px;
-      border-radius: 8px;
+      padding: 6px 11px;
+      border-radius: 7px;
       font-family: 'Plus Jakarta Sans', sans-serif !important;
-      font-size: 0.77rem;
-      font-weight: 600;
+      font-size: 0.78rem;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: background 0.14s ease, color 0.14s ease;
       line-height: 1.3;
       white-space: nowrap;
     }
 
     .nav-tab:hover {
-      border-color: var(--ink-primary);
+      background: var(--bg-card);
       color: var(--ink-primary);
     }
 
     .nav-tab.active {
-      background: var(--ink-primary);
-      color: #FFFFFF;
-      border-color: var(--ink-primary);
+      background: var(--accent-terra-soft);
+      color: var(--accent-terra);
+      font-weight: 600;
     }
 
     .hub-container {
-      max-width: 1380px;
+      max-width: 1320px;
       width: 100%;
       margin: 0 auto;
-      padding: 24px;
+      padding: 20px 28px 64px;
     }
 
-    /* Reference Panel, Track Cards & Tactile Surfaces */
+    /* Borderless Tonal Surface Architecture (Zero 1px Box Noise / Zero 3D Shadows) */
     .panel {
       background: var(--bg-card);
-      border: 1px solid var(--border-warm);
-      border-radius: 14px;
-      padding: 20px 22px;
-      box-shadow: var(--shadow-tactile);
+      border: none !important;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: none !important;
     }
 
     .hero-panel {
-      background: linear-gradient(135deg, #FFFDF9 0%, #F5EFE4 100%);
-      border: 1px solid var(--border-warm);
-      border-radius: 14px;
-      padding: 22px 24px;
-      box-shadow: var(--shadow-tactile);
+      background: var(--bg-card);
+      border: none !important;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: none !important;
     }
 
     .tracks-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 14px;
     }
 
     .track-card, .tactile-card {
       background: var(--bg-card);
-      border: 1px solid var(--border-warm);
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: var(--shadow-tactile);
-      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+      border: none !important;
+      border-radius: 11px;
+      padding: 18px 20px;
+      box-shadow: none !important;
+      transition: background 0.15s ease, transform 0.15s ease;
     }
 
     .track-card:hover, .tactile-card:hover {
-      border-color: #B8AD96;
-      transform: translateY(-2px);
-      box-shadow: 0 5px 0 #D0C5AE, 0 12px 24px rgba(24, 22, 21, 0.08);
+      background: var(--bg-subtle);
+      transform: translateY(-1px);
     }
 
     .archetype-pill {
       display: inline-block;
       font-family: 'JetBrains Mono', monospace !important;
-      font-size: 0.72rem;
+      font-size: 0.69rem;
       font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 6px;
-      background: var(--bg-subtle);
-      color: var(--ink-primary);
+      padding: 3px 8px;
+      border-radius: 5px;
+      background: var(--bg-subtle) !important;
+      color: var(--ink-secondary) !important;
       width: fit-content;
     }
 
     .btn-primary, .coral-btn {
       background: var(--accent-terra);
-      color: #FFFFFF;
+      color: #FAF7F2;
       border: none;
-      padding: 8px 14px;
-      border-radius: 8px;
-      font-family: 'Plus Jakarta Sans', sans-serif !important;
-      font-weight: 600;
-      font-size: 0.82rem;
-      cursor: pointer;
-      transition: filter 0.15s ease, transform 0.15s ease;
-    }
-
-    .btn-primary:hover, .coral-btn:hover {
-      filter: brightness(0.93);
-      transform: translateY(-1px);
-    }
-
-    .btn-subtle {
-      background: var(--bg-subtle);
-      color: var(--ink-primary);
-      border: 1px solid var(--border-warm);
-      padding: 7px 13px;
-      border-radius: 8px;
+      padding: 7px 14px;
+      border-radius: 7px;
       font-family: 'Plus Jakarta Sans', sans-serif !important;
       font-weight: 600;
       font-size: 0.8rem;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: opacity 0.15s ease;
     }
 
-    .btn-subtle:hover {
-      border-color: var(--ink-primary);
-      background: #EAE2D3;
+    .btn-primary:hover, .coral-btn:hover { opacity: 0.9; }
+
+    .btn-subtle {
+      background: var(--bg-subtle);
+      color: var(--ink-primary);
+      border: none !important;
+      padding: 7px 13px;
+      border-radius: 7px;
+      font-family: 'Plus Jakarta Sans', sans-serif !important;
+      font-weight: 600;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
     }
+
+    .btn-subtle:hover { opacity: 0.86; }
 
     .tag {
       display: inline-block;
       font-family: 'JetBrains Mono', monospace !important;
-      font-size: 0.7rem;
-      padding: 2px 9px;
-      border-radius: 99px;
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: 6px;
       background: var(--bg-subtle);
       color: var(--ink-secondary);
-      border: 1px solid #E8E0CE;
+      border: none !important;
     }
 
     .news-card {
-      padding: 14px 16px;
-      border: 1px solid var(--border-warm);
+      padding: 15px 18px;
+      border: none !important;
       border-radius: 10px;
-      background: var(--bg-paper);
+      background: var(--bg-subtle);
     }
 
     .quiz-box {
-      padding: 20px;
+      padding: 20px 22px;
       border-radius: 12px;
-      background: #F6FBF9;
-      border: 1px solid #B7E4D8;
+      background: var(--accent-sage-soft);
+      border: none !important;
     }
 
-    /* Exact 3-Column Textbook Courses Reader Grid */
+    /* Adaptive Collapsible Textbook Layout + Seamless Open-Page Center Sheet (Idea 4 Hybrid) */
+    #view-textbook.hub-container {
+      max-width: 1440px;
+    }
     .kb-layout {
       display: grid;
-      grid-template-columns: 296px minmax(0, 1fr) 310px;
-      gap: 20px;
+      grid-template-columns: 264px minmax(0, 1fr) 276px;
+      gap: 28px;
       align-items: start;
+      transition: grid-template-columns 0.22s ease;
     }
 
-    @media (max-width: 1160px) {
-      .kb-layout {
-        grid-template-columns: 1fr;
-      }
+    body.kb-hide-left:not(.kb-hide-right) .kb-layout {
+      grid-template-columns: minmax(0, 1fr) 276px;
     }
+    body.kb-hide-right:not(.kb-hide-left) .kb-layout {
+      grid-template-columns: 264px minmax(0, 1fr);
+    }
+    body.kb-hide-left.kb-hide-right .kb-layout,
+    body.zen-fullscreen .kb-layout {
+      grid-template-columns: minmax(0, 1fr) !important;
+      justify-content: center;
+    }
+    body.kb-hide-left #kb-left-aside,
+    body.zen-fullscreen #kb-left-aside { display: none !important; }
+    body.kb-hide-right #kb-right-aside,
+    body.zen-fullscreen #kb-right-aside { display: none !important; }
+
+    /* Seamless Open-Page Center Canvas (Eliminates "Box-Inside-a-Box" Trap) */
+    #kb-center-article {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 4px 10px 64px !important;
+      width: 100%;
+      max-width: 820px;
+      margin: 0 auto;
+      transition: max-width 0.22s ease;
+    }
+
+    body[data-kb-width="comfort"] #kb-center-article { max-width: 820px; }
+    body[data-kb-width="comfort"] #kb-center-article .kb-prose { max-width: 72ch; }
+
+    body[data-kb-width="wide"] #kb-center-article { max-width: 1160px; }
+    body[data-kb-width="wide"] #kb-center-article .kb-prose { max-width: 100%; }
+
+    body[data-kb-width="full"] #kb-center-article { max-width: 95vw; }
+    body[data-kb-width="full"] #kb-center-article .kb-prose { max-width: 100%; }
+    body[data-kb-width="full"] #view-textbook.hub-container { max-width: 97vw !important; }
+
+    @media (max-width: 1160px) {
+      .kb-layout { grid-template-columns: 1fr !important; }
+    }
+
+    /* Prominent 1-Click Expand Content Pill (`Z` / `F`) */
+    .expand-cta-btn {
+      background: var(--accent-terra-soft);
+      color: var(--accent-terra);
+      border: none !important;
+      padding: 4px 10px;
+      border-radius: 7px;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.71rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.14s ease, color 0.14s ease, transform 0.12s ease;
+    }
+    .expand-cta-btn:hover, .expand-cta-btn.active {
+      background: var(--accent-terra);
+      color: #FAF7F2;
+    }
+
+    /* Slim Screen-Edge Collapse Rails (Obsidian / GitBook Style) */
+    .kb-edge-rail {
+      display: none;
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 45;
+      background: var(--bg-card);
+      color: var(--ink-secondary);
+      border: none !important;
+      padding: 12px 6px;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.67rem;
+      font-weight: 600;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      cursor: pointer;
+      opacity: 0.58;
+      transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .kb-edge-rail:hover {
+      opacity: 1;
+      background: var(--accent-terra-soft);
+      color: var(--accent-terra);
+    }
+    #kb-edge-rail-left {
+      left: 0;
+      border-radius: 0 9px 9px 0;
+    }
+    #kb-edge-rail-right {
+      right: 0;
+      border-radius: 9px 0 0 9px;
+    }
+    body[data-active-view="textbook"].kb-hide-left:not(.zen-fullscreen) #kb-edge-rail-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    body[data-active-view="textbook"].kb-hide-right:not(.zen-fullscreen) #kb-edge-rail-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Notion-Style Far-Left 15px Hover-Peek Syllabus Zone + Floating Drawer */
+    #kb-hover-edge-zone {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 15px;
+      z-index: 82;
+    }
+    body[data-active-view="textbook"].kb-hide-left #kb-hover-edge-zone,
+    body[data-active-view="textbook"].zen-fullscreen #kb-hover-edge-zone {
+      display: block;
+    }
+
+    #kb-peek-drawer {
+      position: fixed;
+      top: 54px;
+      left: 12px;
+      bottom: 24px;
+      width: 288px;
+      max-width: 86vw;
+      z-index: 88;
+      background: var(--bg-card);
+      border-radius: 13px;
+      padding: 14px 15px;
+      overflow-y: auto;
+      transform: translateX(-112%);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.16s ease;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18);
+    }
+    #kb-peek-drawer.open {
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Universal Fullscreen Focus / Expand Mode (`Z` / `F` / `Esc`) Across Every Page */
+    body.zen-fullscreen .topbar { display: none !important; }
+    body.zen-fullscreen .hub-container { max-width: 96vw !important; padding-top: 24px; }
+    body.zen-fullscreen #view-home.hub-container { max-width: 1120px !important; }
+
+    .zen-floating-bar {
+      display: none;
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 92;
+      background: var(--bg-card);
+      padding: 5px 10px;
+      border-radius: 99px;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.52;
+      transition: opacity 0.16s ease;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    .zen-floating-bar:hover { opacity: 1; }
+    body.zen-fullscreen .zen-floating-bar { display: inline-flex; }
+    .zen-kb-only { display: none; }
+    body[data-active-view="textbook"] .zen-kb-only { display: inline-flex; }
+
+    /* Minimalist Disclosure Drawers for Uncluttered Home */
+    details.minimal-disclosure > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--ink-secondary);
+      user-select: none;
+    }
+    details.minimal-disclosure > summary::-webkit-details-marker { display: none; }
+    details.minimal-disclosure > summary:hover { color: var(--ink-primary); background: var(--bg-subtle); }
 
     .course-pill {
       display: flex;
@@ -282,104 +549,100 @@
       gap: 8px;
       width: 100%;
       text-align: left;
-      padding: 9px 11px;
-      border-radius: 9px;
-      border: 1px solid var(--border-warm);
-      margin-bottom: 6px;
-      font-size: 0.79rem;
-      font-weight: 600;
+      padding: 8px 10px;
+      border-radius: 7px;
+      border: none !important;
+      margin-bottom: 3px;
+      font-size: 0.78rem;
+      font-weight: 500;
       cursor: pointer;
-      background: var(--bg-paper);
-      color: var(--ink-primary);
-      transition: all 0.14s ease;
+      background: transparent;
+      color: var(--ink-secondary);
+      transition: background 0.12s ease, color 0.12s ease;
     }
 
     .course-pill:hover {
-      background: #F5EFE4;
-      border-color: #CFC3AB;
+      background: var(--bg-subtle);
+      color: var(--ink-primary);
     }
 
     .course-pill.active {
-      background: #FCEEE8;
-      border-color: var(--accent-terra);
-      color: var(--ink-primary);
+      background: var(--accent-terra-soft);
+      color: var(--accent-terra);
       font-weight: 700;
-      box-shadow: 0 2px 8px rgba(200, 90, 50, 0.08);
     }
 
     .syllabus-ch-row {
       display: block;
       width: 100%;
       text-align: left;
-      font-size: 0.78rem;
-      line-height: 1.38;
+      font-size: 0.77rem;
+      line-height: 1.42;
       color: var(--ink-secondary);
-      padding: 6px 8px;
-      border-radius: 7px;
-      border: 1px solid transparent;
+      padding: 6px 9px;
+      border-radius: 6px;
+      border: none !important;
+      background: transparent;
       cursor: pointer;
-      transition: background 0.12s ease;
+      transition: background 0.12s ease, color 0.12s ease;
     }
 
     .syllabus-ch-row:hover {
-      background: #F7F3EA;
+      background: var(--bg-subtle);
       color: var(--ink-primary);
     }
 
     .syllabus-ch-row.active {
-      font-weight: 700;
+      font-weight: 600;
       color: var(--ink-primary);
       background: var(--bg-subtle);
-      border-color: var(--border-warm);
     }
 
     .continuity-bridge {
-      background: linear-gradient(135deg, #FFFDF8 0%, #F4ECE0 100%);
-      border: 1px solid #E2D6BE;
-      border-radius: 12px;
-      padding: 13px 16px;
+      background: var(--bg-subtle);
+      border: none !important;
+      border-radius: 10px;
+      padding: 14px 18px;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
+      gap: 14px;
     }
 
     @media (max-width: 820px) {
-      .continuity-bridge {
-        grid-template-columns: 1fr;
-      }
+      .continuity-bridge { grid-template-columns: 1fr; }
     }
 
     .walkthrough-shell {
-      background: #141417;
-      color: #F4F4F5;
-      border: 1.5px solid #2E2E36;
-      border-radius: 15px;
-      padding: 16px 18px;
-      box-shadow: 0 8px 24px rgba(24, 22, 21, 0.12);
+      background: #171615;
+      color: #EAE6DF;
+      border: none !important;
+      border-radius: 12px;
+      padding: 15px 18px;
+      box-shadow: none !important;
     }
 
     .wt-stage-card {
-      background: #1C1C21;
-      border: 1px solid #2E2E36;
-      border-radius: 11px;
+      background: #201E1C;
+      border: none !important;
+      border-radius: 10px;
       padding: 12px 14px;
     }
 
     .wt-subtitle-card {
-      background: linear-gradient(135deg, #271F1A 0%, #1E1A17 100%);
-      border: 1px solid #5C3D2E;
-      border-radius: 10px;
+      background: #26211D;
+      border: none !important;
+      border-radius: 9px;
       padding: 11px 13px;
     }
 
     .wt-code-pill {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.74rem;
-      background: #09090B;
+      background: #121110;
       color: #FDE68A;
       padding: 1px 6px;
-      border-radius: 5px;
-      border: 1px solid #3F3F46;
+      border-radius: 4px;
+      border: none;
     }
 
     @keyframes wtWavePulse {
@@ -404,54 +667,40 @@
 
     .lesson-stepper {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
       gap: 8px;
     }
 
     @media (max-width: 820px) {
-      .lesson-stepper {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+      .lesson-stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     .lesson-step-btn {
-      padding: 10px 11px;
-      border-radius: 10px;
-      border: 1px solid var(--border-warm);
-      background: var(--bg-paper);
+      padding: 10px 12px;
+      border-radius: 9px;
+      border: none !important;
+      background: var(--bg-subtle);
       text-align: left;
       cursor: pointer;
-      transition: all 0.14s ease;
+      transition: background 0.14s ease, opacity 0.14s ease;
     }
 
-    .lesson-step-btn:hover {
-      background: #F5EFE4;
-      border-color: #CFC3AB;
-    }
+    .lesson-step-btn:hover { opacity: 0.9; }
 
     .lesson-step-btn.active {
-      background: #FCEEE8;
-      border: 2px solid var(--accent-terra);
-      box-shadow: 0 2px 8px rgba(200, 90, 50, 0.1);
+      background: var(--accent-terra-soft);
+      box-shadow: inset 0 -2px 0 var(--accent-terra);
     }
 
     .lesson-step-btn.done {
-      background: #E6F4F0;
-      border-color: #9AD5C5;
+      background: var(--accent-sage-soft);
     }
 
-    .pretrain-strip {
-      background: linear-gradient(135deg, #FBF6EC 0%, #F4ECE0 100%);
-      border: 1px solid #E2D6BE;
-      border-radius: 12px;
-      padding: 14px 16px;
-    }
-
-    .poe-gate {
-      background: #FFFDF8;
-      border: 1.5px dashed #D5C4A1;
+    .pretrain-strip, .poe-gate {
+      background: var(--bg-subtle);
+      border: none !important;
       border-radius: 10px;
-      padding: 13px 15px;
+      padding: 14px 16px;
     }
 
     .contrast-grid {
@@ -462,84 +711,84 @@
     }
 
     .contrast-naive {
-      background: #FFF7F5;
-      border: 1px solid #F1C4B5;
-      border-radius: 12px;
-      padding: 15px 16px;
+      background: var(--accent-terra-soft);
+      border: none !important;
+      border-radius: 10px;
+      padding: 15px 17px;
     }
 
     .contrast-staff {
-      background: #F3FBF8;
-      border: 2px solid #1E6F5C;
-      border-radius: 12px;
-      padding: 15px 16px;
+      background: var(--accent-sage-soft);
+      border: none !important;
+      border-radius: 10px;
+      padding: 15px 17px;
     }
 
     .svg-diagram-shell {
-      background: #FFFDF9;
-      border: 1px solid var(--border-warm);
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin: 16px 0;
+      background: var(--bg-subtle);
+      border: none !important;
+      border-radius: 11px;
+      padding: 16px 18px;
+      margin: 18px 0;
       overflow-x: auto;
     }
 
-    .wood-tile {
-      box-shadow: 0 3px 0 #C8A679, 0 5px 10px rgba(0, 0, 0, 0.07);
+    /* Long-Hour Ergonomic Editorial Prose (Optimal 68ch–72ch Measure & Borderless Rhythm) */
+    .kb-prose {
+      max-width: 72ch;
+      margin: 0 auto;
+      font-size: calc(0.97rem * var(--reader-font-scale, 1));
     }
+    .kb-prose h1 { font-size: 1.65em; font-weight: 650; margin: 0.3rem 0 0.8rem; line-height: 1.26; }
+    .kb-prose h2 { font-size: 1.28em; font-weight: 650; margin: 2.1rem 0 0.65rem; padding-top: 0; border-top: none !important; }
+    .kb-prose h3 { font-size: 1.05em; font-weight: 650; margin: 1.3rem 0 0.45rem; color: var(--ink-primary); }
+    .kb-prose p { font-size: 1em; line-height: 1.76; color: var(--ink-secondary); margin-bottom: 1rem; }
+    .kb-prose ul, .kb-prose ol { padding-left: 1.35rem; margin-bottom: 1rem; color: var(--ink-secondary); font-size: 0.97em; line-height: 1.72; }
+    .kb-prose li { margin-bottom: 0.36rem; }
+    .kb-prose pre { background: #181715; color: #E6E2D8; padding: 1rem 1.15rem; border-radius: 10px; overflow-x: auto; font-size: 0.81rem; line-height: 1.62; margin: 1rem 0 1.25rem; border: none !important; }
+    .kb-prose code.inline-code { font-size: 0.84em; background: var(--bg-subtle); border: none !important; padding: 0.1rem 0.38rem; border-radius: 4px; color: var(--accent-terra); }
+    .kb-prose table { width: 100%; border-collapse: collapse; margin: 1.1rem 0 1.3rem; font-size: 0.84rem; background: var(--bg-subtle); border-radius: 10px; overflow: hidden; border: none !important; }
+    .kb-prose th { background: var(--bg-paper); text-align: left; padding: 0.6rem 0.8rem; font-weight: 600; color: var(--ink-primary); border-bottom: 1px solid var(--border-warm); }
+    .kb-prose td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--border-warm); color: var(--ink-secondary); vertical-align: top; }
+    .kb-prose blockquote { background: var(--bg-subtle); border-left: 3px solid var(--accent-terra); padding: 0.85rem 1.1rem; border-radius: 0 8px 8px 0; margin: 1.1rem 0; font-size: 0.92em; color: var(--ink-secondary); }
+    mark { background: var(--accent-terra-soft); color: var(--ink-primary); padding: 0 4px; border-radius: 3px; font-weight: 600; }
 
-    /* Editorial Textbook Prose */
-    .kb-prose h1 { font-size: 1.65rem; font-weight: 700; margin: 0.25rem 0 0.75rem; line-height: 1.28; }
-    .kb-prose h2 { font-size: 1.26rem; font-weight: 700; margin: 1.6rem 0 0.6rem; padding-top: 0.95rem; border-top: 1px solid var(--border-warm); }
-    .kb-prose h3 { font-size: 1.04rem; font-weight: 700; margin: 1.15rem 0 0.4rem; color: #2D2926; }
-    .kb-prose p { font-size: 0.92rem; line-height: 1.7; color: var(--ink-secondary); margin-bottom: 0.85rem; }
-    .kb-prose ul, .kb-prose ol { padding-left: 1.3rem; margin-bottom: 0.9rem; color: var(--ink-secondary); font-size: 0.9rem; line-height: 1.66; }
-    .kb-prose li { margin-bottom: 0.32rem; }
-    .kb-prose pre { background: #18181B; color: #F4F4F5; padding: 0.95rem 1.1rem; border-radius: 10px; overflow-x: auto; font-size: 0.77rem; line-height: 1.58; margin: 0.85rem 0 1.1rem; border: 1px solid #27272A; }
-    .kb-prose code.inline-code { font-size: 0.78rem; background: var(--bg-subtle); border: 1px solid var(--border-warm); padding: 0.08rem 0.36rem; border-radius: 5px; color: #9A3412; }
-    .kb-prose table { width: 100%; border-collapse: collapse; margin: 0.95rem 0 1.2rem; font-size: 0.82rem; background: var(--bg-paper); border-radius: 10px; overflow: hidden; border: 1px solid var(--border-warm); }
-    .kb-prose th { background: var(--bg-subtle); text-align: left; padding: 0.55rem 0.75rem; font-weight: 700; color: var(--ink-primary); border-bottom: 1px solid var(--border-warm); }
-    .kb-prose td { padding: 0.55rem 0.75rem; border-bottom: 1px solid #ECE5D5; color: var(--ink-secondary); vertical-align: top; }
-    .kb-prose blockquote { background: #FFF9F4; border-left: 3px solid var(--accent-terra); padding: 0.8rem 1rem; border-radius: 0 8px 8px 0; margin: 0.95rem 0; font-size: 0.85rem; color: #4A3F38; }
-    mark { background: #FDE68A; color: #181615; padding: 0 3px; border-radius: 3px; font-weight: 600; }
-
-    /* Revise / Single-Page Course Compendium Mode */
+    /* Revise / Single-Page Course Compendium Mode (Borderless Tonal Sheet) */
     .compendium-chapter-card {
       content-visibility: auto;
       contain-intrinsic-size: 900px;
-      background: #FFFDF9;
-      border: 1.5px solid var(--border-warm);
-      border-radius: 14px;
-      padding: 24px 26px;
-      box-shadow: 0 3px 0 #E6DEC8;
+      background: var(--bg-subtle);
+      border: none !important;
+      border-radius: 12px;
+      padding: 24px 28px;
+      box-shadow: none !important;
     }
     .revise-sticky-bar {
       position: sticky;
       top: 10px;
       z-index: 25;
-      background: rgba(255, 253, 249, 0.96);
-      backdrop-filter: blur(8px);
-      border: 1.5px solid var(--border-warm);
-      border-radius: 12px;
+      background: var(--bg-elevated);
+      backdrop-filter: blur(10px);
+      border: none !important;
+      border-radius: 10px;
       padding: 12px 16px;
-      box-shadow: 0 6px 18px rgba(24, 22, 21, 0.06);
+      box-shadow: none !important;
     }
     .revise-filter-pill {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.69rem;
-      font-weight: 700;
-      padding: 4px 9px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 5px 10px;
       border-radius: 6px;
-      border: 1px solid var(--border-warm);
-      background: #FFFFFF;
+      border: none !important;
+      background: var(--bg-subtle);
       color: var(--ink-secondary);
       cursor: pointer;
       transition: all 0.12s ease;
     }
     .revise-filter-pill.active {
-      background: #FCEEE8;
-      border-color: #C85A32;
-      color: #C85A32;
+      background: var(--accent-terra-soft);
+      color: var(--accent-terra);
     }
     .qa-answer-blur {
       filter: blur(5px);
@@ -552,180 +801,212 @@
       user-select: auto;
     }
     @media print {
-      .topbar, aside, .revise-sticky-bar, #kb-sec-header button { display: none !important; }
-      .compendium-chapter-card { break-inside: avoid-page; box-shadow: none; border: 1px solid #ccc; }
+      .topbar, aside, .revise-sticky-bar, .zen-floating-bar, .kb-edge-rail, #kb-hover-edge-zone, #kb-peek-drawer, #kb-sec-header button { display: none !important; }
+      .compendium-chapter-card { break-inside: avoid-page; box-shadow: none; }
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body data-theme="sepia" data-kb-width="comfort" data-active-view="home" class="kb-hide-right min-h-screen flex flex-col">
+
+  <!-- FLOATING AMBIENT READER HUD WHEN IN EXPANDED FULLSCREEN FOCUS MODE (Z / F / Esc) -->
+  <div id="zen-floating-bar" class="zen-floating-bar mono text-xs">
+    <button onclick="togglePeekDrawer()" class="nav-tab zen-kb-only" style="padding:3px 8px; font-size:0.7rem;" title="Peek Course & Chapter Syllabus">☰ Peek</button>
+    <span class="zen-kb-only" style="color: var(--ink-muted);">·</span>
+    <button onclick="setKbContentWidth('comfort')" id="zen-width-comfort" class="nav-tab zen-kb-only active" style="padding:3px 7px; font-size:0.69rem;" title="Optimal 72ch Reading Width">72ch</button>
+    <button onclick="setKbContentWidth('wide')" id="zen-width-wide" class="nav-tab zen-kb-only" style="padding:3px 7px; font-size:0.69rem;" title="Wide 1160px Revision & Code Width">Wide</button>
+    <button onclick="setKbContentWidth('full')" id="zen-width-full" class="nav-tab zen-kb-only" style="padding:3px 7px; font-size:0.69rem;" title="Full 95vw Edge-to-Edge Canvas">100%</button>
+    <span class="zen-kb-only" style="color: var(--ink-muted);">·</span>
+    <button onclick="setEyeComfortTheme('sepia')" class="nav-tab" style="padding:3px 6px; font-size:0.7rem;" title="Warm Sepia (77% Luminance)">📜</button>
+    <button onclick="setEyeComfortTheme('oat')" class="nav-tab" style="padding:3px 6px; font-size:0.7rem;" title="Soft Oat Paper (84% Luminance)">☀️</button>
+    <button onclick="setEyeComfortTheme('ink')" class="nav-tab" style="padding:3px 6px; font-size:0.7rem;" title="Flexoki Warm Ink (0.6% Luminance)">🖤</button>
+    <button onclick="setEyeComfortTheme('dusk')" class="nav-tab" style="padding:3px 6px; font-size:0.7rem;" title="Linear Dusk Slate (0.9% Luminance)">🌙</button>
+    <button onclick="cycleReaderFontScale()" class="nav-tab" style="padding:3px 7px; font-size:0.7rem;" title="Cycle Reading Font Size">Aa</button>
+    <button onclick="toggleZenFullscreen(false)" class="expand-cta-btn active" style="padding:3px 10px; font-size:0.71rem;" title="Exit Expanded View (Esc, Z, or F)">↙ Exit Expand · Esc</button>
+  </div>
+
+  <!-- SLIM SCREEN-EDGE COLLAPSE TABS + NOTION 15PX LEFT-EDGE HOVER-PEEK SYLLABUS DRAWER -->
+  <button id="kb-edge-rail-left" onclick="toggleKbSidebar('left')" class="kb-edge-rail" title="Re-open Courses & Syllabus Spine (Shortcut: [ — or hover far-left screen edge to peek)">
+    ☰ Courses ›
+  </button>
+  <button id="kb-edge-rail-right" onclick="toggleKbSidebar('right')" class="kb-edge-rail" title="Re-open Journey, Jargon & Pulse Drawer (Shortcut: ])">
+    ‹ ✦ Context
+  </button>
+  <div id="kb-hover-edge-zone" onmouseenter="openPeekDrawer()" aria-hidden="true"></div>
+  <aside id="kb-peek-drawer" onmouseleave="closePeekDrawer()" aria-label="Floating Syllabus Peek Drawer" class="space-y-2.5">
+    <div class="flex items-center justify-between gap-2 pb-2" style="border-bottom: 1px solid var(--border-warm);">
+      <span class="mono text-[10.5px] font-bold uppercase" style="color: var(--accent-terra);">📚 Quick Syllabus Peek</span>
+      <div class="flex items-center gap-1">
+        <button onclick="closePeekDrawer(); if(document.body.classList.contains('zen-fullscreen')) toggleZenFullscreen(false); if(document.body.classList.contains('kb-hide-left')) toggleKbSidebar('left');" class="nav-tab mono" style="padding:2px 7px; font-size:0.66rem;" title="Pin Left Sidebar Open">📌 Pin</button>
+        <button onclick="closePeekDrawer()" class="nav-tab mono" style="padding:2px 6px; font-size:0.68rem;" title="Close Peek Drawer">✕</button>
+      </div>
+    </div>
+    <div id="kb-peek-drawer-body" class="space-y-2 text-xs"></div>
+  </aside>
 
   <!-- ==========================================================================
-       TOP NAVIGATION MASTHEAD — MATCHED DIRECTLY TO preview_phase3_hub_ui.html
+       WHISPER-QUIET BORDERLESS TOPBAR + EYE-COMFORT SWITCHER + FOCUS MODE
        ========================================================================== -->
   <header class="topbar">
     <button onclick="showView('home')" class="brand">
-      <span>🏛️ The Hub of Learning</span>
-      <span class="brand-badge">ZEN STUDIO</span>
+      <span>The Hub of Learning</span>
+      <span class="brand-badge">ZEN</span>
     </button>
 
-    <nav class="nav-tabs">
-      <button onclick="showView('home')" id="tab-btn-dashboard" class="nav-tab active">
-        1. Home &amp; Courses
-      </button>
-      <button onclick="showView('textbook')" id="tab-btn-textbook" class="nav-tab">
-        2. Textbook Courses
-      </button>
-      <button onclick="showView('newsfeed')" id="tab-btn-feed" class="nav-tab">
-        3. Tech Pulse
-      </button>
-      <button onclick="showView('roadmap')" id="tab-btn-roadmap" class="nav-tab">
-        4. DSA Roadmap
-      </button>
-      <button onclick="showView('workspace')" id="tab-btn-visualizer" class="nav-tab">
-        5. 50/50 Studio
-      </button>
-      <button onclick="openWorkbenchSubmode('frameworks')" id="tab-btn-workbench" class="nav-tab">
-        6. Workbench
-      </button>
-      <button onclick="openWorkbenchSubmode('interviews')" id="tab-btn-interviews" class="nav-tab">
-        7. Mock Sim
-      </button>
+    <nav class="nav-tabs" aria-label="Primary Navigation">
+      <button onclick="showView('home')" id="tab-btn-dashboard" class="nav-tab active">Home</button>
+      <button onclick="showView('textbook')" id="tab-btn-textbook" class="nav-tab">Courses</button>
+      <button onclick="showView('workspace')" id="tab-btn-visualizer" class="nav-tab">50/50 Studio</button>
+      <button onclick="showView('roadmap')" id="tab-btn-roadmap" class="nav-tab">DSA Map</button>
+      <button onclick="openWorkbenchSubmode('frameworks')" id="tab-btn-workbench" class="nav-tab">Workbench</button>
+      <button onclick="openWorkbenchSubmode('interviews')" id="tab-btn-interviews" class="nav-tab">Mock Sim</button>
+      <button onclick="showView('newsfeed')" id="tab-btn-feed" class="nav-tab">Pulse</button>
     </nav>
 
-    <div class="relative flex items-center gap-2 shrink-0">
+    <div class="relative flex items-center gap-1.5 shrink-0">
       <div class="relative">
         <input
           id="global-kb-search"
           type="search"
-          placeholder="Search FTS5 (LSM-Tree, RAG...)"
+          placeholder="⌘K Search (LSM, RAG, Shards…)"
           oninput="handleGlobalKbSearch(this.value)"
-          style="width: 190px; padding: 6px 10px; border: 1px solid var(--border-warm); border-radius: 8px; background: var(--bg-card); font-size: 0.74rem;"
-          class="mono focus:outline-none focus:border-zinc-900"
+          style="width: 185px; padding: 6px 10px; border: none; border-radius: 7px; background: var(--bg-card); color: var(--ink-primary); font-size: 0.74rem;"
+          class="mono focus:outline-none"
         />
         <div id="global-search-dropdown" class="hidden absolute right-0 mt-1.5 w-96 max-h-96 overflow-y-auto panel p-2.5 z-50 space-y-1"></div>
       </div>
-      <span id="fs-sync-pill" class="hidden 2xl:inline-block mono text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#E6F4F0] text-[#1E6F5C] border border-[#B7E4D8]">
-        WAL+FTS5
-      </span>
-      <span id="header-mastery-pill" class="hidden">3/128 DSA · 8 Chapters</span>
+
+      <!-- 1-Click Eye-Comfort Palette Switcher (Sepia · Oat · Ink · Dusk) + Font Size + Universal Focus Fullscreen -->
+      <div class="flex items-center gap-0.5 rounded-lg p-0.5" style="background: var(--bg-card);" role="group" aria-label="Eye Comfort & Focus Controls">
+        <button onclick="setEyeComfortTheme('sepia')" id="theme-btn-sepia" class="nav-tab active" style="padding: 4px 7px; font-size: 0.71rem;" title="Kindle Warm Sepia (77% Luminance — Best for daytime long reading)">📜 Sepia</button>
+        <button onclick="setEyeComfortTheme('oat')" id="theme-btn-oat" class="nav-tab" style="padding: 4px 7px; font-size: 0.71rem;" title="Flexoki Soft Oat Paper (84% Luminance)">☀️ Paper</button>
+        <button onclick="setEyeComfortTheme('ink')" id="theme-btn-ink" class="nav-tab" style="padding: 4px 7px; font-size: 0.71rem;" title="Flexoki Warm Ink (0.6% Luminance — Best for night reading & coding)">🖤 Ink</button>
+        <button onclick="setEyeComfortTheme('dusk')" id="theme-btn-dusk" class="nav-tab" style="padding: 4px 7px; font-size: 0.71rem;" title="Linear Dusk Slate (0.9% Luminance)">🌙 Dusk</button>
+        <button onclick="cycleReaderFontScale()" id="font-scale-btn" class="nav-tab mono" style="padding: 4px 7px; font-size: 0.7rem;" title="Cycle Reading Font Size (100% / 108% / 116% / 94%)">Aa</button>
+        <button onclick="toggleZenFullscreen(false)" id="zen-focus-btn" class="nav-tab mono" style="padding: 4px 9px; font-size: 0.71rem;" title="Distraction-Free Fullscreen Focus Mode (Shortcut: F, or Shift+F for OS Fullscreen)">⛶ Focus · F</button>
+      </div>
+
+      <span id="fs-sync-pill" class="hidden">WAL+FTS5</span>
+      <span id="header-mastery-pill" class="hidden">3/128 DSA · 74 Chapters</span>
     </div>
   </header>
 
   <!-- ==========================================================================
-       VIEW 1: HOME & ALL 6 CORE VOLUMES (EXACT REFERENCE THEME + DEEP-DIVE BAR)
+       VIEW 1: UNCLUTTERED MINIMALIST HOME (RESUME STRIP + 8 COURSES + PROGRESSIVE DISCLOSURE)
        ========================================================================== -->
-  <main id="view-home" class="hub-container space-y-6">
-    <!-- Warm Gradient Architectural Hero Panel -->
-    <section class="hero-panel space-y-4">
-      <div class="flex flex-wrap items-start justify-between gap-4">
-        <div class="space-y-1.5 max-w-4xl">
-          <div id="home-hero-kicker" class="mono text-xs font-semibold uppercase tracking-wider" style="color: var(--accent-terra);">
-            LOCAL-FIRST MULTI-MODAL ENGINEERING MASTERY
+  <main id="view-home" class="hub-container space-y-6" style="max-width: 1080px;">
+    <!-- Minimalist Calm Resume & Quick-Switch Strip -->
+    <section class="hero-panel space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="space-y-1 max-w-3xl">
+          <div id="home-hero-kicker" class="mono text-[11px] font-semibold uppercase tracking-wider" style="color: var(--accent-terra);">
+            CONTINUE WHERE YOU LEFT OFF · DISTRACTION-FREE MASTERY
           </div>
-          <h1 id="home-hero-title" style="font-size: 1.9rem; font-weight: 700; margin: 4px 0;">
-            8 Prioritized Textbook Courses · 4 Execution Archetypes
+          <h1 id="home-hero-title" style="font-size: 1.55rem; font-weight: 650; margin: 2px 0;">
+            8 Textbook Courses (74 Chapters) &amp; 50/50 Coding Studio
           </h1>
-          <p id="home-hero-desc" style="color: var(--ink-secondary); font-size: 0.94rem; max-width: 900px;">
-            Every track in <strong>The Hub of Learning</strong> uses a purpose-built learning modality:
-            <strong>Textbook Courses</strong> (Zero to Staff SDET, Testing Frameworks, Playwright UI, API &amp; Contracts, AI Engineering, AI QA, System Design &amp; Core CS),
-            <strong>In-Browser 50/50 Split Studio</strong> (DSA),
-            <strong>Local IDE Deterministic Workbench</strong> (Automation Frameworks — strictly zero AI), and
-            <strong>Staff Mock Interview Simulations</strong>.
+          <p id="home-hero-desc" style="color: var(--ink-secondary); font-size: 0.88rem; max-width: 780px; margin: 0;">
+            Zero card clutter, calibrated <code>12:1</code> paper-and-ink contrast for long reading hours, and instant <code>F</code> fullscreen focus on every screen.
           </p>
         </div>
-        <span id="home-dsa-progress" class="mono text-xs px-3 py-1.5 rounded-lg bg-white border border-[#E6DEC8] font-semibold" style="color: var(--ink-secondary);">
-          3 / 128 DSA · Textbook Courses
+        <span id="home-dsa-progress" class="mono text-xs px-3 py-1.5 rounded-lg font-semibold" style="background: var(--bg-subtle); color: var(--ink-secondary);">
+          3 / 128 DSA · 8 Courses (74 Ch)
         </span>
       </div>
 
-      <!-- Compact Quick-Resume Bar -->
-      <div class="pt-3 border-t border-[#E6DEC8] flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="mono text-[11px] font-semibold uppercase" style="color: var(--ink-muted);">Quick Launch:</span>
-          <button id="hero-mode-featured" onclick="setHomeHeroMode('featured')" class="nav-tab active" style="padding: 5px 10px; font-size: 0.76rem;">
+      <div class="pt-2 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <span class="mono text-[10.5px] uppercase mr-1" style="color: var(--ink-muted);">Focus:</span>
+          <button id="hero-mode-featured" onclick="setHomeHeroMode('featured')" class="nav-tab active" style="padding: 4px 10px; font-size: 0.74rem;">
             Course 01: Zero to Staff SDET
           </button>
-          <button id="hero-mode-dsa" onclick="setHomeHeroMode('dsa')" class="nav-tab" style="padding: 5px 10px; font-size: 0.76rem;">
-            DSA WS 1: 003. Group Anagrams
+          <button id="hero-mode-dsa" onclick="setHomeHeroMode('dsa')" class="nav-tab" style="padding: 4px 10px; font-size: 0.74rem;">
+            DSA Studio: 003. Group Anagrams
           </button>
-          <button id="hero-mode-upnext" onclick="setHomeHeroMode('upnext')" class="nav-tab" style="padding: 5px 10px; font-size: 0.76rem;">
+          <button id="hero-mode-upnext" onclick="setHomeHeroMode('upnext')" class="nav-tab" style="padding: 4px 10px; font-size: 0.74rem;">
             Up Next Queue
           </button>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <button id="home-hero-cta" onclick="openCourseById('01-zero-to-staff-sdet')" class="btn-primary">
-            Start Course 01: Zero to Staff SDET →
+            Resume Course 01 →
           </button>
           <button onclick="openProblemWorkspace('003-group-anagrams')" class="btn-subtle">
-            Open 50/50 Studio (WS 1)
+            50/50 Coding Studio →
           </button>
         </div>
       </div>
     </section>
 
-    <!-- Prioritized Textbook Courses Catalog (01 -> 08) -->
-    <section class="panel space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-2">
+    <!-- Ordered 8 Textbook Courses Runway (01 -> 08) -->
+    <section class="space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2 px-1">
         <div>
-          <div class="mono text-[11px] font-semibold uppercase tracking-wider" style="color: var(--accent-terra);">
-            📚 SCIENTIFIC VISUAL-AID CURRICULUM (POE SIMULATORS · SPATIAL SVGS · CONTRASTIVE CASES · 1-CLICK LABS)
+          <div class="mono text-[10.5px] font-semibold uppercase tracking-wider" style="color: var(--ink-muted);">
+            ORDERED CURRICULUM RUNWAY (01 → 08 · 74 TRUE-ZERO 4-STEP CHAPTERS)
           </div>
-          <h2 style="font-size: 1.32rem; font-weight: 700; margin-top: 2px;">
-            Textbook Courses — Ordered Mastery Path (01 → 08)
+          <h2 style="font-size: 1.22rem; font-weight: 650; margin-top: 2px;">
+            Textbook Courses
           </h2>
         </div>
         <button onclick="showView('textbook')" class="btn-subtle">
-          Open Textbook Courses Reader →
+          Open Reader →
         </button>
       </div>
-      <div id="home-courses-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5"></div>
+      <div id="home-courses-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
     </section>
 
-    <!-- All 6 Core Volumes / 4 Execution Archetypes Grid -->
-    <section id="home-tracks-grid" class="tracks-grid"></section>
+    <!-- Progressive Disclosure Drawer 1: All 6 Core Volumes / 4 Execution Archetypes -->
+    <details class="minimal-disclosure">
+      <summary>
+        <span>🎛️ Explore All 4 Execution Archetypes &amp; 6 Core Volumes (DSA Studio, Local Zero-AI Workbench, Mock Sim)</span>
+        <span class="mono text-xs" style="color: var(--ink-muted);">Expand ▾</span>
+      </summary>
+      <div class="pt-3">
+        <section id="home-tracks-grid" class="tracks-grid"></section>
+      </div>
+    </details>
 
-    <!-- Engineering Pulse Preview Panel -->
-    <section class="panel space-y-3.5">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <div class="mono text-[11px] font-semibold uppercase tracking-wider" style="color: var(--accent-terra);">
-            📡 LIVE INDUSTRY &amp; AI SHIFT RADAR
-          </div>
-          <h3 style="font-size: 1.2rem; font-weight: 700; margin-top: 2px;">
-            Engineering Pulse Newsfeed — Cross-Linked to Your Textbooks
-          </h3>
+    <!-- Progressive Disclosure Drawer 2: Engineering Pulse Preview -->
+    <details class="minimal-disclosure">
+      <summary>
+        <span>📡 Live Engineering Pulse Newsfeed — Cross-Linked to Your Textbook Chapters</span>
+        <span class="mono text-xs" style="color: var(--ink-muted);">Expand ▾</span>
+      </summary>
+      <div class="pt-3 space-y-3">
+        <div id="home-pulse-strip" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+        <div class="text-right">
+          <button onclick="showView('newsfeed')" class="btn-subtle">Browse All Pulse Articles →</button>
         </div>
-        <button onclick="showView('newsfeed')" class="btn-subtle">
-          Browse All Pulse Articles →
-        </button>
       </div>
-      <div id="home-pulse-strip" class="grid grid-cols-1 md:grid-cols-3 gap-3.5"></div>
-    </section>
+    </details>
   </main>
 
   <!-- ==========================================================================
-       VIEW 2: TEXTBOOK COURSES READER (296px | 1fr | 310px SCIENTIFIC PEDAGOGY)
+       VIEW 2: DISTRACTION-FREE TEXTBOOK READER (COLLAPSIBLE SIDEBARS + 68CH CANVAS)
        ========================================================================== -->
   <main id="view-textbook" class="hidden hub-container">
     <div class="kb-layout">
-      <!-- LEFT SPINE: 8 PRIORITIZED TEXTBOOK COURSES + ACTIVE COURSE SYLLABUS MODULES (MATCHED 1:1 TO PROTOTYPE) -->
-      <aside class="panel space-y-3 lg:sticky lg:top-20 max-h-[86vh] overflow-y-auto" style="padding: 18px;">
+      <!-- LEFT SPINE: 8 TEXTBOOK COURSES + SYLLABUS (COLLAPSIBLE VIA [‹ Hide] OR `[` KEY) -->
+      <aside id="kb-left-aside" class="panel space-y-3 lg:sticky lg:top-16 max-h-[86vh] overflow-y-auto" style="padding: 15px;">
         <div>
-          <div class="flex items-center justify-between gap-2">
-            <span class="mono font-semibold uppercase whitespace-nowrap" style="font-size: 0.7rem; color: var(--accent-terra);">
-              📚 8 TEXTBOOK COURSES
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="mono font-semibold uppercase whitespace-nowrap" style="font-size: 0.67rem; color: var(--accent-terra);">
+              📚 8 COURSES
             </span>
-            <span id="kb-total-count-pill" class="mono text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F3EDE2] shrink-0 whitespace-nowrap">
-              Priority Order
-            </span>
+            <div class="flex items-center gap-1 shrink-0">
+              <span id="kb-total-count-pill" class="mono text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap" style="background: var(--bg-subtle); color: var(--ink-muted);">
+                74 Ch
+              </span>
+              <button onclick="toggleKbSidebar('left')" class="nav-tab mono" style="padding: 2px 6px; font-size: 0.67rem;" title="Collapse Left Sidebar to Screen Edge (Shortcut: [)">‹ Hide</button>
+            </div>
           </div>
           <input
             id="kb-spine-search"
             type="search"
-            placeholder="FTS5 Search (Flakiness, CDP, RAG...)"
+            placeholder="Filter chapters (CDP, RAG…)"
             oninput="handleSpineKbSearch(this.value)"
-            style="width: 100%; margin-top: 8px; padding: 7px 10px; border: 1px solid var(--border-warm); border-radius: 8px; background: var(--bg-paper); font-size: 0.76rem;"
-            class="mono focus:outline-none focus:border-zinc-900"
+            style="width: 100%; margin-top: 8px; padding: 6px 10px; border: none; border-radius: 7px; background: var(--bg-subtle); color: var(--ink-primary); font-size: 0.75rem;"
+            class="mono focus:outline-none"
           />
           <div id="kb-spine-search-results" class="hidden space-y-1.5 pt-2"></div>
         </div>
@@ -733,60 +1014,76 @@
         <div id="kb-chapters-spine"></div>
       </aside>
 
-      <!-- CENTER GUIDED LESSON SHEET (UDEMY CONTINUITY + BITE-SIZED 4-STEP READER) -->
-      <article class="panel space-y-4" style="padding: 24px 28px;">
-        <div id="kb-sec-header" class="space-y-2.5 pb-3.5 border-b border-[#E6DEC8]">
+      <!-- CENTER GUIDED LESSON SHEET (SEAMLESS OPEN-PAGE CANVAS — ZERO ENCLOSING BOX) -->
+      <article id="kb-center-article" class="space-y-4">
+        <div id="kb-sec-header" class="space-y-2 pb-3" style="border-bottom: 1px solid var(--border-warm);">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <span id="kb-chapter-kicker" class="mono text-xs font-semibold uppercase" style="color: var(--accent-terra);">
-              COURSE 01 · MODULE 1 · CHAPTER 1 · 12 MIN GUIDED LESSON
-            </span>
-            <div class="flex flex-wrap items-center gap-1.5">
-              <button onclick="setKbReadingMode('guided')" id="kb-mode-guided" class="nav-tab active" style="padding: 4px 10px; font-size: 0.72rem;">
+            <div class="flex items-center gap-1.5">
+              <button onclick="toggleKbSidebar('left')" id="kb-toggle-left-btn" class="nav-tab active mono" style="padding: 3px 8px; font-size: 0.7rem;" title="Toggle Left Course Syllabus (Shortcut: [)">☰ Syllabus</button>
+              <span id="kb-chapter-kicker" class="mono text-[11px] font-semibold uppercase" style="color: var(--accent-terra);">
+                COURSE 01 · MODULE 1 · CHAPTER 1
+              </span>
+            </div>
+            <div class="flex flex-wrap items-center gap-1">
+              <button onclick="setKbReadingMode('guided')" id="kb-mode-guided" class="nav-tab active" style="padding: 4px 9px; font-size: 0.72rem;">
                 🎯 Guided 4-Step
               </button>
-              <button onclick="setKbReadingMode('full')" id="kb-mode-full" class="nav-tab" style="padding: 4px 10px; font-size: 0.72rem;">
-                📖 Full / Staff Scroll
+              <button onclick="setKbReadingMode('full')" id="kb-mode-full" class="nav-tab" style="padding: 4px 9px; font-size: 0.72rem;">
+                📖 Full Scroll
               </button>
-              <button onclick="setKbReadingMode('revise')" id="kb-mode-revise" class="nav-tab" style="padding: 4px 10px; font-size: 0.72rem;" title="Compile all chapters of this course into one single-page revision compendium">
-                ⚡ Revise: Single-Page Course
+              <button onclick="setKbReadingMode('revise')" id="kb-mode-revise" class="nav-tab" style="padding: 4px 9px; font-size: 0.72rem;" title="Compile all chapters of this course into one single-page revision compendium">
+                ⚡ Revise Course
               </button>
-              <span id="kb-chapter-level-pill" class="archetype-pill" style="font-size: 0.68rem; padding: 3px 8px;">
+              <div class="inline-flex items-center rounded-lg p-0.5 mono" style="background: var(--bg-card);" role="group" aria-label="Center Content Width">
+                <button onclick="setKbContentWidth('comfort')" id="kb-width-btn-comfort" class="nav-tab active mono" style="padding: 3px 7px; font-size: 0.68rem;" title="Optimal 72ch Reading Measure">72ch</button>
+                <button onclick="setKbContentWidth('wide')" id="kb-width-btn-wide" class="nav-tab mono" style="padding: 3px 7px; font-size: 0.68rem;" title="Wide 1160px Revision & Split Code Canvas">Wide</button>
+                <button onclick="setKbContentWidth('full')" id="kb-width-btn-full" class="nav-tab mono" style="padding: 3px 7px; font-size: 0.68rem;" title="Full 95vw Edge-to-Edge Canvas">100%</button>
+              </div>
+              <button onclick="toggleKbSidebar('right')" id="kb-toggle-right-btn" class="nav-tab mono" style="padding: 3px 8px; font-size: 0.7rem;" title="Toggle Right Jargon & Journey Drawer (Shortcut: ])">✦ Context</button>
+              <button onclick="toggleCenterContentExpand()" id="kb-expand-center-btn" class="expand-cta-btn" title="Expand Center Content Only — Collapses Sidebars & Topbar (Shortcut: Z or F)">⤢ Expand Content · Z</button>
+              <span id="kb-chapter-level-pill" class="hidden archetype-pill" style="font-size: 0.66rem; padding: 2px 7px;">
                 Zero → Staff
               </span>
-              <span id="kb-chapter-mastery-badge" class="mono text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#F3EDE2] border border-[#E6DEC8]">
+              <span id="kb-chapter-mastery-badge" class="mono text-[10.5px] font-semibold px-2 py-0.5 rounded-full" style="background: var(--bg-subtle); color: var(--ink-muted);">
                 Quiz Pending
               </span>
             </div>
           </div>
-          <h1 id="kb-chapter-title" style="font-size: 1.68rem; font-weight: 700; line-height: 1.26;">
+          <h1 id="kb-chapter-title" style="font-size: 1.68rem; font-weight: 700; line-height: 1.25; margin: 2px 0;">
             Loading Textbook Course Chapter...
           </h1>
           <p id="kb-chapter-summary" class="text-xs" style="color: var(--ink-secondary); margin: 0;"></p>
-          <div id="kb-chapter-tags" class="flex flex-wrap gap-1.5 pt-0.5"></div>
+          <div id="kb-chapter-tags" class="hidden flex-wrap gap-1.5 pt-0.5"></div>
         </div>
 
-        <!-- UDEMY STORY CONTINUITY BRIDGE ("THE RED THREAD") -->
-        <section id="kb-continuity-bridge" class="continuity-bridge text-xs">
-          <div>
-            <div class="mono text-[10px] font-bold uppercase" style="color: var(--accent-sage);">⏪ Where We Were</div>
-            <p id="kb-cont-prev" class="mt-1 leading-relaxed" style="color: var(--ink-secondary); margin-bottom:0;"></p>
+        <!-- UDEMY STORY CONTINUITY BRIDGE ("THE RED THREAD" — COMPACT 1-LINE PROGRESSIVE DISCLOSURE BY DEFAULT) -->
+        <details id="kb-continuity-bridge" class="minimal-disclosure text-xs">
+          <summary style="padding: 8px 14px; font-size: 0.78rem;">
+            <span>🧭 <strong>Story Thread:</strong> Where We Were · Today's Friction Point · What We'll Build</span>
+            <span class="mono text-[10.5px]" style="color: var(--ink-muted);">Context ▾</span>
+          </summary>
+          <div class="continuity-bridge text-xs mt-2">
+            <div>
+              <div class="mono text-[10px] font-bold uppercase" style="color: var(--accent-sage);">⏪ Where We Were</div>
+              <p id="kb-cont-prev" class="mt-1 leading-relaxed" style="color: var(--ink-secondary); margin-bottom:0;"></p>
+            </div>
+            <div>
+              <div class="mono text-[10px] font-bold uppercase" style="color: var(--accent-terra);">💥 Today's Friction Point</div>
+              <p id="kb-cont-pain" class="mt-1 leading-relaxed" style="color: var(--ink-secondary); margin-bottom:0;"></p>
+            </div>
+            <div>
+              <div class="mono text-[10px] font-bold uppercase" style="color: var(--accent-indigo);">🎯 What We'll Build</div>
+              <p id="kb-cont-unlock" class="mt-1 leading-relaxed" style="color: var(--ink-secondary); margin-bottom:0;"></p>
+            </div>
           </div>
-          <div>
-            <div class="mono text-[10px] font-bold uppercase" style="color: var(--accent-terra);">💥 Today's Friction Point</div>
-            <p id="kb-cont-pain" class="mt-1 leading-relaxed" style="color: var(--ink-secondary); margin-bottom:0;"></p>
-          </div>
-          <div>
-            <div class="mono text-[10px] font-bold uppercase" style="color: var(--accent-indigo);">🎯 What We'll Build</div>
-            <p id="kb-cont-unlock" class="mt-1 leading-relaxed" style="color: var(--ink-secondary); margin-bottom:0;"></p>
-          </div>
-        </section>
+        </details>
 
-        <!-- 90-SECOND NARRATED VISUAL STORY WALKTHROUGH + VIDEO LECTURE SLOT -->
-        <section id="kb-walkthrough-shell" class="walkthrough-shell space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-zinc-800">
+        <!-- 90-SECOND NARRATED VISUAL STORY WALKTHROUGH (COLLAPSED TO 1-LINE BAR BY DEFAULT SO PROSE STARTS IMMEDIATELY) -->
+        <section id="kb-walkthrough-shell" class="walkthrough-shell space-y-2.5" style="padding: 10px 15px;">
+          <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap items-center gap-2">
               <span id="kb-wt-slide-badge" class="mono text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-[#C85A32] text-white">
-                🎬 INTERACTIVE CONCEPT WALKTHROUGH · SCENE 1 / 4
+                🎬 90s VISUAL WALKTHROUGH · SCENE 1 / 4
               </span>
               <span id="kb-wt-step-sync-pill" class="mono text-[10px] px-2.5 py-0.5 rounded-full bg-zinc-800 text-emerald-300 border border-zinc-700">
                 🔗 Synced with Step 1: Plain-English Story
@@ -794,22 +1091,22 @@
             </div>
             <div class="flex flex-wrap items-center gap-1.5">
               <div class="flex items-center rounded-lg bg-zinc-900 p-0.5 border border-zinc-700 text-[10.5px] mono">
-                <button onclick="setWalkthroughAudioMode('voice')" id="kb-wt-audio-voice" class="px-2 py-0.5 rounded bg-[#C85A32] text-white font-semibold cursor-pointer">🔊 Voice + Visuals</button>
-                <button onclick="setWalkthroughAudioMode('silent')" id="kb-wt-audio-silent" class="px-2 py-0.5 rounded text-zinc-300 cursor-pointer">🔇 Visual-Only</button>
+                <button onclick="setWalkthroughAudioMode('voice')" id="kb-wt-audio-voice" class="px-2 py-0.5 rounded bg-[#C85A32] text-white font-semibold cursor-pointer">🔊 Voice</button>
+                <button onclick="setWalkthroughAudioMode('silent')" id="kb-wt-audio-silent" class="px-2 py-0.5 rounded text-zinc-300 cursor-pointer">🔇 Silent</button>
               </div>
               <div id="kb-wt-media-toggle" class="hidden items-center gap-1 mr-1">
                 <button onclick="switchWalkthroughMediaMode('storyboard')" id="kb-wt-mode-story" class="btn-subtle" style="padding:3px 8px; font-size:0.68rem; background:#C85A32; color:#fff; border-color:#C85A32;">🎬 Storyboard</button>
                 <button onclick="switchWalkthroughMediaMode('video')" id="kb-wt-mode-video" class="btn-subtle" style="padding:3px 8px; font-size:0.68rem; background:#27272A; color:#E4E4E7; border-color:#3F3F46;">🎥 Video</button>
               </div>
-              <button onclick="stepWalkthrough(-1)" class="btn-subtle" style="padding: 4px 9px; font-size: 0.72rem; background:#27272A; color:#F4F4F5; border-color:#3F3F46;">◀</button>
-              <button onclick="toggleWalkthroughPlay()" id="kb-wt-play-btn" class="btn-primary" style="padding: 4px 11px; font-size: 0.73rem; background:#1E6F5C;">▶ Play Walkthrough</button>
-              <button onclick="stepWalkthrough(1)" class="btn-subtle" style="padding: 4px 9px; font-size: 0.72rem; background:#27272A; color:#F4F4F5; border-color:#3F3F46;">▶</button>
+              <button onclick="stepWalkthrough(-1)" class="btn-subtle" style="padding: 3px 8px; font-size: 0.7rem; background:#27272A; color:#F4F4F5; border-color:#3F3F46;">◀</button>
+              <button onclick="toggleWalkthroughPlay()" id="kb-wt-play-btn" class="btn-primary" style="padding: 4px 11px; font-size: 0.72rem; background:#1E6F5C;">▶ Play Walkthrough</button>
+              <button onclick="stepWalkthrough(1)" class="btn-subtle" style="padding: 3px 8px; font-size: 0.7rem; background:#27272A; color:#F4F4F5; border-color:#3F3F46;">▶</button>
               <button onclick="cycleWalkthroughSpeed()" id="kb-wt-speed-btn" class="mono text-[10px] px-2 py-1 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 cursor-pointer">1.0x</button>
-              <button onclick="toggleWalkthroughCollapse()" id="kb-wt-collapse-btn" class="mono text-[10px] px-2 py-1 rounded bg-zinc-800 text-zinc-400 hover:text-white cursor-pointer">Hide ▲</button>
+              <button onclick="toggleWalkthroughCollapse()" id="kb-wt-collapse-btn" class="mono text-[10px] px-2.5 py-1 rounded bg-zinc-800 text-zinc-300 hover:text-white cursor-pointer">Expand Studio ▼</button>
             </div>
           </div>
 
-          <div id="kb-wt-body" class="space-y-3">
+          <div id="kb-wt-body" class="hidden space-y-3 pt-2 border-t border-zinc-800">
             <div id="kb-wt-storyboard-pane" class="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-stretch">
               <!-- Left 50%: Animated Architecture State Diagram Canvas + Timed Visual Cue Overlay -->
               <div class="md:col-span-6 wt-stage-card flex flex-col justify-between relative">
@@ -962,11 +1259,14 @@
         <section id="kb-compendium-container" class="hidden space-y-5"></section>
       </article>
 
-      <!-- RIGHT RAIL (310px): JOURNEY PROGRESS RING + JUST-IN-TIME JARGON UNLOCKS + PULSE -->
-      <aside class="space-y-4 lg:sticky lg:top-20">
+      <!-- RIGHT RAIL (276px): JOURNEY PROGRESS RING + JUST-IN-TIME JARGON UNLOCKS + PULSE (COLLAPSIBLE VIA `]` KEY) -->
+      <aside id="kb-right-aside" class="space-y-4 lg:sticky lg:top-16">
         <div class="panel space-y-3" style="padding: 16px 18px;">
-          <div class="mono text-[11px] font-semibold uppercase" style="color: var(--accent-terra);">
-            🧭 YOUR JOURNEY MAP
+          <div class="flex items-center justify-between gap-2">
+            <span class="mono text-[11px] font-semibold uppercase" style="color: var(--accent-terra);">
+              🧭 YOUR JOURNEY MAP
+            </span>
+            <button onclick="toggleKbSidebar('right')" class="nav-tab mono" style="padding: 2px 6px; font-size: 0.67rem;" title="Collapse Right Sidebar to Screen Edge (Shortcut: ])">Hide ›</button>
           </div>
           <div class="flex items-center gap-3.5">
             <div class="relative w-16 h-16 shrink-0">
@@ -1031,9 +1331,12 @@
             Every article is tagged and cross-linked directly to the foundational Textbook Chapters in your Knowledgebase.
           </p>
         </div>
-        <button onclick="refreshLiveNewsfeed()" id="news-refresh-btn" class="btn-primary">
-          ↻ Sync Live RSS/Atom Feeds
-        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleZenFullscreen(false)" class="expand-cta-btn" title="Expand Pulse Feed Only (Shortcut: Z or F)">⤢ Expand Content · Z</button>
+          <button onclick="refreshLiveNewsfeed()" id="news-refresh-btn" class="btn-primary">
+            ↻ Sync Live RSS/Atom Feeds
+          </button>
+        </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-2 pt-1">
@@ -1059,19 +1362,26 @@
        ========================================================================== -->
   <main id="view-roadmap" class="hidden hub-container">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      <aside class="lg:col-span-3 panel space-y-2 max-h-[82vh] overflow-y-auto">
-        <div class="mono text-xs font-semibold uppercase px-1 pb-1" style="color: var(--accent-amber);">
-          DSA Chapter Volumes (15)
+      <aside id="roadmap-left-aside" class="lg:col-span-3 panel space-y-2 max-h-[82vh] overflow-y-auto">
+        <div class="flex items-center justify-between gap-2 px-1 pb-1">
+          <span class="mono text-xs font-semibold uppercase" style="color: var(--accent-amber);">
+            DSA Chapters (15)
+          </span>
+          <button onclick="toggleSplitPaneMaximize('roadmap-main')" class="nav-tab mono" style="padding: 2px 6px; font-size: 0.67rem;" title="Collapse Chapter Spine">‹ Hide</button>
         </div>
         <div id="roadmap-chapter-spine" class="space-y-1.5"></div>
       </aside>
 
-      <section class="lg:col-span-9 space-y-5">
+      <section id="roadmap-main-pane" class="lg:col-span-9 space-y-5">
         <div class="hero-panel grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
           <div class="md:col-span-7 space-y-2">
-            <span id="roadmap-banner-tag" class="archetype-pill" style="background:#FEF3C7; color:#B7791F;">
-              CHAPTER 01 · ARRAYS &amp; HASHING
-            </span>
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="roadmap-banner-tag" class="archetype-pill" style="background:#FEF3C7; color:#B7791F;">
+                CHAPTER 01 · ARRAYS &amp; HASHING
+              </span>
+              <button onclick="toggleSplitPaneMaximize('roadmap-main')" id="roadmap-expand-btn" class="expand-cta-btn" title="Collapse Chapter Spine &amp; Expand Problem Grid">⤢ Expand Problems</button>
+              <button onclick="toggleZenFullscreen(false)" class="nav-tab mono" style="padding: 3px 8px; font-size: 0.7rem;" title="Fullscreen Focus (Shortcut: Z or F)">⛶ Focus · Z</button>
+            </div>
             <h2 id="roadmap-banner-title" style="font-size: 1.4rem; font-weight: 700; line-height: 1.3;">
               Mental Model: O(1) Instant Lookup via Canonical Signatures vs O(N) Linear Scan
             </h2>
@@ -1115,14 +1425,15 @@
         <button onclick="openProblemWorkspace('003-group-anagrams')" id="prob-pill-003-group-anagrams" class="nav-tab active" style="padding: 4px 9px; font-size: 0.74rem;">003. Group Anagrams</button>
         <button onclick="openProblemWorkspace('004-longest-consecutive-sequence')" id="prob-pill-004-longest-consecutive-sequence" class="nav-tab" style="padding: 4px 9px; font-size: 0.74rem;">004. Longest Consecutive</button>
         <button onclick="openProblemWorkspace('005-top-k-frequent-elements')" id="prob-pill-005-top-k-frequent-elements" class="nav-tab" style="padding: 4px 9px; font-size: 0.74rem;">005. Top K Frequent</button>
+        <button onclick="toggleZenFullscreen(false)" class="expand-cta-btn ml-1" title="Fullscreen Coding Focus — Hide Topbar (Shortcut: Z or F)">⛶ Fullscreen · Z</button>
       </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-      <!-- LEFT 6 COLS -->
-      <section class="lg:col-span-6 panel flex flex-col justify-between space-y-4">
+      <!-- LEFT 6 COLS (COLLAPSIBLE / MAXIMIZABLE) -->
+      <section id="ws-left-pane" class="lg:col-span-6 panel flex flex-col justify-between space-y-4">
         <div class="space-y-4">
-          <div class="flex items-center justify-between border-b border-[#E6DEC8] pb-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#E6DEC8] pb-3">
             <div class="flex flex-wrap gap-1.5">
               <button onclick="switchLeftTab('problem')" id="left-tab-problem" class="nav-tab active" style="padding: 5px 11px; font-size: 0.76rem;">
                 1. Problem &amp; 3D Visualizer
@@ -1134,7 +1445,10 @@
                 3. Narrated Walkthrough
               </button>
             </div>
-            <span id="ws-difficulty-badge" class="archetype-pill" style="background:#FEF3C7; color:#B7791F;">Medium</span>
+            <div class="flex items-center gap-1.5">
+              <span id="ws-difficulty-badge" class="archetype-pill" style="background:#FEF3C7; color:#B7791F;">Medium</span>
+              <button onclick="toggleSplitPaneMaximize('ws-left')" id="ws-left-expand-btn" class="expand-cta-btn" title="Expand Problem &amp; Visualizer to 100% Width">⤢ Expand Problem</button>
+            </div>
           </div>
 
           <div id="left-pane-problem" class="space-y-4">
@@ -1222,8 +1536,8 @@
         </div>
       </section>
 
-      <!-- RIGHT 6 COLS -->
-      <section class="lg:col-span-6 panel flex flex-col justify-between space-y-4">
+      <!-- RIGHT 6 COLS (COLLAPSIBLE / MAXIMIZABLE) -->
+      <section id="ws-right-pane" class="lg:col-span-6 panel flex flex-col justify-between space-y-4">
         <div class="space-y-3 flex-1 flex flex-col">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#E6DEC8] pb-3">
             <div class="flex items-center gap-2">
@@ -1235,13 +1549,14 @@
               </button>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-1.5">
               <span id="editor-disk-status" class="text-[11px] mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
                 ✓ Saved · dsa/.../solution.py
               </span>
               <button onclick="saveActiveFileToDisk()" class="btn-subtle" style="padding: 5px 10px; font-size: 0.76rem;">
                 Save (⌘S)
               </button>
+              <button onclick="toggleSplitPaneMaximize('ws-right')" id="ws-right-expand-btn" class="expand-cta-btn" title="Expand Code Editor to 100% Width">⤢ Expand Editor</button>
             </div>
           </div>
 
@@ -1311,13 +1626,14 @@
           🛠️ Local IDE Engineering Workbench &amp; Staff Mock Simulator
         </h2>
       </div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <button onclick="switchWorkbenchMode('frameworks')" id="wb-mode-frameworks" class="nav-tab active">
           Local IDE Workbench (Zero AI)
         </button>
         <button onclick="switchWorkbenchMode('interviews')" id="wb-mode-interviews" class="nav-tab">
           Staff Mock Interview Simulator
         </button>
+        <button onclick="toggleZenFullscreen(false)" class="expand-cta-btn" title="Expand Workbench / Simulator Only (Shortcut: Z or F)">⤢ Expand Content · Z</button>
       </div>
     </div>
 
@@ -1343,7 +1659,7 @@
 
     <!-- SUB-PANE B: STAFF & SENIOR MOCK INTERVIEW SIMULATOR -->
     <section id="wb-pane-interviews" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-      <div class="lg:col-span-7 panel space-y-4">
+      <div id="mi-left-pane" class="lg:col-span-7 panel space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#E6DEC8] pb-3">
           <div>
             <span id="mi-status-pill" class="archetype-pill" style="background:#E6F4F0; color:#1E6F5C;">
@@ -1353,18 +1669,22 @@
               Mock Interview #1
             </h3>
           </div>
-          <div class="flex gap-1.5">
+          <div class="flex flex-wrap items-center gap-1.5">
             <button onclick="switchInterviewDocTab('questions')" id="mi-tab-questions" class="nav-tab active">Prompts</button>
             <button onclick="switchInterviewDocTab('evaluation')" id="mi-tab-evaluation" class="nav-tab">100-Pt Feedback</button>
+            <button onclick="toggleSplitPaneMaximize('mi-left')" id="mi-left-expand-btn" class="expand-cta-btn" title="Expand Interview Prompt &amp; Rubric Reader">⤢ Expand Reader</button>
           </div>
         </div>
         <div id="mi-doc-viewer" class="kb-prose max-h-[620px] overflow-y-auto pr-2"></div>
       </div>
 
-      <div class="lg:col-span-5 space-y-4">
+      <div id="mi-right-pane" class="lg:col-span-5 space-y-4">
         <div class="panel space-y-3">
-          <div class="mono text-xs font-semibold uppercase" style="color: var(--accent-crimson);">
-            ✍️ CANDIDATE ARCHITECTURAL RESPONSE STUDIO
+          <div class="flex items-center justify-between gap-2">
+            <div class="mono text-xs font-semibold uppercase" style="color: var(--accent-crimson);">
+              ✍️ CANDIDATE ARCHITECTURAL RESPONSE STUDIO
+            </div>
+            <button onclick="toggleSplitPaneMaximize('mi-right')" id="mi-right-expand-btn" class="expand-cta-btn" title="Expand Response Studio">⤢ Expand Studio</button>
           </div>
           <select id="mi-question-select" onchange="loadSelectedInterviewQuestionResponse()" class="w-full bg-[#FAF7F2] border border-[#E6DEC8] rounded-lg px-3 py-2 text-xs font-semibold">
             <option value="q1">Q1: 32-Worker Concurrency &amp; Tenant Isolation</option>
@@ -1562,15 +1882,19 @@
       preferredKbLang: 'python',
       kbCompendiumCache: {},
       activeCompendium: null,
-      compendiumLayers: { step1: true, step2: true, step3: true, step4: true, qa: true },
+      compendiumLayers: { step1: true, step2: true, step3: true, step4: true, step5: true, qa: true },
+      compendiumCramOnly: false,
       compendiumBlurAnswers: false,
       compendiumFilterQuery: '',
       wtSlideIdx: 0,
       wtPlaying: false,
       wtTimer: null,
       wtSpeed: 1.0,
-      wtCollapsed: false,
+      wtCollapsed: true,
       wtMediaMode: 'storyboard',
+      kbWidth: 'comfort',
+      kbUserWidthOverride: false,
+      maximizedSplitPane: null,
       poeSelectedIdx: null,
       kbQuizSelections: {},
       kbSimSteps: [],
@@ -2240,6 +2564,8 @@
     function showView(viewName) {
       if (viewName === 'feed') viewName = 'newsfeed';
       state.activeView = viewName;
+      document.body.setAttribute('data-active-view', viewName);
+      if (typeof closePeekDrawer === 'function') closePeekDrawer();
       ['home', 'textbook', 'newsfeed', 'roadmap', 'workspace', 'workbench'].forEach(v => {
         const el = document.getElementById('view-' + v);
         if (el) el.classList.toggle('hidden', v !== viewName);
@@ -2321,35 +2647,32 @@
       if (!grid || !state.kbCourses.length) return;
       grid.innerHTML = state.kbCourses.map(c => {
         const pct = c.publishedChapters > 0 ? Math.round((c.masteredChapters / c.publishedChapters) * 100) : 0;
+        const numStr = String(c.priorityRank || 1).padStart(2, '0');
         return `
-          <div onclick="openCourseById('${c.courseId}')" class="track-card cursor-pointer flex flex-col justify-between gap-3" style="padding: 16px 18px;">
-            <div class="space-y-2">
-              <div class="flex items-center justify-between gap-1.5">
-                <span class="archetype-pill" style="background: ${c.pillBg}; color: ${c.accentColor};">
-                  Priority #${c.priorityRank}
-                </span>
-                <span class="mono text-[10px]" style="color: var(--ink-muted);">
-                  ${c.publishedChapters} Ch · ${c.plannedModules} Mod
-                </span>
+          <div onclick="openCourseById('${c.courseId}')" class="track-card cursor-pointer flex flex-col justify-between gap-2.5" style="padding: 15px 18px;">
+            <div class="space-y-1">
+              <div class="flex items-center justify-between gap-2 mono text-[10.5px]" style="color: var(--ink-muted);">
+                <span>COURSE ${numStr}</span>
+                <span>${c.publishedChapters} Chapters · ${c.plannedModules} Modules</span>
               </div>
-              <h3 style="font-size: 0.98rem; font-weight: 700; line-height: 1.32;">
-                ${escapeHtml(c.title)}
+              <h3 style="font-size: 1.02rem; font-weight: 650; line-height: 1.32;">
+                ${escapeHtml(c.shortTitle || c.title)}
               </h3>
-              <p style="font-size: 0.78rem; color: var(--ink-secondary); line-height: 1.5;" class="line-clamp-3">
+              <p style="font-size: 0.8rem; color: var(--ink-secondary); line-height: 1.5; margin: 0;" class="line-clamp-2">
                 ${escapeHtml(c.tagline)}
               </p>
             </div>
-            <div class="space-y-1.5 pt-2 border-t border-[#EFEAE0]">
-              <div class="w-full h-1.5 rounded-full bg-[#EFEAE0] overflow-hidden">
-                <div style="width: ${pct}%; background: ${c.accentColor};" class="h-full rounded-full transition-all"></div>
+            <div class="space-y-1.5 pt-1">
+              <div class="w-full h-1 rounded-full overflow-hidden" style="background: var(--bg-subtle);">
+                <div style="width: ${pct}%; background: var(--accent-terra);" class="h-full rounded-full transition-all"></div>
               </div>
-              <div class="flex items-center justify-between mono text-[10px]">
-                <span style="color: var(--ink-secondary);"><strong>${c.masteredChapters}/${c.publishedChapters}</strong> Mastered</span>
+              <div class="flex items-center justify-between mono text-[10.5px]">
+                <span style="color: var(--ink-muted);">${c.masteredChapters}/${c.publishedChapters} mastered</span>
                 <div class="flex items-center gap-2">
-                  <button onclick="event.stopPropagation(); openCourseCompendium('${c.courseId}')" class="px-2 py-0.5 rounded border border-[#E6DEC8] bg-[#FAF7F2] hover:border-[#C85A32] cursor-pointer" style="color: var(--ink-primary); font-weight: 700;" title="Open all chapters of this course in a single revision page">
+                  <button onclick="event.stopPropagation(); openCourseCompendium('${c.courseId}')" class="px-2 py-0.5 rounded cursor-pointer" style="background: var(--bg-subtle); color: var(--ink-secondary); border: none; font-weight: 600;" title="Open all chapters of this course in a single revision page">
                     ⚡ 1-Page Revise
                   </button>
-                  <span style="color: ${c.accentColor}; font-weight: 700;">Start →</span>
+                  <span style="color: var(--accent-terra); font-weight: 600;">Read →</span>
                 </div>
               </div>
             </div>
@@ -2538,6 +2861,7 @@
     }
 
     function handleSpineChapterClick(slug) {
+      if (typeof closePeekDrawer === 'function') closePeekDrawer();
       if (state.kbReadingMode === 'revise') {
         const anchor = document.getElementById(`comp-ch-${slug}`);
         if (anchor) {
@@ -2615,13 +2939,13 @@
         </div>
       `;
 
-      container.innerHTML = `
+      const spineMarkup = `
         <div>${pillsHtml}</div>
         <div style="border-top: 1px solid var(--border-warm); margin-top: 12px; padding-top: 12px;">
           <button
-            onclick="setKbReadingMode(state.kbReadingMode === 'revise' ? 'guided' : 'revise')"
-            class="w-full text-left px-3 py-2 rounded-lg border transition flex items-center justify-between gap-2 mb-2.5 cursor-pointer"
-            style="background: ${isReviseMode ? '#C85A32' : '#FFFDF9'}; color: ${isReviseMode ? '#FFFFFF' : 'var(--accent-terra)'}; border-color: #C85A32; font-size: 0.73rem; font-weight: 700;"
+            onclick="if(typeof closePeekDrawer==='function') closePeekDrawer(); setKbReadingMode(state.kbReadingMode === 'revise' ? 'guided' : 'revise')"
+            class="w-full text-left px-3 py-2 rounded-lg transition flex items-center justify-between gap-2 mb-2.5 cursor-pointer"
+            style="background: ${isReviseMode ? 'var(--accent-terra)' : 'var(--bg-subtle)'}; color: ${isReviseMode ? '#FAF7F2' : 'var(--accent-terra)'}; border: none; font-size: 0.73rem; font-weight: 700;"
           >
             <span>${isReviseMode ? '📖 Exit Single-Page Revise' : '⚡ Revise Course in 1 Page'}</span>
             <span class="mono text-[10px]">${activeCourse.publishedChapters || 0} Ch</span>
@@ -2632,6 +2956,9 @@
           ${syllabusHtml}
         </div>
       `;
+      container.innerHTML = spineMarkup;
+      const peekBody = document.getElementById('kb-peek-drawer-body');
+      if (peekBody) peekBody.innerHTML = spineMarkup;
     }
 
     async function handleSpineKbSearch(query) {
@@ -2869,6 +3196,14 @@
       const slides = (ch && ch.walkthrough) || [];
       if (!slides.length) return;
 
+      if (state.wtCollapsed) {
+        state.wtCollapsed = false;
+        const wtBody = document.getElementById('kb-wt-body');
+        const wtBtn = document.getElementById('kb-wt-collapse-btn');
+        if (wtBody) wtBody.classList.remove('hidden');
+        if (wtBtn) wtBtn.textContent = 'Hide ▲';
+      }
+
       state.wtPlaying = true;
       const playBtn = document.getElementById('kb-wt-play-btn');
       if (playBtn) playBtn.textContent = '⏸ Pause';
@@ -2981,7 +3316,7 @@
       const body = document.getElementById('kb-wt-body');
       const btn = document.getElementById('kb-wt-collapse-btn');
       if (body) body.classList.toggle('hidden', state.wtCollapsed);
-      if (btn) btn.textContent = state.wtCollapsed ? 'Show ▼' : 'Hide ▲';
+      if (btn) btn.textContent = state.wtCollapsed ? 'Expand Studio ▼' : 'Hide ▲';
       if (state.wtCollapsed) stopWalkthroughPlayback();
     }
 
@@ -3076,6 +3411,9 @@
       }
 
       if (compContainer) compContainer.classList.add('hidden');
+      if (!state.kbUserWidthOverride && typeof setKbContentWidth === 'function') {
+        setKbContentWidth('comfort', false);
+      }
       ['kb-continuity-bridge', 'kb-chapter-body', 'kb-prev-next-bar'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('hidden');
@@ -3090,6 +3428,9 @@
       state.expandedCourseId = targetCourseId;
       state.kbReadingMode = 'revise';
       if (switchScreen) showView('textbook');
+      if (!state.kbUserWidthOverride && typeof setKbContentWidth === 'function') {
+        setKbContentWidth('wide', false);
+      }
 
       const gBtn = document.getElementById('kb-mode-guided');
       const fBtn = document.getElementById('kb-mode-full');
@@ -3139,12 +3480,37 @@
 
     function toggleCompendiumLayer(layerKey) {
       state.compendiumLayers[layerKey] = !state.compendiumLayers[layerKey];
+      state.compendiumCramOnly = false;
+      const cramBtn = document.getElementById('comp-cram-preset-btn');
+      if (cramBtn) cramBtn.classList.remove('active');
       const active = Boolean(state.compendiumLayers[layerKey]);
       const btn = document.getElementById(`comp-layer-btn-${layerKey}`);
       if (btn) btn.classList.toggle('active', active);
       document.querySelectorAll(`[data-comp-layer="${layerKey}"]`).forEach(el => {
         el.classList.toggle('hidden', !active);
       });
+    }
+
+    function toggleCompendiumCramPreset() {
+      state.compendiumCramOnly = !state.compendiumCramOnly;
+      const hasStep5 = document.querySelectorAll('[data-comp-layer="step5"]').length > 0;
+      const nextLayers = state.compendiumCramOnly
+        ? { step1: false, step2: false, step3: false, step4: !hasStep5, step5: true, qa: true }
+        : { step1: true, step2: true, step3: true, step4: true, step5: true, qa: true };
+      state.compendiumLayers = nextLayers;
+      Object.keys(nextLayers).forEach(lk => {
+        const active = Boolean(nextLayers[lk]);
+        const btn = document.getElementById(`comp-layer-btn-${lk}`);
+        if (btn) btn.classList.toggle('active', active);
+        document.querySelectorAll(`[data-comp-layer="${lk}"]`).forEach(el => {
+          el.classList.toggle('hidden', !active);
+        });
+      });
+      const cramBtn = document.getElementById('comp-cram-preset-btn');
+      if (cramBtn) {
+        cramBtn.classList.toggle('active', state.compendiumCramOnly);
+        cramBtn.textContent = state.compendiumCramOnly ? '⚡ Cram Mode ON (Show All)' : '⚡ Interview Cram';
+      }
     }
 
     function toggleCompendiumAnswerBlur() {
@@ -3281,7 +3647,7 @@
           : [{ stepNumber: 1, shortLabel: 'Full Chapter', title: ch.title, markdown: ch.markdownBody }];
 
         const stepsHtml = steps.map((stObj, sIdx) => {
-          const layerKey = `step${Math.min(4, sIdx + 1)}`;
+          const layerKey = `step${Math.min(5, sIdx + 1)}`;
           const isVis = Boolean(layers[layerKey]);
           return `
             <div data-comp-layer="${layerKey}" class="${isVis ? '' : 'hidden'} kb-prose">
@@ -3383,11 +3749,13 @@
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap items-center gap-1.5">
               <span class="mono text-[10px] font-bold uppercase mr-1" style="color: var(--ink-muted);">LAYERS:</span>
-              <button id="comp-layer-btn-step1" onclick="toggleCompendiumLayer('step1')" class="revise-filter-pill ${layers.step1 ? 'active' : ''}">✓ 1. Story &amp; Diagrams</button>
-              <button id="comp-layer-btn-step2" onclick="toggleCompendiumLayer('step2')" class="revise-filter-pill ${layers.step2 ? 'active' : ''}">✓ 2. Starter Code</button>
-              <button id="comp-layer-btn-step3" onclick="toggleCompendiumLayer('step3')" class="revise-filter-pill ${layers.step3 ? 'active' : ''}">✓ 3. Contrast &amp; Failure Modes</button>
-              <button id="comp-layer-btn-step4" onclick="toggleCompendiumLayer('step4')" class="revise-filter-pill ${layers.step4 ? 'active' : ''}">✓ 4. Staff Math, Blueprints &amp; Gotchas</button>
-              <button id="comp-layer-btn-qa" onclick="toggleCompendiumLayer('qa')" class="revise-filter-pill ${layers.qa ? 'active' : ''}">✓ 5. Self-Check Q&amp;A Key</button>
+              <button id="comp-layer-btn-step1" onclick="toggleCompendiumLayer('step1')" class="revise-filter-pill ${layers.step1 ? 'active' : ''}">✓ 1. Story</button>
+              <button id="comp-layer-btn-step2" onclick="toggleCompendiumLayer('step2')" class="revise-filter-pill ${layers.step2 ? 'active' : ''}">✓ 2. Starter &amp; CLI</button>
+              <button id="comp-layer-btn-step3" onclick="toggleCompendiumLayer('step3')" class="revise-filter-pill ${layers.step3 ? 'active' : ''}">✓ 3. How-To &amp; Contrast</button>
+              <button id="comp-layer-btn-step4" onclick="toggleCompendiumLayer('step4')" class="revise-filter-pill ${layers.step4 ? 'active' : ''}">✓ 4. Big Tech &amp; Math</button>
+              <button id="comp-layer-btn-step5" onclick="toggleCompendiumLayer('step5')" class="revise-filter-pill ${layers.step5 ? 'active' : ''}">✓ 5. Cheat-Sheets &amp; Pitch</button>
+              <button id="comp-layer-btn-qa" onclick="toggleCompendiumLayer('qa')" class="revise-filter-pill ${layers.qa ? 'active' : ''}">✓ Q&amp;A Key</button>
+              <button id="comp-cram-preset-btn" onclick="toggleCompendiumCramPreset()" class="revise-filter-pill ${state.compendiumCramOnly ? 'active' : ''}" title="1-Click Pre-Interview Cram Mode: Show Cheat-Sheets, 60s Interview Pitches &amp; Q&amp;A Keys Only">${state.compendiumCramOnly ? '⚡ Cram Mode ON (Show All)' : '⚡ Interview Cram'}</button>
             </div>
             <div class="flex flex-wrap items-center gap-1.5">
               <span class="mono text-[10px] font-bold uppercase" style="color: var(--ink-muted);">GLOBAL CODE:</span>
@@ -3409,12 +3777,15 @@
                 ${chapters.length} Chapters
               </span>
             </div>
-            <div class="flex items-center gap-1.5">
+            <div class="flex flex-wrap items-center gap-1.5">
               <button id="comp-qa-blur-btn" onclick="toggleCompendiumAnswerBlur()" class="revise-filter-pill ${!state.compendiumBlurAnswers ? 'active' : ''}">
                 ${state.compendiumBlurAnswers ? '🙈 Answers Blurred (Click to Reveal)' : '👁️ Answers Shown'}
               </button>
               <button onclick="window.print()" class="revise-filter-pill" title="Print or Save Complete Course Compendium as PDF">
                 🖨️ Print / PDF
+              </button>
+              <button onclick="toggleCenterContentExpand()" class="expand-cta-btn" title="Expand Revision Guide Only — Hide Sidebars &amp; Topbar (Shortcut: Z or F)">
+                ⤢ Expand Content · Z
               </button>
             </div>
           </div>
@@ -3576,13 +3947,20 @@
       const altPill = document.getElementById('kb-journey-altitude-pill');
       const hintEl = document.getElementById('kb-journey-upnext-hint');
 
-      const altitudes = [
+      const altitudes = totalSteps >= 5 ? [
+        ['🌱 Plain-English Story', 'Zero jargon — build intuition first!'],
+        ['🔨 Starter & CLI Run', 'Terminal setup + subgoal-labeled code!'],
+        ['🛠️ Practitioner & Sim', 'Everyday configs, debugging & POE sim!'],
+        ['🏢 Big Tech & Staff Math', '30–500+ service scale, equations & blueprint!'],
+        ['📋 Cheat-Sheet & Pitch', 'Lookup table, 60s pitch, 1-click lab & quiz!']
+      ] : [
         ['🌱 Plain-English Story', 'Zero jargon — build intuition first!'],
         ['🔨 First Lines of Code', 'Hands-on baby step — run & see it work!'],
         ['⚡ Real-World & Sim', 'Test where naive code breaks at scale.'],
         ['🚀 Staff Mastery Gate', 'Production blueprint, 1-click lab & quiz!']
       ];
-      const altInfo = altitudes[Math.min(isGuided ? curIdx : 3, 3)];
+      const maxAltIdx = altitudes.length - 1;
+      const altInfo = altitudes[Math.min(isGuided ? curIdx : maxAltIdx, maxAltIdx)];
       if (arc) arc.setAttribute('stroke-dashoffset', String(offset.toFixed(2)));
       if (pctLabel) pctLabel.textContent = `${pct}%`;
       if (stepTitle) stepTitle.textContent = isGuided ? `Step ${curIdx + 1} of ${totalSteps}` : `Full Staff View (${totalSteps} Steps)`;
@@ -3660,6 +4038,9 @@
       stopWalkthroughPlayback();
       if (state.kbReadingMode === 'revise') {
         state.kbReadingMode = 'guided';
+        if (!state.kbUserWidthOverride && typeof setKbContentWidth === 'function') {
+          setKbContentWidth('comfort', false);
+        }
         const gBtn = document.getElementById('kb-mode-guided');
         const fBtn = document.getElementById('kb-mode-full');
         const rBtn = document.getElementById('kb-mode-revise');
@@ -4652,7 +5033,194 @@
       }
     }
 
+    /* ========================================================================
+       OPTION 4: EYE-COMFORT PALETTES, FONT SCALE, COLLAPSIBLE DRAWERS & FOCUS MODE
+       ======================================================================== */
+    const READER_FONT_SCALES = [1, 1.08, 1.16, 0.94];
+    let activeFontScaleIdx = 0;
+
+    function setEyeComfortTheme(themeName) {
+      const valid = ['sepia', 'oat', 'ink', 'dusk'];
+      const chosen = valid.includes(themeName) ? themeName : 'sepia';
+      document.body.setAttribute('data-theme', chosen);
+      try { localStorage.setItem('hub_eye_theme', chosen); } catch (_) {}
+      valid.forEach(t => {
+        const btn = document.getElementById('theme-btn-' + t);
+        if (btn) btn.classList.toggle('active', t === chosen);
+      });
+    }
+
+    function cycleReaderFontScale() {
+      activeFontScaleIdx = (activeFontScaleIdx + 1) % READER_FONT_SCALES.length;
+      const scale = READER_FONT_SCALES[activeFontScaleIdx];
+      document.documentElement.style.setProperty('--reader-font-scale', String(scale));
+      const btn = document.getElementById('font-scale-btn');
+      if (btn) btn.textContent = scale === 1 ? 'Aa' : `Aa ${Math.round(scale * 100)}%`;
+      try { localStorage.setItem('hub_font_scale_idx', String(activeFontScaleIdx)); } catch (_) {}
+    }
+
+    function toggleKbSidebar(side) {
+      const cls = side === 'left' ? 'kb-hide-left' : 'kb-hide-right';
+      const hidden = document.body.classList.toggle(cls);
+      const btn = document.getElementById(side === 'left' ? 'kb-toggle-left-btn' : 'kb-toggle-right-btn');
+      if (btn) btn.classList.toggle('active', !hidden);
+      if (side === 'left' && !hidden) closePeekDrawer();
+      try { localStorage.setItem('hub_' + cls, hidden ? '1' : '0'); } catch (_) {}
+    }
+
+    function setKbContentWidth(mode, isManual = true) {
+      const valid = ['comfort', 'wide', 'full'];
+      const chosen = valid.includes(mode) ? mode : 'comfort';
+      state.kbWidth = chosen;
+      if (isManual) state.kbUserWidthOverride = true;
+      document.body.setAttribute('data-kb-width', chosen);
+      valid.forEach(m => {
+        const b1 = document.getElementById('kb-width-btn-' + m);
+        const b2 = document.getElementById('zen-width-' + m);
+        if (b1) b1.classList.toggle('active', m === chosen);
+        if (b2) b2.classList.toggle('active', m === chosen);
+      });
+      if (isManual) {
+        try { localStorage.setItem('hub_kb_width', chosen); } catch (_) {}
+      }
+    }
+
+    function toggleCenterContentExpand(requestNative = false) {
+      if (state.activeView === 'textbook' && state.kbReadingMode === 'revise' && state.kbWidth === 'comfort') {
+        setKbContentWidth('wide', false);
+      }
+      toggleZenFullscreen(requestNative);
+    }
+
+    function openPeekDrawer() {
+      const drawer = document.getElementById('kb-peek-drawer');
+      if (drawer && state.activeView === 'textbook') drawer.classList.add('open');
+    }
+
+    function closePeekDrawer() {
+      const drawer = document.getElementById('kb-peek-drawer');
+      if (drawer) drawer.classList.remove('open');
+    }
+
+    function togglePeekDrawer() {
+      const drawer = document.getElementById('kb-peek-drawer');
+      if (!drawer) return;
+      drawer.classList.toggle('open');
+    }
+
+    const SPLIT_PANE_CONFIGS = {
+      'ws-left': {
+        targetId: 'ws-left-pane', targetDefaultSpan: 'lg:col-span-6',
+        siblingId: 'ws-right-pane',
+        btnId: 'ws-left-expand-btn', defaultLabel: '⤢ Expand Problem', restoreLabel: '↙ Restore 50/50'
+      },
+      'ws-right': {
+        targetId: 'ws-right-pane', targetDefaultSpan: 'lg:col-span-6',
+        siblingId: 'ws-left-pane',
+        btnId: 'ws-right-expand-btn', defaultLabel: '⤢ Expand Editor', restoreLabel: '↙ Restore 50/50'
+      },
+      'roadmap-main': {
+        targetId: 'roadmap-main-pane', targetDefaultSpan: 'lg:col-span-9',
+        siblingId: 'roadmap-left-aside',
+        btnId: 'roadmap-expand-btn', defaultLabel: '⤢ Expand Problems', restoreLabel: '↙ Show Chapters'
+      },
+      'mi-left': {
+        targetId: 'mi-left-pane', targetDefaultSpan: 'lg:col-span-7',
+        siblingId: 'mi-right-pane',
+        btnId: 'mi-left-expand-btn', defaultLabel: '⤢ Expand Reader', restoreLabel: '↙ Restore Split'
+      },
+      'mi-right': {
+        targetId: 'mi-right-pane', targetDefaultSpan: 'lg:col-span-5',
+        siblingId: 'mi-left-pane',
+        btnId: 'mi-right-expand-btn', defaultLabel: '⤢ Expand Studio', restoreLabel: '↙ Restore Split'
+      }
+    };
+
+    function restoreAllSplitPanes() {
+      Object.keys(SPLIT_PANE_CONFIGS).forEach(k => {
+        const cfg = SPLIT_PANE_CONFIGS[k];
+        const target = document.getElementById(cfg.targetId);
+        const sibling = document.getElementById(cfg.siblingId);
+        const btn = document.getElementById(cfg.btnId);
+        if (target) {
+          target.classList.remove('hidden', 'lg:col-span-12');
+          target.classList.add(cfg.targetDefaultSpan);
+        }
+        if (sibling) sibling.classList.remove('hidden');
+        if (btn) {
+          btn.textContent = cfg.defaultLabel;
+          btn.classList.remove('active');
+        }
+      });
+      state.maximizedSplitPane = null;
+    }
+
+    function toggleSplitPaneMaximize(paneKey) {
+      const cfg = SPLIT_PANE_CONFIGS[paneKey];
+      if (!cfg) return;
+      if (state.maximizedSplitPane === paneKey) {
+        restoreAllSplitPanes();
+        return;
+      }
+      restoreAllSplitPanes();
+      const target = document.getElementById(cfg.targetId);
+      const sibling = document.getElementById(cfg.siblingId);
+      const btn = document.getElementById(cfg.btnId);
+      if (target) {
+        target.classList.remove(cfg.targetDefaultSpan);
+        target.classList.add('lg:col-span-12');
+      }
+      if (sibling) sibling.classList.add('hidden');
+      if (btn) {
+        btn.textContent = cfg.restoreLabel;
+        btn.classList.add('active');
+      }
+      state.maximizedSplitPane = paneKey;
+    }
+
+    function toggleZenFullscreen(requestNative = false) {
+      const entering = !document.body.classList.contains('zen-fullscreen');
+      document.body.classList.toggle('zen-fullscreen', entering);
+      if (!entering) closePeekDrawer();
+      const btn = document.getElementById('zen-focus-btn');
+      if (btn) btn.classList.toggle('active', entering);
+      const kbExpBtn = document.getElementById('kb-expand-center-btn');
+      if (kbExpBtn) kbExpBtn.classList.toggle('active', entering);
+      if (entering && requestNative && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else if (!entering && document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    function initZenPreferences() {
+      try {
+        const savedTheme = localStorage.getItem('hub_eye_theme');
+        if (savedTheme) setEyeComfortTheme(savedTheme);
+        const savedScaleIdx = parseInt(localStorage.getItem('hub_font_scale_idx') || '0', 10);
+        if (!Number.isNaN(savedScaleIdx) && savedScaleIdx > 0 && savedScaleIdx < READER_FONT_SCALES.length) {
+          activeFontScaleIdx = savedScaleIdx - 1;
+          cycleReaderFontScale();
+        }
+        const savedWidth = localStorage.getItem('hub_kb_width');
+        if (savedWidth) setKbContentWidth(savedWidth, true);
+
+        const hideLeftPref = localStorage.getItem('hub_kb-hide-left');
+        const hideRightPref = localStorage.getItem('hub_kb-hide-right');
+        const hideLeft = hideLeftPref === '1';
+        const hideRight = hideRightPref === null ? true : (hideRightPref === '1');
+        document.body.classList.toggle('kb-hide-left', hideLeft);
+        document.body.classList.toggle('kb-hide-right', hideRight);
+
+        const leftBtn = document.getElementById('kb-toggle-left-btn');
+        const rightBtn = document.getElementById('kb-toggle-right-btn');
+        if (leftBtn) leftBtn.classList.toggle('active', !hideLeft);
+        if (rightBtn) rightBtn.classList.toggle('active', !hideRight);
+      } catch (_) {}
+    }
+
     async function initHub() {
+      initZenPreferences();
       attachSmartEditorKeybindings();
       await loadKbCatalogAndDefaultChapter();
       await Promise.all([
@@ -4684,15 +5252,58 @@
     }
 
     document.addEventListener('keydown', (e) => {
+      const inInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target && e.target.tagName) || '');
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        if (document.body.classList.contains('zen-fullscreen')) toggleZenFullscreen(false);
+        const searchInput = document.getElementById('global-kb-search');
+        if (searchInput) { searchInput.focus(); searchInput.select(); }
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         if (state.activeView === 'workspace') {
           e.preventDefault();
           saveActiveFileToDisk();
         }
-      } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         if (state.activeView === 'workspace') {
           e.preventDefault();
           runAndVerifyWorkspaceCode();
+        }
+        return;
+      }
+      if (e.key === 'Escape') {
+        const drawer = document.getElementById('kb-peek-drawer');
+        if (drawer && drawer.classList.contains('open')) {
+          closePeekDrawer();
+          return;
+        }
+        if (state.maximizedSplitPane) {
+          restoreAllSplitPanes();
+          return;
+        }
+        if (document.body.classList.contains('zen-fullscreen')) {
+          toggleZenFullscreen(false);
+          return;
+        }
+      }
+      if (!inInput && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (e.key === 'f' || e.key === 'F' || e.key === 'z' || e.key === 'Z') {
+          e.preventDefault();
+          toggleCenterContentExpand(e.shiftKey);
+        } else if (e.key === '[') {
+          if (state.activeView === 'textbook') {
+            e.preventDefault();
+            toggleKbSidebar('left');
+          } else if (state.activeView === 'roadmap') {
+            e.preventDefault();
+            toggleSplitPaneMaximize('roadmap-main');
+          }
+        } else if (e.key === ']' && state.activeView === 'textbook') {
+          e.preventDefault();
+          toggleKbSidebar('right');
         }
       }
     });
