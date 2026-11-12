@@ -485,7 +485,19 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             self.assertTrue((scaf_dir / "solution.py").exists())
             self.assertTrue((scaf_dir / "Solution.java").exists())
             self.assertTrue((scaf_dir / "tests.json").exists())
-            # Verify scaffolded starter passes per-case runner
+            # Newly scaffolded starter must be genuinely un-spoiled (not pre-solved!)
+            run_blank = hub_server.dispatch_request(
+                "POST",
+                "/api/run-cases",
+                body={"slug": "002-contains-duplicate", "lang": "python"}
+            )
+            self.assertEqual(run_blank["status_code"], 200)
+            self.assertEqual(run_blank["data"]["status"], "FAILED")
+            self.assertIn("codeCoach", run_blank["data"])
+            # Now write the real solution and verify Code Coach awards Staff grade
+            from hub import dsa_catalog
+            ref_py = dsa_catalog.get_reference_solution("contains-duplicate")["python"]
+            (scaf_dir / "solution.py").write_text(ref_py, encoding="utf-8")
             run_scaf = hub_server.dispatch_request(
                 "POST",
                 "/api/run-cases",
@@ -493,6 +505,7 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             )
             self.assertEqual(run_scaf["status_code"], 200)
             self.assertEqual(run_scaf["data"]["status"], "PASSED")
+            self.assertGreaterEqual(run_scaf["data"]["codeCoach"]["score"], 95)
         finally:
             if not existed_before and scaf_dir.exists():
                 shutil.rmtree(scaf_dir)
@@ -1121,6 +1134,119 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             flags=_re.IGNORECASE,
         )
         self.assertEqual(glare_hex, [], f"Found hardcoded light-mode hex in roadmap section/JS: {glare_hex}")
+
+    def test_23_wave1_coding_dojo_catalog_coach_warmups_and_dark_ui(self):
+        """Verify Wave 1 (Option A): 128/128 DSA specs, 12 Warmups, 4s timeout guard, O(N^2) vs O(N) Code Coach, reset, and Dark UI."""
+        import shutil
+        import re as _re
+        from hub import code_coach, dsa_catalog
+
+        # 1. Verify all 128/128 problems exist with unique slugs, outlines, and passing reference tests
+        self.assertEqual(len(dsa_catalog.ALL_SPECS), 128)
+        for spec in dsa_catalog.ALL_SPECS:
+            self.assertTrue(spec.get("firstLine"))
+            self.assertEqual(len(spec.get("steps", [])), 3, f"Problem #{spec['id']} must have 3-step outline")
+            ref = dsa_catalog.get_reference_solution(str(spec["id"]))["python"]
+            meta = dsa_catalog.build_tests_meta(spec, f"{spec['id']:03d}-{spec['slug']}")
+            res = code_coach.run_python_cases_sandboxed(None, meta, spec=spec, code_text=ref, mode="dsa")
+            self.assertEqual(res["status"], "PASSED", f"Reference failed for #{spec['id']} {spec['slug']}: {res}")
+            self.assertGreaterEqual(res["codeCoach"]["score"], 90, f"Low score for ref #{spec['id']}: {res['codeCoach']}")
+
+        # 2. Verify GET /api/dsa/warmups + POST /api/dsa/warmup/run on all 12 templates
+        wu_res = hub_server.dispatch_request("GET", "/api/dsa/warmups")
+        self.assertEqual(wu_res["status_code"], 200)
+        warmups = wu_res["data"]["warmups"]
+        self.assertEqual(len(warmups), 12)
+        for d in dsa_catalog.WARMUP_DRILLS:
+            run_d = hub_server.dispatch_request(
+                "POST",
+                "/api/dsa/warmup/run",
+                body={"drillId": d["id"], "code": d["refPy"]},
+            )
+            self.assertEqual(run_d["status_code"], 200)
+            self.assertEqual(run_d["data"]["status"], "PASSED", f"Warmup {d['id']} failed: {run_d['data']}")
+            self.assertIn("referenceSolution", run_d["data"])
+
+        # 3. Verify infinite-loop protection times out safely without crashing server
+        two_sum_spec = dsa_catalog.get_spec("two-sum")
+        two_sum_meta = dsa_catalog.build_tests_meta(two_sum_spec, "001-two-sum")
+        inf_code = "class Solution:\n    def twoSum(self, nums, target):\n        while True:\n            pass\n"
+        t_res = code_coach.run_python_cases_sandboxed(
+            None, two_sum_meta, spec=two_sum_spec, code_text=inf_code, mode="dsa", timeout_s=1.0
+        )
+        self.assertEqual(t_res["status"], "TIMEOUT")
+        self.assertEqual(t_res["codeCoach"]["score"], 0)
+        self.assertIn("4 seconds", t_res["codeCoach"]["tips"][0])
+
+        # 4. Verify Code Coach catches O(N^2) quadratic nesting vs O(N) hash solution
+        slow_code = (
+            "class Solution:\n"
+            "    def twoSum(self, nums, target):\n"
+            "        if nums:\n"
+            "            if len(nums) > 1:\n"
+            "                for i in range(len(nums)):\n"
+            "                    for j in range(i + 1, len(nums)):\n"
+            "                        if nums[i] + nums[j] == target:\n"
+            "                            return [i, j]\n"
+            "        return []\n"
+        )
+        s_res = code_coach.run_python_cases_sandboxed(
+            None, two_sum_meta, spec=two_sum_spec, code_text=slow_code, mode="dsa"
+        )
+        self.assertEqual(s_res["status"], "PASSED")
+        self.assertLess(s_res["codeCoach"]["score"], 85)
+        self.assertEqual(s_res["codeCoach"]["speedPts"], 10)
+
+        # 5. Verify scaffold -> Help Me Start metadata -> reset cycle for a complex OOP problem (LFU Cache #122)
+        lfu_dir = REPO_ROOT / "dsa" / "13-design-and-concurrency" / "122-lfu-cache"
+        existed = lfu_dir.exists()
+        try:
+            bun = hub_server.dispatch_request("GET", "/api/dsa/problem?slug=lfu-cache")
+            self.assertEqual(bun["status_code"], 200)
+            self.assertEqual(bun["data"]["problem"]["className"], "LFUCache")
+            self.assertEqual(len(bun["data"]["problem"]["steps"]), 3)
+            actual_dir = REPO_ROOT / bun["data"]["folderPath"]
+            # Overwrite with ref, test pass, then reset back to blank starter
+            (actual_dir / "solution.py").write_text(
+                dsa_catalog.get_reference_solution("lfu-cache")["python"], encoding="utf-8"
+            )
+            pass_res = hub_server.dispatch_request("POST", "/api/dsa/problem/lfu-cache/run", body={"lang": "python"})
+            self.assertEqual(pass_res["status_code"], 200)
+            self.assertEqual(pass_res["data"]["status"], "PASSED")
+            self.assertIn("referenceSolution", pass_res["data"])
+
+            rst_res = hub_server.dispatch_request(
+                "POST", "/api/dsa/problem/lfu-cache/reset", body={"lang": "python"}
+            )
+            self.assertEqual(rst_res["status_code"], 200)
+            self.assertIn("pass", rst_res["data"]["files"]["python"]["content"])
+        finally:
+            if not existed and lfu_dir.exists():
+                shutil.rmtree(lfu_dir)
+
+        # 6. Verify #view-workspace has zero glaring light-mode hexes and renders Wave 1 Studio tokens
+        root_html = hub_server.dispatch_request("GET", "/")["data"]["html"]
+        for tok in (
+            "ws-warmup-select",
+            "ws-help-start-btn",
+            "ws-reset-blank-btn",
+            "ws-first-line-banner",
+            "ws-code-coach-card",
+            "ws-coach-score-title",
+            "ws-coach-ref-pre",
+            "triggerHelpMeStart",
+            "resetActiveProblemToBlank",
+        ):
+            self.assertIn(tok, root_html, f"Missing Wave 1 UI token: {tok}")
+
+        ws_sec = _re.search(r'<main id="view-workspace"[\s\S]*?</main>', root_html)
+        self.assertIsNotNone(ws_sec)
+        ws_glare = _re.findall(
+            r"(?:bg-white|#(?!18181B|121215)(?:FFFDF9|FAF7F2|E6DEC8|F6FBF9|FEF3C7))",
+            ws_sec.group(0),
+            flags=_re.IGNORECASE,
+        )
+        self.assertEqual(ws_glare, [], f"Found hardcoded light-mode colors in #view-workspace: {ws_glare}")
 
 
 if __name__ == "__main__":

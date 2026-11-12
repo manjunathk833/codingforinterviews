@@ -1743,7 +1743,7 @@
   </main>
 
   <!-- ==========================================================================
-       VIEW 5: 50/50 EDITORIAL SPLIT STUDIO (BANKED WS 1 — DSA)
+       VIEW 5: 50/50 EDITORIAL SPLIT STUDIO (BANKED WS 1 — DSA & CODING DOJO)
        ========================================================================== -->
   <main id="view-workspace" class="hidden hub-container space-y-4">
     <div id="ws-page-tracker-bar" class="page-tracker-banner flex flex-wrap items-center justify-between gap-3 text-xs"></div>
@@ -1756,6 +1756,15 @@
         <span id="ws-breadcrumb-title" class="font-bold">003. Group Anagrams</span>
       </div>
       <div class="flex flex-wrap items-center gap-1.5">
+        <select
+          id="ws-warmup-select"
+          onchange="selectWarmupDrill(this.value)"
+          class="nav-tab mono"
+          style="padding: 4px 10px; font-size: 0.74rem; background: var(--bg-subtle); color: var(--ink-primary); border: 1px solid var(--border-warm);"
+          title="Practice 2-to-5 minute muscle-memory coding templates from memory"
+        >
+          <option value="">🥋 5-Min Warmup Drills (12 Templates)</option>
+        </select>
         <button onclick="toggleActiveDsaProblemDone()" id="ws-roadmap-done-btn" class="mark-done-btn mr-1" title="Mark this DSA Problem as Done in your Staff SDET Roadmap">
           ○ Mark Done
         </button>
@@ -1773,7 +1782,7 @@
       <!-- LEFT 6 COLS (COLLAPSIBLE / MAXIMIZABLE) -->
       <section id="ws-left-pane" class="lg:col-span-6 panel flex flex-col justify-between space-y-4">
         <div class="space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#E6DEC8] pb-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3" style="border-bottom: 1px solid var(--border-warm);">
             <div class="flex flex-wrap gap-1.5">
               <button onclick="switchLeftTab('problem')" id="left-tab-problem" class="nav-tab active" style="padding: 5px 11px; font-size: 0.76rem;">
                 1. Problem &amp; 3D Visualizer
@@ -1786,7 +1795,7 @@
               </button>
             </div>
             <div class="flex items-center gap-1.5">
-              <span id="ws-difficulty-badge" class="archetype-pill" style="background:#FEF3C7; color:#B7791F;">Medium</span>
+              <span id="ws-difficulty-badge" class="archetype-pill" style="background: var(--accent-terra-soft); color: var(--accent-terra);">Medium</span>
               <button onclick="toggleSplitPaneMaximize('ws-left')" id="ws-left-expand-btn" class="expand-cta-btn" title="Expand Problem &amp; Visualizer to 100% Width">⤢ Expand Problem</button>
             </div>
           </div>
@@ -1800,10 +1809,10 @@
                 </button>
               </div>
               <p id="ws-problem-prompt" class="text-sm mt-1" style="color: var(--ink-secondary);">
-                Given an array of strings <code class="mono bg-[#FAF7F2] px-1 rounded">strs</code>, group the anagrams together in <code class="mono text-emerald-800 font-semibold">O(N · K)</code> time using a 26-letter canonical frequency signature.
+                Given an array of strings <code class="mono px-1 rounded" style="background: var(--bg-subtle); color: var(--ink-primary);">strs</code>, group the anagrams together in <code class="mono font-semibold" style="color: var(--accent-sage);">O(N · K)</code> time using a 26-letter canonical frequency signature.
               </p>
-              <div class="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-[#FAF7F2] border border-[#E6DEC8] text-xs mono">
-                <span>Invariant:</span>
+              <div class="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs mono" style="background: var(--bg-subtle); border: 1px solid var(--border-warm);">
+                <span style="color: var(--ink-muted);">Invariant:</span>
                 <strong id="ws-problem-invariant" style="color: var(--accent-sage);">key = tuple(count[26]) → buckets[key].append(word)</strong>
               </div>
             </div>
@@ -1813,7 +1822,7 @@
                 <span id="viz-step-header" class="mono font-semibold uppercase" style="color: var(--ink-secondary);">
                   Interactive 3D Trace · Step 1 of 6
                 </span>
-                <span id="viz-active-badge" class="mono font-semibold px-2.5 py-0.5 rounded-md bg-white border border-[#E6DEC8]" style="color: var(--accent-terra);">
+                <span id="viz-active-badge" class="mono font-semibold px-2.5 py-0.5 rounded-md" style="background: var(--bg-subtle); border: 1px solid var(--border-warm); color: var(--accent-terra);">
                   Ready
                 </span>
               </div>
@@ -1821,7 +1830,7 @@
               <div id="viz-tiles-row" class="flex flex-wrap items-center justify-center gap-2 py-2 min-h-[54px]"></div>
               <div id="viz-buckets-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mono text-xs"></div>
 
-              <p id="viz-step-narration" class="text-xs bg-white rounded-lg p-3 border border-[#E6DEC8]" style="color: var(--ink-secondary); line-height: 1.6;">
+              <p id="viz-step-narration" class="text-xs rounded-lg p-3" style="background: var(--bg-subtle); border: 1px solid var(--border-warm); color: var(--ink-secondary); line-height: 1.6;">
                 Step through the trace to watch each input fold into its canonical O(1) hash structure.
               </p>
 
@@ -1840,7 +1849,8 @@
                     id="viz-custom-input"
                     type="text"
                     value='{"strs": ["eat", "tea", "tan", "ate", "nat", "bat"]}'
-                    class="flex-1 bg-white border border-[#E6DEC8] rounded-lg px-3 py-1.5 mono text-[11px] focus:outline-none focus:border-zinc-900"
+                    class="flex-1 rounded-lg px-3 py-1.5 mono text-[11px] focus:outline-none"
+                    style="background: var(--bg-subtle); color: var(--ink-primary); border: 1px solid var(--border-warm);"
                   />
                   <button onclick="runCustomVisualizerInput()" class="nav-tab shrink-0" style="padding: 5px 11px;">
                     ↻ Trace Input
@@ -1882,20 +1892,26 @@
       </section>
 
       <!-- RIGHT 6 COLS (COLLAPSIBLE / MAXIMIZABLE) -->
-      <section id="ws-right-pane" class="lg:col-span-6 panel flex flex-col justify-between space-y-4">
-        <div class="space-y-3 flex-1 flex flex-col">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#E6DEC8] pb-3">
-            <div class="flex items-center gap-2">
-              <button onclick="switchEditorLang('python')" id="lang-tab-python" class="nav-tab active mono" style="padding: 5px 12px;">
+      <section id="ws-right-pane" class="lg:col-span-6 panel flex flex-col justify-between space-y-3.5">
+        <div class="space-y-2.5 flex-1 flex flex-col">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5" style="border-bottom: 1px solid var(--border-warm);">
+            <div class="flex items-center gap-1.5">
+              <button onclick="switchEditorLang('python')" id="lang-tab-python" class="nav-tab active mono" style="padding: 5px 11px;">
                 🐍 solution.py
               </button>
-              <button onclick="switchEditorLang('java')" id="lang-tab-java" class="nav-tab mono" style="padding: 5px 12px;">
+              <button onclick="switchEditorLang('java')" id="lang-tab-java" class="nav-tab mono" style="padding: 5px 11px;">
                 ☕ Solution.java
+              </button>
+              <button onclick="triggerHelpMeStart()" id="ws-help-start-btn" class="nav-tab font-semibold" style="padding: 5px 11px; background: var(--accent-terra-soft); color: var(--accent-terra);" title="Click once for Line 1 hint; click twice to insert 3-step plain-English comments">
+                ⚡ Help Me Start
+              </button>
+              <button onclick="resetActiveProblemToBlank()" id="ws-reset-blank-btn" class="nav-tab" style="padding: 5px 10px;" title="Wipe file clean back to empty starter signature">
+                ↺ Reset Blank
               </button>
             </div>
 
             <div class="flex flex-wrap items-center gap-1.5">
-              <span id="editor-disk-status" class="text-[11px] mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+              <span id="editor-disk-status" class="text-[11px] mono px-2.5 py-1 rounded-md" style="background: var(--accent-sage-soft); color: var(--accent-sage); border: 1px solid var(--border-warm);">
                 ✓ Saved · dsa/.../solution.py
               </span>
               <button onclick="saveActiveFileToDisk()" class="btn-subtle" style="padding: 5px 10px; font-size: 0.76rem;">
@@ -1905,7 +1921,15 @@
             </div>
           </div>
 
-          <div class="relative flex-1 flex bg-[#18181B] rounded-xl overflow-hidden border border-zinc-800 min-h-[320px]">
+          <div id="ws-first-line-banner" class="hidden rounded-xl px-3.5 py-2.5 text-xs flex items-center justify-between gap-2" style="background: var(--accent-terra-soft); border: 1px solid var(--border-warm); color: var(--ink-primary);">
+            <div>
+              <strong style="color: var(--accent-terra);">⚡ First-Line Coach:</strong>
+              <span id="ws-first-line-text">Start by creating your lookup state on line 1.</span>
+            </div>
+            <span id="ws-first-line-badge" class="mono text-[11px] font-semibold shrink-0 px-2 py-0.5 rounded" style="background: var(--bg-card); color: var(--ink-secondary);">Click again for 3-step outline</span>
+          </div>
+
+          <div class="relative flex-1 flex bg-[#18181B] rounded-xl overflow-hidden border border-zinc-800 min-h-[290px]">
             <pre
               id="editor-line-gutter"
               aria-hidden="true"
@@ -1933,12 +1957,12 @@
                 🏆 Mark Mastered
               </button>
               <button onclick="runAndVerifyWorkspaceCode()" id="ws-run-btn" class="btn-primary">
-                ▶ Run &amp; Verify Code (⌘↵)
+                ▶ Run &amp; Coach (⌘↵)
               </button>
             </div>
           </div>
 
-          <div id="ws-case-inspector" class="bg-white rounded-lg p-3 border border-[#E6DEC8] text-xs mono space-y-2">
+          <div id="ws-case-inspector" class="rounded-lg p-3 text-xs mono space-y-2" style="background: var(--bg-subtle); border: 1px solid var(--border-warm);">
             <div class="flex items-center justify-between">
               <span id="ws-case-input-label" class="truncate" style="color: var(--ink-secondary);">Input: strs = ["eat","tea","tan","ate","nat","bat"]</span>
               <button onclick="visualizeSelectedCase()" class="font-bold hover:underline shrink-0 ml-2" style="color: var(--accent-terra); font-family: 'Plus Jakarta Sans', sans-serif !important;">
@@ -1946,14 +1970,39 @@
               </button>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-              <div class="p-2 rounded-md bg-[#FAF7F2] border border-[#E6DEC8]">
+              <div class="p-2 rounded-md" style="background: var(--bg-card); border: 1px solid var(--border-warm);">
                 <span class="block" style="color: var(--ink-muted);">Expected:</span>
-                <span id="ws-case-expected" class="font-semibold break-all">[["ate","eat","tea"],["nat","tan"],["bat"]]</span>
+                <span id="ws-case-expected" class="font-semibold break-all" style="color: var(--ink-primary);">[["ate","eat","tea"],["nat","tan"],["bat"]]</span>
               </div>
-              <div class="p-2 rounded-md bg-[#F6FBF9] border border-[#B7E4D8]">
+              <div class="p-2 rounded-md" style="background: var(--accent-sage-soft); border: 1px solid var(--border-warm);">
                 <span class="block" style="color: var(--accent-sage);">Actual Output:</span>
-                <span id="ws-case-actual" class="font-semibold break-all" style="color: #064E3B;">[["eat","tea","ate"],["tan","nat"],["bat"]]</span>
+                <span id="ws-case-actual" class="font-semibold break-all" style="color: var(--ink-primary);">[["eat","tea","ate"],["tan","nat"],["bat"]]</span>
               </div>
+            </div>
+          </div>
+
+          <!-- INSTANT CODE COACH 0-100 ASSESSMENT CARD -->
+          <div id="ws-code-coach-card" class="rounded-xl p-3 text-xs space-y-2" style="background: var(--bg-subtle); border: 1px solid var(--border-warm);">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <strong id="ws-coach-score-title" style="color: var(--ink-primary);">🏆 Instant Code Coach: Ready</strong>
+                <span id="ws-coach-verdict" class="mono text-[11px] px-2 py-0.5 rounded-full" style="background: var(--bg-card); color: var(--ink-secondary);">100% Local Grader</span>
+              </div>
+              <span id="ws-coach-scaling" class="mono text-[11px]" style="color: var(--ink-muted);">Click ▶ Run &amp; Coach to score Correctness, Speed &amp; Clean Code</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 mono text-[11px]">
+              <span id="ws-coach-correct" class="px-2.5 py-0.5 rounded-full" style="background: var(--bg-card); color: var(--ink-secondary);">Correctness: --/50</span>
+              <span id="ws-coach-speed" class="px-2.5 py-0.5 rounded-full" style="background: var(--bg-card); color: var(--ink-secondary);">Speed: --/25</span>
+              <span id="ws-coach-clean" class="px-2.5 py-0.5 rounded-full" style="background: var(--bg-card); color: var(--ink-secondary);">Clean Code: --/25</span>
+            </div>
+            <ul id="ws-coach-tips" class="list-disc pl-4 space-y-1 text-[11.5px]" style="color: var(--ink-secondary);">
+              <li>Write your first lines from scratch, or click <strong>⚡ Help Me Start</strong> for a 3-step plain-English outline.</li>
+            </ul>
+            <div id="ws-coach-ref-wrap" class="hidden pt-1">
+              <button onclick="toggleCoachReference()" class="font-bold hover:underline" style="color: var(--accent-sage);">
+                🔓 Compare Side-by-Side with Staff Reference Solution ▾
+              </button>
+              <pre id="ws-coach-ref-pre" class="hidden mt-2 p-3 rounded-lg bg-[#121215] text-zinc-100 mono text-[11px] overflow-x-auto leading-relaxed"></pre>
             </div>
           </div>
         </div>
@@ -5096,7 +5145,10 @@
         fileObj.content = document.getElementById('ws-code-editor').value;
         const statusEl = document.getElementById('editor-disk-status');
         statusEl.textContent = `● Unsaved edits · ${fileObj.path}`;
-        statusEl.className = 'text-[11px] mono text-amber-900 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200';
+        statusEl.className = 'text-[11px] mono px-2.5 py-1 rounded-md';
+        statusEl.style.background = 'var(--accent-terracotta-soft)';
+        statusEl.style.color = 'var(--accent-terracotta)';
+        statusEl.style.borderColor = 'var(--accent-terracotta)';
       }
     }
 
@@ -5147,6 +5199,13 @@
 
     async function openProblemWorkspace(slug, switchScreen = true) {
       state.activeSlug = slug;
+      state.activeWarmupId = null;
+      state.helpStartClicks = 0;
+      state.lastReferencePython = null;
+      const warmupSel = document.getElementById('ws-warmup-select');
+      if (warmupSel) warmupSel.value = '';
+      resetHelpMeStartBanner();
+      resetCodeCoachCard();
       state.unlockedHintTier = 1;
       state.isDirty = false;
       if (switchScreen) showView('workspace');
@@ -5175,6 +5234,7 @@
         }
       } catch (_) {}
 
+      state.activeProblemMeta = probMeta;
       if (probMeta && probMeta.id) {
         state.activeProblemId = Number(probMeta.id);
       } else {
@@ -5206,6 +5266,180 @@
       if (firstInput) document.getElementById('viz-custom-input').value = JSON.stringify(firstInput);
       renderRoadmapEverywhere();
       await loadVisualizerTrace(state.activeVisualizerId, firstInput);
+    }
+
+    async function loadWarmupDrills() {
+      try {
+        const res = await fetch('/api/dsa/warmups');
+        if (!res.ok) return;
+        const data = await res.json();
+        state.warmupDrills = data.warmups || [];
+        const sel = document.getElementById('ws-warmup-select');
+        if (sel) {
+          sel.innerHTML = `<option value="">🥋 5-Min Warmup Drills (12 Templates)</option>` +
+            state.warmupDrills.map(d => `<option value="${d.id}">${d.title} (~${d.minutes}m)</option>`).join('');
+        }
+      } catch (_) {}
+    }
+
+    function selectWarmupDrill(drillId) {
+      if (!drillId) {
+        state.activeWarmupId = null;
+        return openProblemWorkspace(state.activeSlug || '003-group-anagrams', false);
+      }
+      const drill = (state.warmupDrills || []).find(d => d.id === drillId);
+      if (!drill) return;
+      state.activeWarmupId = drill.id;
+      state.helpStartClicks = 0;
+      state.lastReferencePython = null;
+      resetHelpMeStartBanner();
+      resetCodeCoachCard();
+
+      document.getElementById('ws-breadcrumb-title').textContent = `🥋 Warmup · ${drill.title}`;
+      document.getElementById('ws-problem-title').textContent = drill.title;
+      document.getElementById('ws-problem-prompt').textContent = drill.goal;
+      document.getElementById('ws-problem-invariant').textContent = drill.firstLine;
+      document.getElementById('ws-difficulty-badge').textContent = `${drill.minutes}m Drill`;
+
+      state.activeLang = 'python';
+      document.getElementById('lang-tab-python').classList.add('active');
+      document.getElementById('lang-tab-java').classList.remove('active');
+      const ed = document.getElementById('ws-code-editor');
+      ed.value = drill.starterPy;
+      updateEditorLineNumbers();
+      document.getElementById('editor-disk-status').textContent = `🥋 Drill Mode · In-Memory Sandbox`;
+
+      state.cases = (drill.cases || []).map((c, idx) => ({
+        id: `drill-c${idx + 1}`, label: `Drill ${idx + 1}`, input: c.input, expected: c.expected, actual: c.expected, passed: true, durationMs: 0.2
+      }));
+      renderCasePills();
+      selectTestCaseIndex(0);
+    }
+
+    function resetHelpMeStartBanner() {
+      const b = document.getElementById('ws-first-line-banner');
+      const btn = document.getElementById('ws-help-start-btn');
+      if (b) b.classList.add('hidden');
+      if (btn) btn.textContent = '⚡ Help Me Start';
+    }
+
+    function triggerHelpMeStart() {
+      const banner = document.getElementById('ws-first-line-banner');
+      const txtEl = document.getElementById('ws-first-line-text');
+      const badgeEl = document.getElementById('ws-first-line-badge');
+      const btn = document.getElementById('ws-help-start-btn');
+      const editor = document.getElementById('ws-code-editor');
+
+      const meta = state.activeWarmupId
+        ? (state.warmupDrills || []).find(d => d.id === state.activeWarmupId)
+        : state.activeProblemMeta;
+      const firstLine = (meta && meta.firstLine) || 'Initialize a hash map or pointer state on line 1.';
+
+      state.helpStartClicks = (state.helpStartClicks || 0) + 1;
+      if (state.helpStartClicks === 1 || !meta || !meta.outlinePy) {
+        if (txtEl) txtEl.textContent = firstLine;
+        if (badgeEl) badgeEl.textContent = state.activeWarmupId ? '3-step hints already in editor' : 'Click again to insert 3-step outline';
+        if (banner) banner.classList.remove('hidden');
+        if (btn && !state.activeWarmupId) btn.textContent = '⚡ Insert 3-Step Outline';
+        return;
+      }
+
+      // Click 2: Insert 3 plain-English # Step 1 / # Step 2 / # Step 3 comments without writing solution code
+      if (state.activeLang !== 'python') switchEditorLang('python');
+      if (editor && meta.outlinePy) {
+        editor.value = meta.outlinePy;
+        handleEditorInput();
+        if (badgeEl) badgeEl.textContent = '✓ 3-Step Outline Inserted';
+        if (btn) btn.textContent = '⚡ Outline Ready';
+      }
+    }
+
+    async function resetActiveProblemToBlank() {
+      state.helpStartClicks = 0;
+      state.lastReferencePython = null;
+      resetHelpMeStartBanner();
+      resetCodeCoachCard();
+      if (state.activeWarmupId) {
+        selectWarmupDrill(state.activeWarmupId);
+        return;
+      }
+      const btn = document.getElementById('ws-reset-blank-btn');
+      if (btn) btn.textContent = '⏳ Resetting...';
+      try {
+        const res = await fetch('/api/dsa/problem/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: state.activeSlug, lang: state.activeLang })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.files && data.files.python) state.files.python = data.files.python;
+          if (data.files && data.files.java) state.files.java = data.files.java;
+          state.isDirty = false;
+          switchEditorLang(state.activeLang, false);
+        }
+      } catch (_) {}
+      if (btn) btn.textContent = '↺ Reset Blank';
+    }
+
+    function resetCodeCoachCard() {
+      const titleEl = document.getElementById('ws-coach-score-title');
+      const verdEl = document.getElementById('ws-coach-verdict');
+      const scaleEl = document.getElementById('ws-coach-scaling');
+      const corrEl = document.getElementById('ws-coach-correct');
+      const spdEl = document.getElementById('ws-coach-speed');
+      const clnEl = document.getElementById('ws-coach-clean');
+      const tipsEl = document.getElementById('ws-coach-tips');
+      const refWrap = document.getElementById('ws-coach-ref-wrap');
+      const refPre = document.getElementById('ws-coach-ref-pre');
+      if (titleEl) titleEl.textContent = '🏆 Instant Code Coach: Ready';
+      if (verdEl) verdEl.textContent = '100% Local Grader';
+      if (scaleEl) scaleEl.textContent = 'Click ▶ Run & Coach to score Correctness, Speed & Clean Code';
+      if (corrEl) corrEl.textContent = 'Correctness: --/50';
+      if (spdEl) spdEl.textContent = 'Speed: --/25';
+      if (clnEl) clnEl.textContent = 'Clean Code: --/25';
+      if (tipsEl) tipsEl.innerHTML = '<li>Write your first lines from scratch, or click <strong>⚡ Help Me Start</strong> for a 3-step plain-English outline.</li>';
+      if (refWrap) refWrap.classList.add('hidden');
+      if (refPre) refPre.classList.add('hidden');
+    }
+
+    function renderCodeCoachAssessment(coach, refSol) {
+      if (!coach) return;
+      const titleEl = document.getElementById('ws-coach-score-title');
+      const verdEl = document.getElementById('ws-coach-verdict');
+      const scaleEl = document.getElementById('ws-coach-scaling');
+      const corrEl = document.getElementById('ws-coach-correct');
+      const spdEl = document.getElementById('ws-coach-speed');
+      const clnEl = document.getElementById('ws-coach-clean');
+      const tipsEl = document.getElementById('ws-coach-tips');
+      const refWrap = document.getElementById('ws-coach-ref-wrap');
+      const refPre = document.getElementById('ws-coach-ref-pre');
+
+      if (titleEl) titleEl.textContent = `🏆 Code Coach Score: ${coach.score} / 100`;
+      if (verdEl) {
+        verdEl.textContent = coach.verdict || 'Evaluated';
+        verdEl.style.color = coach.score >= 90 ? 'var(--accent-sage)' : 'var(--accent-terra)';
+      }
+      if (scaleEl) scaleEl.textContent = coach.empiricalScaling || '';
+      if (corrEl) corrEl.textContent = `✓ Correctness: ${coach.correctnessPts}/50`;
+      if (spdEl) spdEl.textContent = `⚡ Speed: ${coach.speedPts}/25`;
+      if (clnEl) clnEl.textContent = `✨ Clean Code: ${coach.cleanCodePts}/25`;
+
+      if (tipsEl) {
+        tipsEl.innerHTML = (coach.tips || []).map(t => `<li>${String(t).replace(/</g, '&lt;')}</li>`).join('');
+      }
+      if (refSol && refSol.python && refWrap && refPre) {
+        state.lastReferencePython = refSol.python;
+        refPre.textContent = refSol.python;
+        refWrap.classList.remove('hidden');
+      } else if (refWrap) {
+        refWrap.classList.add('hidden');
+      }
+    }
+
+    function toggleCoachReference() {
+      const refPre = document.getElementById('ws-coach-ref-pre');
+      if (refPre) refPre.classList.toggle('hidden');
     }
 
     function renderHints(hints) {
@@ -5265,14 +5499,20 @@
         const data = await res.json();
         if (res.status === 412) {
           statusEl.textContent = '⚠️ Disk Conflict (Modified in IDE!)';
-          statusEl.className = 'text-[11px] mono text-amber-900 bg-amber-100 px-2.5 py-1 rounded-md border border-amber-300';
+          statusEl.className = 'text-[11px] mono px-2.5 py-1 rounded-md';
+          statusEl.style.background = 'var(--accent-terracotta-soft)';
+          statusEl.style.color = 'var(--accent-terracotta)';
+          statusEl.style.borderColor = 'var(--accent-terracotta)';
           return;
         }
         if (res.ok && data.sha256) {
           fileObj.sha256 = data.sha256;
           state.isDirty = false;
           statusEl.textContent = `✓ Saved · ${fileObj.path} (${data.sha256.slice(0, 7)})`;
-          statusEl.className = 'text-[11px] mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200';
+          statusEl.className = 'text-[11px] mono px-2.5 py-1 rounded-md';
+          statusEl.style.background = 'var(--accent-sage-soft)';
+          statusEl.style.color = 'var(--accent-sage)';
+          statusEl.style.borderColor = 'var(--border-warm)';
         }
       } catch (_) {
         statusEl.textContent = `✓ Saved in buffer · ${fileObj.path}`;
@@ -5280,9 +5520,30 @@
     }
 
     async function runAndVerifyWorkspaceCode() {
-      await saveActiveFileToDisk();
       const btn = document.getElementById('ws-run-btn');
-      btn.textContent = '⏳ Running tests.json...';
+      if (state.activeWarmupId) {
+        btn.textContent = '⏳ Coaching Drill...';
+        try {
+          const code = (document.getElementById('ws-code-editor') || {}).value || '';
+          const res = await fetch('/api/dsa/warmup/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ drillId: state.activeWarmupId, code })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.cases && data.cases.length) state.cases = data.cases;
+            renderCasePills(data.durationMs);
+            selectTestCaseIndex(Math.min(state.selectedCaseIdx || 0, Math.max(0, state.cases.length - 1)));
+            renderCodeCoachAssessment(data.codeCoach, data.referenceSolution);
+          }
+        } catch (_) {}
+        btn.textContent = '▶ Run & Coach (⌘↵)';
+        return;
+      }
+
+      await saveActiveFileToDisk();
+      btn.textContent = '⏳ Running & Coaching...';
       try {
         const res = await fetch('/api/run-cases', {
           method: 'POST',
@@ -5293,8 +5554,9 @@
           const data = await res.json();
           if (data.cases && data.cases.length) state.cases = data.cases;
           renderCasePills(data.durationMs);
-          selectTestCaseIndex(state.selectedCaseIdx);
+          selectTestCaseIndex(Math.min(state.selectedCaseIdx || 0, Math.max(0, state.cases.length - 1)));
           document.getElementById('ws-mastery-btn').classList.toggle('hidden', data.status !== 'PASSED');
+          renderCodeCoachAssessment(data.codeCoach, data.referenceSolution);
         } else {
           await fetch('/api/run-test', {
             method: 'POST',
@@ -5303,7 +5565,7 @@
           });
         }
       } catch (_) {}
-      btn.textContent = '▶ Run & Verify Code (⌘↵)';
+      btn.textContent = '▶ Run & Coach (⌘↵)';
     }
 
     async function markProblemMastered() {
@@ -6273,6 +6535,7 @@
         loadTracksAndHome(),
         loadNewsfeedView('all', false),
         loadWorkbenchAndInterviews(),
+        loadWarmupDrills(),
         openProblemWorkspace('003-group-anagrams', false)
       ]);
 

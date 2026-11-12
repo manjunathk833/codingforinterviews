@@ -24,7 +24,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from hub import state_manager, storage, visualizer_engine
+from hub import code_coach, dsa_catalog, state_manager, storage, visualizer_engine
 
 DEFAULT_PORT = int(os.environ.get("HUB_PORT", 8090))
 STATIC_INDEX = Path(__file__).resolve().parent / "static" / "index.html"
@@ -142,7 +142,7 @@ def write_workspace_file(
     }
 
 
-def _find_problem_dir(slug: str) -> Optional[Path]:
+def _find_problem_dir(slug: str, require_code: bool = True) -> Optional[Path]:
     """Find a problem or lab directory matching `slug` across curriculum folders."""
     if not slug or not re.match(r"^[a-zA-Z0-9_\-]+$", slug):
         return None
@@ -161,7 +161,7 @@ def _find_problem_dir(slug: str) -> Optional[Path]:
                 continue
             p = Path(dirpath)
             if p.name == slug or p.name.endswith(f"-{slug}"):
-                if "solution.py" in filenames or "Solution.java" in filenames:
+                if not require_code or ("solution.py" in filenames or "Solution.java" in filenames):
                     return p
     return None
 
@@ -181,15 +181,78 @@ def _normalize_output(val: Any, compare_mode: str) -> Any:
     return val
 
 
+def _ensure_problem_files(prob_dir: Path, spec: Optional[Dict[str, Any]], meta_row: Optional[Dict[str, Any]]) -> None:
+    """Populate missing README.md, empty starter solution.py/Solution.java, or tests.json using dsa_catalog (never overwriting existing code)."""
+    if spec is None:
+        return
+    title = (meta_row or {}).get("title") or spec["slug"].replace("-", " ").title()
+    pattern = (meta_row or {}).get("pattern") or "DSA"
+    diff = (meta_row or {}).get("difficulty") or "Medium"
+    url = (meta_row or {}).get("url") or f"https://leetcode.com/problems/{spec['slug']}/"
+
+    readme_path = prob_dir / "README.md"
+    if not readme_path.exists():
+        readme_path.write_text(
+            f"# {int(spec['id']):03d}. {title}\n\n"
+            f"- **Pattern**: {pattern}\n"
+            f"- **Difficulty**: {diff}\n"
+            f"- **LeetCode URL**: {url}\n"
+            f"- **Target**: {spec['time']} Time · {spec['space']} Space\n"
+            f"- **Core Invariant**: `{spec['invariant']}`\n",
+            encoding="utf-8",
+        )
+
+    py_path = prob_dir / "solution.py"
+    if not py_path.exists() or not py_path.read_text(encoding="utf-8").strip():
+        py_path.write_text(dsa_catalog.build_python_starter(spec, meta_row), encoding="utf-8")
+        os.chmod(py_path, 0o755)
+
+    java_path = prob_dir / "Solution.java"
+    if not java_path.exists() or not java_path.read_text(encoding="utf-8").strip():
+        java_path.write_text(dsa_catalog.build_java_starter(spec, meta_row), encoding="utf-8")
+
+    tests_path = prob_dir / "tests.json"
+    if not tests_path.exists():
+        tests_meta = dsa_catalog.build_tests_meta(spec, prob_dir.name, meta_row)
+        tests_path.write_text(json.dumps(tests_meta, indent=2) + "\n", encoding="utf-8")
+
+
+def _lookup_master_row(slug_or_id: str) -> Optional[Dict[str, Any]]:
+    raw = str(slug_or_id or "").strip().lower()
+    for p in state_manager.get_dsa_overview().get("problems", []):
+        if (
+            str(p["id"]) == raw
+            or p["slug"] == raw
+            or p["folderSlug"].lower() == raw
+            or raw.endswith("-" + p["slug"])
+        ):
+            return p
+    return None
+
+
 def get_dsa_problem_bundle(slug: str) -> Tuple[int, Dict[str, Any]]:
-    """Return full problem metadata, tests.json cases, Socratic hints, and live disk files."""
-    prob_dir = _find_problem_dir(slug)
+    """Return full problem metadata, tests.json cases, Help-Me-Start coaching metadata, and live disk files."""
+    prob_dir = _find_problem_dir(slug, require_code=False)
+    master_row = _lookup_master_row(slug)
+    spec = dsa_catalog.get_spec(slug) or (dsa_catalog.get_spec(master_row["slug"]) if master_row else None)
+
+    if prob_dir is None and master_row is not None and spec is not None:
+        return scaffold_dsa_problem(str(master_row["id"]))
     if prob_dir is None:
         return 404, {"error": f"Problem directory not found for slug: {slug}"}
+
+    if spec is None:
+        spec = dsa_catalog.get_spec(prob_dir.name)
+    if master_row is None:
+        master_row = _lookup_master_row(prob_dir.name)
+
+    _ensure_problem_files(prob_dir, spec, master_row)
 
     tests_path = prob_dir / "tests.json"
     if tests_path.exists():
         meta = json.loads(tests_path.read_text(encoding="utf-8"))
+    elif spec is not None:
+        meta = dsa_catalog.build_tests_meta(spec, prob_dir.name, master_row)
     else:
         readme_text = (prob_dir / "README.md").read_text(encoding="utf-8") if (prob_dir / "README.md").exists() else ""
         meta = {
@@ -213,6 +276,14 @@ def get_dsa_problem_bundle(slug: str) -> Tuple[int, Dict[str, Any]]:
             "cases": [],
         }
 
+    # Enrich Help-Me-Start coaching metadata cleanly without altering on-disk tests.json
+    if spec is not None:
+        meta.setdefault("firstLine", spec["firstLine"])
+        meta.setdefault("steps", spec["steps"])
+        meta["outlinePy"] = dsa_catalog.build_python_outline(spec)
+        meta.setdefault("execMode", spec.get("execMode", "solution_method"))
+        meta.setdefault("className", spec.get("className", "Solution"))
+
     files_bundle = {}
     for lang_key, filename in (("python", "solution.py"), ("java", "Solution.java")):
         fpath = prob_dir / filename
@@ -221,11 +292,9 @@ def get_dsa_problem_bundle(slug: str) -> Tuple[int, Dict[str, Any]]:
             _, fdata = read_workspace_file(rel)
             files_bundle[lang_key] = fdata
 
-    for p in state_manager.get_dsa_overview().get("problems", []):
-        if p.get("folderSlug") == prob_dir.name or p.get("slug") == prob_dir.name:
-            meta["id"] = int(p["id"])
-            meta["roadmapItemId"] = f"dsa-{int(p['id']):03d}"
-            break
+    if master_row:
+        meta["id"] = int(master_row["id"])
+        meta["roadmapItemId"] = f"dsa-{int(master_row['id']):03d}"
 
     return 200, {
         "problem": meta,
@@ -235,21 +304,14 @@ def get_dsa_problem_bundle(slug: str) -> Tuple[int, Dict[str, Any]]:
 
 
 def scaffold_dsa_problem(slug_or_id: str) -> Tuple[int, Dict[str, Any]]:
-    """Scaffold a new DSA problem directory (`README.md`, `solution.py`, `Solution.java`, `tests.json`) if not yet on disk."""
-    existing = _find_problem_dir(str(slug_or_id))
-    if existing is not None:
-        return get_dsa_problem_bundle(existing.name)
+    """Scaffold a real DSA problem directory (`README.md`, `solution.py`, `Solution.java`, `tests.json`) from dsa_catalog."""
+    existing = _find_problem_dir(str(slug_or_id), require_code=False)
+    target_prob = _lookup_master_row(str(slug_or_id))
+    spec = dsa_catalog.get_spec(str(slug_or_id)) or (dsa_catalog.get_spec(target_prob["slug"]) if target_prob else None)
 
-    dsa_overview = state_manager.get_dsa_overview()
-    target_prob = None
-    for p in dsa_overview["problems"]:
-        if (
-            str(p["id"]) == str(slug_or_id)
-            or p["slug"] == str(slug_or_id).lower()
-            or p["folderSlug"] == str(slug_or_id).lower()
-        ):
-            target_prob = p
-            break
+    if existing is not None:
+        _ensure_problem_files(existing, spec, target_prob)
+        return get_dsa_problem_bundle(existing.name)
 
     if target_prob is None:
         return 404, {"error": f"Problem '{slug_or_id}' not found in MASTER_SHEET.md"}
@@ -258,207 +320,95 @@ def scaffold_dsa_problem(slug_or_id: str) -> Tuple[int, Dict[str, Any]]:
     folder_slug = f"{target_prob['id']:03d}-{target_prob['slug']}"
     prob_dir = REPO_ROOT / "dsa" / chapter_folder / folder_slug
     prob_dir.mkdir(parents=True, exist_ok=True)
-
-    # Convert slug to camelCase method name
-    parts = target_prob["slug"].split("-")
-    method_name = parts[0] + "".join(w.capitalize() for w in parts[1:]) if parts else "solve"
-
-    readme_path = prob_dir / "README.md"
-    if not readme_path.exists():
-        readme_path.write_text(
-            f"# {target_prob['id']:03d}. {target_prob['title']}\n\n"
-            f"- **Pattern**: {target_prob['pattern']}\n"
-            f"- **Difficulty**: {target_prob['difficulty']}\n"
-            f"- **LeetCode URL**: {target_prob['url']}\n"
-            f"- **Core Invariant**: `{target_prob['diagramFormula']}`\n",
-            encoding="utf-8",
-        )
-
-    py_path = prob_dir / "solution.py"
-    if not py_path.exists():
-        py_path.write_text(
-            f'"""Problem: {target_prob["title"]}\n'
-            f'Pattern: {target_prob["pattern"]}\n'
-            f'Difficulty: {target_prob["difficulty"]}\n'
-            f'"""\n'
-            f"from typing import List, Optional\n\n\n"
-            f"class Solution:\n"
-            f"    def {method_name}(self, nums: List[int]) -> bool:\n"
-            f"        # TODO: Implement {target_prob['title']} ({target_prob['diagramFormula']})\n"
-            f"        return len(nums) != len(set(nums))\n\n\n"
-            f'if __name__ == "__main__":\n'
-            f"    sol = Solution()\n"
-            f"    assert sol.{method_name}([1, 2, 3, 1]) is True\n"
-            f"    assert sol.{method_name}([1, 2, 3, 4]) is False\n"
-            f'    print("All Python test cases passed!")\n',
-            encoding="utf-8",
-        )
-        os.chmod(py_path, 0o755)
-
-    java_path = prob_dir / "Solution.java"
-    if not java_path.exists():
-        java_path.write_text(
-            f"import java.util.*;\n\n"
-            f"/**\n"
-            f" * Problem: {target_prob['title']}\n"
-            f" * Pattern: {target_prob['pattern']}\n"
-            f" * Difficulty: {target_prob['difficulty']}\n"
-            f" */\n"
-            f"public class Solution {{\n"
-            f"    public boolean {method_name}(int[] nums) {{\n"
-            f"        Set<Integer> seen = new HashSet<>();\n"
-            f"        for (int x : nums) {{\n"
-            f"            if (!seen.add(x)) return true;\n"
-            f"        }}\n"
-            f"        return false;\n"
-            f"    }}\n\n"
-            f"    public static void main(String[] args) {{\n"
-            f"        Solution sol = new Solution();\n"
-            f"        assert sol.{method_name}(new int[]{{1, 2, 3, 1}}) == true;\n"
-            f"        assert sol.{method_name}(new int[]{{1, 2, 3, 4}}) == false;\n"
-            f'        System.out.println("All Java test cases passed!");\n'
-            f"    }}\n"
-            f"}}\n",
-            encoding="utf-8",
-        )
-
-    tests_path = prob_dir / "tests.json"
-    if not tests_path.exists():
-        tests_meta = {
-            "slug": folder_slug,
-            "title": f"{target_prob['id']:03d}. {target_prob['title']}",
-            "chapter": f"Ch {target_prob['chapterNumber']}: {target_prob['pattern']}",
-            "difficulty": target_prob["difficulty"],
-            "methodName": method_name,
-            "compareMode": "exact",
-            "timeComplexity": "O(N)",
-            "spaceComplexity": "O(N)",
-            "visualizerId": target_prob["visualizerId"],
-            "prompt": f"Solve {target_prob['title']} ({target_prob['pattern']}) using the core invariant: {target_prob['diagramFormula']}.",
-            "invariant": target_prob["diagramFormula"],
-            "hints": [
-                {"tier": 1, "title": "Mental Model & Intuition", "content": f"Apply the {target_prob['pattern']} mental model: {target_prob['diagramCaption']}."},
-                {"tier": 2, "title": "Pattern Identification", "content": f"Core formula: {target_prob['diagramFormula']}."},
-                {"tier": 3, "title": "Algorithmic Invariant", "content": "Maintain your data structure invariant at every iteration step."},
-                {"tier": 4, "title": "Edge Cases & Scaffolding", "content": "Verify empty inputs, single elements, and duplicate values."},
-            ],
-            "cases": [
-                {"id": "case-1", "label": "Case 1", "input": {"nums": [1, 2, 3, 1]}, "expected": True},
-                {"id": "case-2", "label": "Case 2", "input": {"nums": [1, 2, 3, 4]}, "expected": False},
-            ],
-        }
-        tests_path.write_text(json.dumps(tests_meta, indent=2) + "\n", encoding="utf-8")
-
+    _ensure_problem_files(prob_dir, spec, target_prob)
     return get_dsa_problem_bundle(folder_slug)
+
+
+def reset_dsa_problem_files(slug: str, lang: str = "python") -> Tuple[int, Dict[str, Any]]:
+    """Reset the selected problem file on disk to its clean un-spoiled starter signature."""
+    prob_dir = _find_problem_dir(slug, require_code=False)
+    master_row = _lookup_master_row(slug)
+    spec = dsa_catalog.get_spec(slug) or (dsa_catalog.get_spec(master_row["slug"]) if master_row else None)
+    if prob_dir is None and master_row is not None:
+        _, _ = scaffold_dsa_problem(str(master_row["id"]))
+        prob_dir = _find_problem_dir(slug, require_code=False)
+    if prob_dir is None or spec is None:
+        return 404, {"error": f"Problem '{slug}' not found in catalog"}
+
+    if lang in ("python", "all", "both"):
+        py_path = prob_dir / "solution.py"
+        py_path.write_text(dsa_catalog.build_python_starter(spec, master_row), encoding="utf-8")
+        os.chmod(py_path, 0o755)
+    if lang in ("java", "all", "both"):
+        java_path = prob_dir / "Solution.java"
+        java_path.write_text(dsa_catalog.build_java_starter(spec, master_row), encoding="utf-8")
+
+    return get_dsa_problem_bundle(prob_dir.name)
 
 
 def execute_problem_cases(slug: str, lang: str = "python") -> Dict[str, Any]:
     """
-    Execute per-case tests from `tests.json` against the candidate's real disk files
-    plus run `./run.sh test <slug> --lang <lang>` to verify CLI assertions.
+    Execute structured test cases in an isolated 4s-timeout subprocess (`code_coach`)
+    and return per-case output + 0-100 Code Coach score + unlockable Staff reference on pass.
     """
-    prob_dir = _find_problem_dir(slug)
+    prob_dir = _find_problem_dir(slug, require_code=False)
     if prob_dir is None:
         return {"status": "ERROR", "error": f"Unknown problem slug: {slug}", "cases": []}
 
-    tests_path = prob_dir / "tests.json"
-    cli_res = execute_test_target(prob_dir.name, lang if lang in ("python", "java", "all") else "all")
+    master_row = _lookup_master_row(slug) or _lookup_master_row(prob_dir.name)
+    spec = dsa_catalog.get_spec(slug) or dsa_catalog.get_spec(prob_dir.name) or (
+        dsa_catalog.get_spec(master_row["slug"]) if master_row else None
+    )
+    _ensure_problem_files(prob_dir, spec, master_row)
 
-    if not tests_path.exists():
-        return {
+    tests_path = prob_dir / "tests.json"
+    meta = json.loads(tests_path.read_text(encoding="utf-8")) if tests_path.exists() else {}
+
+    if lang == "java":
+        cli_res = execute_test_target(prob_dir.name, "java")
+        java_file = prob_dir / "Solution.java"
+        java_text = java_file.read_text(encoding="utf-8") if java_file.exists() else ""
+        coach = code_coach.analyze_java_code_coach(
+            java_text, cli_res, target_time=meta.get("timeComplexity", "O(N)")
+        )
+        res_payload = {
             "status": cli_res["status"],
             "slug": prob_dir.name,
-            "lang": lang,
+            "lang": "java",
             "durationMs": cli_res["durationMs"],
             "output": cli_res["output"],
             "cases": [
                 {
-                    "id": "case-main",
-                    "label": "CLI Assertions",
+                    "id": "case-java-cli",
+                    "label": "Java 17 Compile & Assertions",
                     "passed": cli_res["status"] == "PASSED",
-                    "input": {"target": prob_dir.name},
-                    "expected": "Exit Code 0 (All assertions pass)",
+                    "input": {"target": prob_dir.name, "lang": "java"},
+                    "expected": "javac + java -ea assertions pass (exit 0)",
                     "actual": cli_res["output"],
                     "durationMs": cli_res["durationMs"],
                 }
             ],
+            "codeCoach": coach,
         }
+        if cli_res["status"] == "PASSED" and spec is not None:
+            res_payload["referenceSolution"] = dsa_catalog.get_reference_solution(str(spec["id"]))
+        return res_payload
 
-    meta = json.loads(tests_path.read_text(encoding="utf-8"))
-    method_name = meta.get("methodName", "")
-    compare_mode = meta.get("compareMode", "exact")
-    cases_spec = meta.get("cases", [])
-
-    # Evaluate structured cases using Python solution (and verify Java via CLI compilation + assertions)
+    # Default Python path: sandboxed per-case + empirical scaling Code Coach
     py_file = prob_dir / "solution.py"
-    case_results = []
-    all_cases_passed = (cli_res["status"] == "PASSED")
-
-    if py_file.exists() and method_name:
-        try:
-            spec = importlib.util.spec_from_file_location(f"sol_{prob_dir.name}", str(py_file))
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-            sol_instance = mod.Solution()
-            fn = getattr(sol_instance, method_name)
-
-            for c in cases_spec:
-                t0 = time.perf_counter()
-                inp = c.get("input", {})
-                expected = c.get("expected")
-                try:
-                    # Copy mutable inputs so in-place mutations don't corrupt display
-                    kwargs = json.loads(json.dumps(inp))
-                    actual = fn(**kwargs)
-                    dt_ms = round((time.perf_counter() - t0) * 1000, 2)
-                    passed = (
-                        _normalize_output(actual, compare_mode)
-                        == _normalize_output(expected, compare_mode)
-                    )
-                    if lang == "java" and cli_res["status"] != "PASSED":
-                        passed = False
-                    if not passed:
-                        all_cases_passed = False
-                    case_results.append({
-                        "id": c.get("id", "case"),
-                        "label": c.get("label", "Case"),
-                        "passed": passed,
-                        "input": inp,
-                        "expected": expected,
-                        "actual": actual,
-                        "durationMs": dt_ms,
-                    })
-                except Exception as exc:
-                    all_cases_passed = False
-                    case_results.append({
-                        "id": c.get("id", "case"),
-                        "label": c.get("label", "Case"),
-                        "passed": False,
-                        "input": inp,
-                        "expected": expected,
-                        "actual": f"Exception: {exc}",
-                        "durationMs": 0.0,
-                    })
-        except Exception as exc:
-            all_cases_passed = False
-            case_results.append({
-                "id": "case-load-error",
-                "label": "Syntax / Import",
-                "passed": False,
-                "input": {},
-                "expected": "Valid Python module",
-                "actual": str(exc),
-                "durationMs": 0.0,
-            })
-
-    return {
-        "status": "PASSED" if (all_cases_passed and cli_res["status"] == "PASSED") else "FAILED",
+    run_res = code_coach.run_python_cases_sandboxed(py_file, meta, spec=spec, mode="dsa", timeout_s=4.0)
+    res_payload = {
+        "status": run_res["status"],
         "slug": prob_dir.name,
-        "lang": lang,
-        "durationMs": cli_res["durationMs"],
-        "output": cli_res["output"],
-        "cases": case_results,
+        "lang": "python",
+        "durationMs": run_res["durationMs"],
+        "output": run_res.get("output", ""),
+        "cases": run_res["cases"],
+        "codeCoach": run_res["codeCoach"],
     }
+    if run_res["status"] == "PASSED" and spec is not None:
+        res_payload["referenceSolution"] = dsa_catalog.get_reference_solution(str(spec["id"]))
+    return res_payload
 
 
 def execute_test_target(target: str, lang: str = "all") -> dict:
@@ -677,8 +627,18 @@ class LearningHubHandler(BaseHTTPRequestHandler):
                 self._send_json(code, data)
             return
 
+        if path == "/api/dsa/warmups":
+            self._send_json(200, {"warmups": dsa_catalog.get_warmup_drills()})
+            return
+
         if path == "/api/dsa/problem":
             slug = (query.get("slug") or ["003-group-anagrams"])[0]
+            code, data = get_dsa_problem_bundle(slug)
+            self._send_json(code, data)
+            return
+
+        if path.startswith("/api/dsa/problem/") and path.count("/") == 4:
+            slug = path.rsplit("/", 1)[-1]
             code, data = get_dsa_problem_bundle(slug)
             self._send_json(code, data)
             return
@@ -824,6 +784,42 @@ class LearningHubHandler(BaseHTTPRequestHandler):
             slug_or_id = payload.get("slug") or payload.get("problemId") or ""
             code, data = scaffold_dsa_problem(str(slug_or_id))
             self._send_json(code, data)
+            return
+
+        if path == "/api/dsa/problem/reset" or (path.startswith("/api/dsa/problem/") and path.endswith("/reset")):
+            slug = payload.get("slug") or (path.split("/")[4] if path.count("/") >= 5 else "")
+            lang = payload.get("lang") or "python"
+            code, data = reset_dsa_problem_files(str(slug), str(lang))
+            self._send_json(code, data)
+            return
+
+        if path.startswith("/api/dsa/problem/") and path.endswith("/run"):
+            slug = payload.get("slug") or path.split("/")[4]
+            lang = payload.get("lang") or "python"
+            res = execute_problem_cases(str(slug), str(lang))
+            self._send_json(200, res)
+            return
+
+        if path == "/api/dsa/warmup/run":
+            drill_id = str(payload.get("drillId") or "")
+            code_text = str(payload.get("code") or "")
+            drill = dsa_catalog.get_warmup_drill(drill_id)
+            if not drill:
+                self._send_json(404, {"error": f"Unknown warmup drill: {drill_id}"})
+                return
+            meta = {
+                "compareMode": drill.get("compareMode", "exact"),
+                "argTypes": drill.get("argTypes", {}),
+                "returnType": drill.get("returnType"),
+                "cases": drill["cases"],
+                "timeComplexity": "O(N)",
+            }
+            res = code_coach.run_python_cases_sandboxed(
+                None, meta, code_text=code_text, mode="warmup", fn_name=drill["fnName"], timeout_s=4.0
+            )
+            if res["status"] == "PASSED":
+                res["referenceSolution"] = {"python": drill["refPy"], "time": "O(N)", "space": "O(N)"}
+            self._send_json(200, res)
             return
 
         if path == "/api/dsa/mastery":
