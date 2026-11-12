@@ -932,6 +932,196 @@ class TestHubAndArchitectureCI(unittest.TestCase):
                 self.assertEqual(len(comp_by_slug[slug]["steps"]), 5)
                 self.assertEqual(comp_by_slug[slug]["primarySources"], api_ch["primarySources"])
 
+    def test_22_staff_sdet_roadmap_engine_and_gamified_tracking(self):
+        """Verify Staff SDET Career Roadmap & Gamified Habit Engine (toggle, 256 ordered items, 5 phases, cross-page trackers, mark-done & soundbites)."""
+        from hub import storage
+        # 1. Verify GET /api/roadmap/status and GET /api/roadmap/journey
+        status_res = hub_server.dispatch_request("GET", "/api/roadmap/status")
+        self.assertEqual(status_res["status_code"], 200)
+        st = status_res["data"]
+        self.assertIn("roadmapEnabled", st)
+        self.assertEqual(st["macro"]["totalItems"], 256)
+        self.assertEqual(st["pages"]["courses"]["total"], 114)
+        self.assertEqual(st["pages"]["dsa"]["total"], 128)
+        self.assertEqual(st["pages"]["workbench"]["total"], 13)
+        self.assertEqual(st["pages"]["interviews"]["total"], 1)
+        self.assertEqual(len(st["phases"]), 5)
+
+        journey_res = hub_server.dispatch_request("GET", "/api/roadmap/journey")
+        self.assertEqual(journey_res["status_code"], 200)
+        self.assertEqual(journey_res["data"]["macro"]["totalItems"], 256)
+
+        # Verify global ordering is strictly 1..256 across the 5 phases AND interleaved daily across 60 sessions
+        all_items = [it for p in st["phases"] for it in p["items"]]
+        self.assertEqual(len(all_items), 256)
+        self.assertEqual([it["globalOrder"] for it in all_items], list(range(1, 257)))
+        self.assertEqual(all_items[0]["itemId"], "sdet-01-determinism-and-flakiness-math")
+        self.assertEqual(all_items[1]["itemId"], "dsa-001")
+        self.assertEqual(all_items[-1]["itemId"], "interview-1")
+        for p in st["phases"]:
+            self.assertTrue(p.get("soundbite"), f"Phase {p['phaseNumber']} missing Staff Bar-Raiser soundbite")
+            self.assertTrue(p.get("sessionRange"), f"Phase {p['phaseNumber']} missing sessionRange")
+
+        # Verify all 60 canonical sessions interleave BOTH courses and dsa, and Course 08 chapters are strictly 1..5
+        sessions_60 = {}
+        c08_nums = []
+        for it in all_items:
+            sessions_60.setdefault(it["session60"], set()).add(it["track"])
+            if it["meta"].get("courseId") == "08-core-cs-internals":
+                c08_nums.append(it["meta"]["chapterNumber"])
+        self.assertEqual(len(sessions_60), 60)
+        for s_num, trks in sessions_60.items():
+            self.assertIn("courses", trks, f"Session {s_num} missing course item")
+            self.assertIn("dsa", trks, f"Session {s_num} missing DSA item")
+        self.assertEqual(c08_nums, [1, 2, 3, 4, 5])
+
+        # Verify todaySession payload and POST /api/roadmap/pace ('60d' <-> '120d')
+        self.assertIn("todaySession", st)
+        self.assertGreaterEqual(len(st["todaySession"]["items"]), 1)
+        orig_pace = st.get("pace", "60d")
+        try:
+            p120 = hub_server.dispatch_request("POST", "/api/roadmap/pace", body={"pace": "120d"})
+            self.assertEqual(p120["status_code"], 200)
+            self.assertEqual(p120["data"]["pace"], "120d")
+            self.assertEqual(p120["data"]["totalSessions"], 120)
+            self.assertEqual(p120["data"]["todaySession"]["totalSessions"], 120)
+
+            p60 = hub_server.dispatch_request("POST", "/api/roadmap/pace", body={"pace": "60d"})
+            self.assertEqual(p60["status_code"], 200)
+            self.assertEqual(p60["data"]["pace"], "60d")
+            self.assertEqual(p60["data"]["totalSessions"], 60)
+            self.assertEqual(p60["data"]["todaySession"]["totalSessions"], 60)
+        finally:
+            hub_server.dispatch_request("POST", "/api/roadmap/pace", body={"pace": orig_pace})
+
+        # 2. Verify POST /api/roadmap/toggle ON and OFF persistence
+        orig_enabled = bool(st["roadmapEnabled"])
+        try:
+            off_res = hub_server.dispatch_request("POST", "/api/roadmap/toggle", body={"enabled": False})
+            self.assertEqual(off_res["status_code"], 200)
+            self.assertFalse(off_res["data"]["roadmapEnabled"])
+
+            on_res = hub_server.dispatch_request("POST", "/api/roadmap/toggle", body={"enabled": True})
+            self.assertEqual(on_res["status_code"], 200)
+            self.assertTrue(on_res["data"]["roadmapEnabled"])
+        finally:
+            hub_server.dispatch_request("POST", "/api/roadmap/toggle", body={"enabled": orig_enabled})
+
+        # 3. Verify POST /api/roadmap/mark-done (both shorthand alias 'c01-ch01' and canonical slug) + bidirectional sync
+        target_slug = "sdet-01-determinism-and-flakiness-math"
+        was_done = bool(st["completedMap"].get(target_slug))
+        try:
+            mark_on = hub_server.dispatch_request(
+                "POST",
+                "/api/roadmap/mark-done",
+                body={"itemId": "c01-ch01", "completed": True},
+            )
+            self.assertEqual(mark_on["status_code"], 200)
+            self.assertEqual(mark_on["data"]["itemId"], target_slug)
+            self.assertTrue(mark_on["data"]["completed"])
+            self.assertTrue(mark_on["data"]["completedMap"][target_slug])
+
+            # Confirm chapter endpoint also reflects mastered=True when marked done in roadmap
+            ch_check = hub_server.dispatch_request("GET", f"/api/kb/chapter?slug={target_slug}")
+            self.assertEqual(ch_check["status_code"], 200)
+            self.assertTrue(ch_check["data"]["mastered"])
+
+            # Toggle back to false
+            mark_off = hub_server.dispatch_request(
+                "POST",
+                "/api/roadmap/mark-done",
+                body={"itemId": target_slug, "completed": False},
+            )
+            self.assertEqual(mark_off["status_code"], 200)
+            self.assertFalse(mark_off["data"]["completed"])
+        finally:
+            if not was_done:
+                conn = storage._get_connection()
+                try:
+                    conn.execute("DELETE FROM roadmap_completions WHERE item_id = ?", (target_slug,))
+                    conn.commit()
+                finally:
+                    conn.close()
+            else:
+                hub_server.dispatch_request(
+                    "POST",
+                    "/api/roadmap/mark-done",
+                    body={"itemId": target_slug, "completed": True},
+                )
+
+        # 4. Verify DSA problem bundle enriches roadmapItemId (e.g., 003-group-anagrams -> problemId 4 -> dsa-004)
+        prob_res = hub_server.dispatch_request("GET", "/api/dsa/problem?slug=003-group-anagrams")
+        self.assertEqual(prob_res["status_code"], 200)
+        self.assertEqual(prob_res["data"]["problem"]["id"], 4)
+        self.assertEqual(prob_res["data"]["problem"]["roadmapItemId"], "dsa-004")
+
+        # 5. Verify UI tokens, zero missing getElementById targets, dark-mode safety & cross-page Mark Done controls in GET /
+        root_html = hub_server.dispatch_request("GET", "/")["data"]["html"]
+        for ui_token in (
+            "topbar-roadmap-toggle-btn",
+            "topbar-roadmap-toggle-dot",
+            "topbar-roadmap-toggle-label",
+            "home-roadmap-switch-btn",
+            "home-roadmap-on-switch-btn",
+            "home-roadmap-dashboard",
+            "home-freeform-hero",
+            "rm-up-next-card",
+            "rm-up-next-phase-badge",
+            "rm-up-next-title",
+            "rm-up-next-open-btn",
+            "rm-up-next-mark-btn",
+            "rm-pace-60d-btn",
+            "rm-pace-120d-btn",
+            "rm-today-session-chips",
+            "arena-gauge-grid",
+            "setRoadmapPace",
+            "rm-tracks-grid",
+            "rm-phases-tabs",
+            "rm-phase-checklist-details",
+            "connected-flow-row",
+            "connected-flow-box",
+            "connected-flow-arrow",
+            "kb-page-tracker-bar",
+            "dsa-page-tracker-bar",
+            "ws-page-tracker-bar",
+            "wb-page-tracker-bar",
+            "mi-page-tracker-bar",
+            "pulse-page-tracker-bar",
+            "kb-mark-done-btn",
+            "kb-footer-mark-done-btn",
+            "ws-roadmap-done-btn",
+            "ws-title-mark-done-btn",
+            "ws-footer-mark-done-btn",
+            "mi-mark-done-btn",
+            "mi-studio-mark-done-btn",
+            "resolveDsaRoadmapItemId",
+            "toggleStaffRoadmap",
+            "toggleRoadmapItemDone",
+            ".roadmap-switch-pill.active",
+            ".roadmap-switch-pill.on",
+            ".mark-done-btn.done",
+            ".mark-done-btn.completed",
+        ):
+            self.assertIn(ui_token, root_html, f"Missing UI roadmap token: {ui_token}")
+
+        # Verify zero missing static DOM IDs referenced by getElementById(...)
+        import re as _re
+        html_ids = set(_re.findall(r'\bid="([^"]+)"', root_html))
+        js_get_ids = set(_re.findall(r"getElementById\('([^']+)'\)", root_html))
+        missing_dom_ids = sorted(i for i in js_get_ids if i not in html_ids and not i.endswith("-"))
+        self.assertEqual(missing_dom_ids, [], f"JS getElementById references missing HTML IDs: {missing_dom_ids}")
+
+        # Verify zero hardcoded glaring light hex colors in #home-roadmap-dashboard or renderRoadmapEverywhere
+        rm_sec = _re.search(r'<section id="home-roadmap-dashboard"[\s\S]*?</section>', root_html)
+        rm_js = _re.search(r"function renderRoadmapEverywhere\(\)[\s\S]*?async function initHub", root_html)
+        rm_combined = (rm_sec.group(0) if rm_sec else "") + "\n" + (rm_js.group(0) if rm_js else "")
+        glare_hex = _re.findall(
+            r"#(?:FFFDF9|FAF7F2|EFEAE0|E6F4F0|FCEEE8|FEF3C7|F0EBFF|EBF8FF|FFF5F5|F4FBF8)",
+            rm_combined,
+            flags=_re.IGNORECASE,
+        )
+        self.assertEqual(glare_hex, [], f"Found hardcoded light-mode hex in roadmap section/JS: {glare_hex}")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

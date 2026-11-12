@@ -10,6 +10,7 @@ Implements the Local-First Hybrid Storage Architecture:
 """
 import hashlib
 import json
+import math
 import pathlib
 import re
 import sqlite3
@@ -453,7 +454,7 @@ def _compute_kb_signature() -> str:
     """Fast filesystem mtime+size signature so live server picks up newly authored chapters automatically."""
     kb_root = REPO_ROOT / "knowledgebase"
     seed_file = HUB_DIR / "seed_newsfeed.json"
-    parts: List[str] = []
+    parts: List[str] = ["v4-roadmap-interleaved-60sessions"]
     if kb_root.exists():
         for md in sorted(kb_root.rglob("*.md")):
             st = md.stat()
@@ -846,6 +847,33 @@ def ensure_initialized(db_path: pathlib.Path = DEFAULT_DB_PATH) -> None:
                     related_chapters_json TEXT NOT NULL,
                     updated_at REAL NOT NULL
                 );
+
+                CREATE TABLE IF NOT EXISTS user_preferences (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    updated_at REAL NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS roadmap_items (
+                    item_id TEXT PRIMARY KEY,
+                    track TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    slug TEXT NOT NULL,
+                    phase_number INTEGER NOT NULL,
+                    order_index INTEGER NOT NULL,
+                    estimated_minutes INTEGER NOT NULL DEFAULT 15,
+                    xp_reward INTEGER NOT NULL DEFAULT 100,
+                    meta_json TEXT NOT NULL DEFAULT '{}',
+                    prerequisites_json TEXT NOT NULL DEFAULT '[]'
+                );
+
+                CREATE TABLE IF NOT EXISTS roadmap_completions (
+                    item_id TEXT PRIMARY KEY,
+                    completed INTEGER NOT NULL DEFAULT 0,
+                    completed_at REAL,
+                    source TEXT NOT NULL DEFAULT 'manual',
+                    notes TEXT
+                );
                 """
             )
 
@@ -908,8 +936,8 @@ def _sync_filesystem_locked(conn: sqlite3.Connection) -> None:
         )
 
     existing_rows = {
-        row["slug"]: (row["sha256"], row["source_path"])
-        for row in conn.execute("SELECT slug, sha256, source_path FROM kb_chapters").fetchall()
+        row["slug"]: (row["sha256"], row["source_path"], row["course_id"])
+        for row in conn.execute("SELECT slug, sha256, source_path, course_id FROM kb_chapters").fetchall()
     }
 
     candidate_docs: List[Tuple[str, str, int, pathlib.Path]] = []
@@ -943,11 +971,11 @@ def _sync_filesystem_locked(conn: sqlite3.Connection) -> None:
         parsed = parse_markdown_frontmatter_and_quizzes(raw_md, fallback_slug, track_id, fallback_num)
         slug = parsed["slug"]
         seen_slugs.add(slug)
-        if existing_rows.get(slug, ("", ""))[0] == sha:
+        rel_source = str(path.relative_to(REPO_ROOT))
+        if existing_rows.get(slug, ("", "", "")) == (sha, rel_source, parsed["course_id"]):
             continue
 
         rebuild_fts = True
-        rel_source = str(path.relative_to(REPO_ROOT))
         lab_path = parsed.get("lab_path") or (str(path.parent.relative_to(REPO_ROOT)) if path.name == "README.md" else "")
         conn.execute(
             """
@@ -1119,11 +1147,12 @@ def _sync_filesystem_locked(conn: sqlite3.Connection) -> None:
                 ),
             )
 
+    _sync_roadmap_locked(conn)
     conn.commit()
 
 
 def get_kb_courses(db_path: pathlib.Path = DEFAULT_DB_PATH) -> Dict[str, Any]:
-    """Return all 8 Prioritized Textbook Courses with hierarchical Modules -> Chapters and mastery progress."""
+    """Return all 12 Prioritized Textbook Courses with hierarchical Modules -> Chapters and mastery progress."""
     ensure_initialized(db_path)
     conn = _get_connection(db_path)
     try:
@@ -1133,9 +1162,10 @@ def get_kb_courses(db_path: pathlib.Path = DEFAULT_DB_PATH) -> Dict[str, Any]:
             SELECT c.slug, c.course_id, c.track, c.volume, c.module_number, c.module_title,
                    c.chapter_number, c.level_tag, c.title, c.summary, c.reading_time_minutes,
                    c.visualizer_id, c.lab_path, c.quizzes_json,
-                   COALESCE(a.mastered, 0) AS mastered
+                   COALESCE(rc.completed, a.mastered, 0) AS mastered
             FROM kb_chapters c
             LEFT JOIN kb_quiz_attempts a ON a.slug = c.slug
+            LEFT JOIN roadmap_completions rc ON rc.item_id = c.slug
             WHERE c.slug NOT LIKE 'lab-%'
             ORDER BY c.module_number ASC, c.chapter_number ASC, c.slug ASC
             """
@@ -1227,11 +1257,26 @@ def get_tracks_catalog(db_path: pathlib.Path = DEFAULT_DB_PATH) -> Dict[str, Any
         mi_total = conn.execute("SELECT COUNT(*) AS cnt FROM mock_interview_sessions").fetchone()["cnt"]
         dsa_overview = state_manager.get_dsa_overview()
 
-        # Group the 8 Textbook Courses across the 3 textbook pillar cards while exposing all 8 courses directly
+        # Group the 12 Textbook Courses across the 3 textbook pillar cards while exposing all 12 courses directly
         pillar_course_groups = {
-            "system-design": ["01-zero-to-staff-sdet", "02-building-testing-frameworks", "07-distributed-system-design"],
-            "ai-engineering": ["05-ai-engineering", "06-ai-engineering-qa-focused"],
-            "core-cs": ["03-ui-automation-playwright", "04-api-and-api-automation", "08-core-cs-internals"],
+            "system-design": [
+                "01-zero-to-staff-sdet",
+                "02-building-testing-frameworks",
+                "07-distributed-system-design",
+                "10-docker-cicd-and-cloud-infra",
+                "11-performance-chaos-and-sre",
+            ],
+            "ai-engineering": [
+                "05-ai-engineering",
+                "06-ai-engineering-qa-focused",
+                "12-app-api-and-ai-security",
+            ],
+            "core-cs": [
+                "03-ui-automation-playwright",
+                "04-api-and-api-automation",
+                "08-core-cs-internals",
+                "09-sql-and-data-engineering",
+            ],
         }
 
         tracks_out = []
@@ -1295,12 +1340,13 @@ def list_kb_chapters(
                    c.quizzes_json, c.source_path,
                    COALESCE(k.priority_rank, 99) AS priority_rank,
                    COALESCE(k.title, c.volume) AS course_title,
-                   COALESCE(a.mastered, 0) AS mastered,
+                   COALESCE(rc.completed, a.mastered, 0) AS mastered,
                    a.score AS quiz_score,
                    a.total AS quiz_total
             FROM kb_chapters c
             LEFT JOIN kb_courses k ON k.course_id = c.course_id
             LEFT JOIN kb_quiz_attempts a ON a.slug = c.slug
+            LEFT JOIN roadmap_completions rc ON rc.item_id = c.slug
             {where_sql}
             ORDER BY priority_rank ASC, c.module_number ASC, c.chapter_number ASC, c.slug ASC
             """,
@@ -1347,12 +1393,13 @@ def get_kb_chapter(slug: str, db_path: pathlib.Path = DEFAULT_DB_PATH) -> Tuple[
                    COALESCE(k.title, c.volume) AS course_title,
                    COALESCE(k.priority_rank, 99) AS priority_rank,
                    COALESCE(k.accent_color, '#C85A32') AS course_accent,
-                   COALESCE(a.mastered, 0) AS mastered,
+                   COALESCE(rc.completed, a.mastered, 0) AS mastered,
                    a.score AS quiz_score,
                    a.total AS quiz_total
             FROM kb_chapters c
             LEFT JOIN kb_courses k ON k.course_id = c.course_id
             LEFT JOIN kb_quiz_attempts a ON a.slug = c.slug
+            LEFT JOIN roadmap_completions rc ON rc.item_id = c.slug
             WHERE c.slug = ?
             """,
             (slug,),
@@ -1495,9 +1542,10 @@ def get_kb_course_compendium(
 
         rows = conn.execute(
             """
-            SELECT c.*, COALESCE(a.mastered, 0) AS mastered
+            SELECT c.*, COALESCE(rc.completed, a.mastered, 0) AS mastered
             FROM kb_chapters c
             LEFT JOIN kb_quiz_attempts a ON a.slug = c.slug
+            LEFT JOIN roadmap_completions rc ON rc.item_id = c.slug
             WHERE c.course_id = ? AND c.slug NOT LIKE 'lab-%'
             ORDER BY c.module_number ASC, c.chapter_number ASC, c.slug ASC
             """,
@@ -1910,13 +1958,28 @@ def get_workbench_catalog(db_path: pathlib.Path = DEFAULT_DB_PATH) -> Dict[str, 
             }
             for r in conn.execute("SELECT * FROM workbench_runs").fetchall()
         }
+        manual_comp = {
+            r["item_id"]: int(r["completed"])
+            for r in conn.execute("SELECT item_id, completed FROM roadmap_completions").fetchall()
+        }
         items = []
+        completed_count = 0
         for wb in WORKBENCH_CATALOG:
             entry = dict(wb)
-            entry["lastRun"] = runs.get(wb["id"])
+            last_run = runs.get(wb["id"])
+            entry["lastRun"] = last_run
+            if wb["id"] in manual_comp:
+                is_done = bool(manual_comp[wb["id"]])
+            else:
+                is_done = bool(last_run and last_run.get("status") == "PASS")
+            entry["completed"] = is_done
+            if is_done:
+                completed_count += 1
             items.append(entry)
         return {
             "executionModel": "100% Local Deterministic Verification (Strictly Zero AI Dependency)",
+            "total": len(items),
+            "completed": completed_count,
             "items": items,
         }
     finally:
@@ -1980,10 +2043,12 @@ def get_interviews_catalog(db_path: pathlib.Path = DEFAULT_DB_PATH) -> Dict[str,
     try:
         rows = conn.execute(
             """
-            SELECT session_id, title, target_role, status, overall_score,
-                   folder_path, related_chapters_json, updated_at
-            FROM mock_interview_sessions
-            ORDER BY session_id ASC
+            SELECT m.session_id, m.title, m.target_role, m.status, m.overall_score,
+                   m.folder_path, m.related_chapters_json, m.updated_at,
+                   COALESCE(rc.completed, 0) AS completed
+            FROM mock_interview_sessions m
+            LEFT JOIN roadmap_completions rc ON rc.item_id = m.session_id
+            ORDER BY m.session_id ASC
             """
         ).fetchall()
         sessions = [
@@ -1995,6 +2060,7 @@ def get_interviews_catalog(db_path: pathlib.Path = DEFAULT_DB_PATH) -> Dict[str,
                 "overallScore": r["overall_score"],
                 "folderPath": r["folder_path"],
                 "relatedChapters": json.loads(r["related_chapters_json"]),
+                "completed": bool(r["completed"]),
             }
             for r in rows
         ]
@@ -2008,7 +2074,12 @@ def get_interview_session(session_id: str, db_path: pathlib.Path = DEFAULT_DB_PA
     conn = _get_connection(db_path)
     try:
         row = conn.execute(
-            "SELECT * FROM mock_interview_sessions WHERE session_id = ?",
+            """
+            SELECT m.*, COALESCE(rc.completed, 0) AS completed
+            FROM mock_interview_sessions m
+            LEFT JOIN roadmap_completions rc ON rc.item_id = m.session_id
+            WHERE m.session_id = ?
+            """,
             (session_id,),
         ).fetchone()
         if row is None:
@@ -2025,6 +2096,7 @@ def get_interview_session(session_id: str, db_path: pathlib.Path = DEFAULT_DB_PA
             "masteryGuideMarkdown": row["mastery_guide_md"],
             "candidateResponses": json.loads(row["candidate_responses_json"]),
             "relatedChapters": json.loads(row["related_chapters_json"]),
+            "completed": bool(row["completed"]),
         }
     finally:
         conn.close()
@@ -2057,3 +2129,856 @@ def save_interview_response(
         }
     finally:
         conn.close()
+
+
+# ==============================================================================
+# STAFF SDET ROADMAP, 5-PHASE CURRICULUM ORDER & GAMIFIED HABIT ENGINE
+# ==============================================================================
+ROADMAP_PHASES_SPEC: List[Dict[str, Any]] = [
+    {
+        "phaseNumber": 1,
+        "title": "Phase 1: SDET Foundations & Core Algorithms",
+        "shortTitle": "Foundations & DSA Core",
+        "objective": "Master flaky test combinatorics (p^N), boundary value analysis, seam economics, AST framework lifecycles, and O(1) hash/pointer invariants.",
+        "exitGate": "Complete Courses 01–02 + Core Design Katas + Arrays & Two Pointers",
+        "courses": ["01-zero-to-staff-sdet", "02-building-testing-frameworks"],
+        "workbenchIds": [
+            "wb-custom-retry-analyzer",
+            "wb-json-payload-diff-engine",
+            "wb-rate-limiter-backpressure",
+            "wb-test-data-builder",
+            "wb-microservice-mocking",
+        ],
+        "dsaChapterNumbers": ["01", "02"],
+        "mockIds": [],
+        "soundbiteTitle": "🎙️ Phase 1 Bar-Raiser Soundbite — Flakiness & Framework Economics",
+        "soundbiteQuote": (
+            "At scale, suite reliability is P(pass) = p^N: a 99% reliable test across 100 tests yields only 36.6% green builds. "
+            "I eliminate flakiness structurally via Hermetic Contract Seams, LIFO DI teardown, and deterministic AST payload diffing rather than blind @Retry loops."
+        ),
+    },
+    {
+        "phaseNumber": 2,
+        "title": "Phase 2: Microservices, Concurrency & Contracts",
+        "shortTitle": "Concurrency, UI & API Contracts",
+        "objective": "Architect zero-collision 32-worker parallel execution, CDP/BiDi browser pipes, HTTP/2 connection pools, Token Bucket backpressure, and Pact consumer-driven contracts.",
+        "exitGate": "Complete Courses 03–04 + 32-Worker Concurrency Lab + Sliding Window/Stack/Binary Search",
+        "courses": ["03-ui-automation-playwright", "04-api-and-api-automation"],
+        "workbenchIds": [
+            "wb-concurrency-isolation",
+            "wb-playwright-ui-framework",
+            "wb-api-automation-suite",
+            "wb-ci-shard-bin-packer-tia",
+        ],
+        "dsaChapterNumbers": ["03", "04", "05"],
+        "mockIds": [],
+        "soundbiteTitle": "🎙️ Phase 2 Bar-Raiser Soundbite — 32-Worker Tenant Isolation",
+        "soundbiteQuote": (
+            "Shared staging environments fail under parallel CI because workers collide on mutable rows. "
+            "I enforce X-Tenant-ID header propagation, composite (tenant_id, resource_id) isolation, and RFC 8785 canonical Pact contracts so 32 parallel workers achieve 100% deterministic 201 Created throughput."
+        ),
+    },
+    {
+        "phaseNumber": 3,
+        "title": "Phase 3: SQL Ledger, Cloud CI/CD & AI Engineering",
+        "shortTitle": "SQL, Cloud CI/CD & AI QA",
+        "objective": "Build double-entry SQL reconciliation harnesses, multi-stage Docker/K8s ephemeral test environments, LPT bin-packed CI shards, and calibrated LLM/RAG evaluation pipelines.",
+        "exitGate": "Complete Courses 09, 10, 05, 06 + AeroLedger & AeroPipe Labs + Trees/Heaps",
+        "courses": [
+            "09-sql-and-data-engineering",
+            "10-docker-cicd-and-cloud-infra",
+            "05-ai-engineering",
+            "06-ai-engineering-qa-focused",
+        ],
+        "workbenchIds": ["wb-sql-data-reconciliation", "wb-cicd-container-sharding"],
+        "dsaChapterNumbers": ["06", "07", "08", "09"],
+        "mockIds": [],
+        "soundbiteTitle": "🎙️ Phase 3 Bar-Raiser Soundbite — SQL Ledgers, LPT Sharding & RAG Calibration",
+        "soundbiteQuote": (
+            "To prevent 1:N join fan-out from corrupting financial totals, I pre-aggregate child grains via CTEs before joining, "
+            "serialize high-contention seat claims with SELECT FOR UPDATE SKIP LOCKED, bin-pack CI shards via O(N log K) LPT min-heaps, and debias LLM judges with Rogan-Gladen prevalence calibration."
+        ),
+    },
+    {
+        "phaseNumber": 4,
+        "title": "Phase 4: Performance, Chaos SRE & App/AI Security",
+        "shortTitle": "Perf, Chaos SRE & App/AI Security",
+        "objective": "Eliminate Coordinated Omission in open-loop load tests, size HikariCP pools via Little's Law, inject deterministic Toxiproxy faults, and enforce BOLA/JWT/SSRF/Prompt-Injection gates.",
+        "exitGate": "Complete Courses 11–12 + AeroPulse & AeroShield Labs + Graphs & DP",
+        "courses": ["11-performance-chaos-and-sre", "12-app-api-and-ai-security"],
+        "workbenchIds": ["wb-perf-chaos-sre-harness", "wb-security-bola-jwt-llm"],
+        "dsaChapterNumbers": ["10", "11", "12", "13"],
+        "mockIds": [],
+        "soundbiteTitle": "🎙️ Phase 4 Bar-Raiser Soundbite — Coordinated Omission & Zero-Trust AppSec",
+        "soundbiteQuote": (
+            "Closed-loop load generators hide tail-latency stalls by waiting for slow responses before sending the next request. "
+            "I use open-loop Poisson arrival schedules with HdrHistogram correction, multi-window 14.4x/6x SLO burn-rate gates, and automated BOLA + RFC 8725 JWT + IMDSv2 SSRF regression shields."
+        ),
+    },
+    {
+        "phaseNumber": 5,
+        "title": "Phase 5: Staff Bar-Raiser & System Design Mastery",
+        "shortTitle": "Staff System Design & Mock Sim",
+        "objective": "Synthesize distributed backpressure, consistent hashing, Raft quorums, Linux kernel/storage internals, and clear the 100-Point Staff Bar-Raiser Mock Interview Simulator.",
+        "exitGate": "Complete Courses 07–08 + Advanced DSA + Score ≥ 85/100 on Staff Mock Simulator",
+        "courses": ["07-distributed-system-design", "08-core-cs-internals"],
+        "workbenchIds": [],
+        "dsaChapterNumbers": ["14", "15"],
+        "mockIds": ["interview-1"],
+        "soundbiteTitle": "🎙️ Phase 5 Bar-Raiser Soundbite — Principal Quality Architect Pitch",
+        "soundbiteQuote": (
+            "As a Staff SDET, my product is engineering velocity with mathematical confidence: bounding tail latency via Little's Law and Full Jitter backpressure, "
+            "proving data durability across WAL/LSM storage engines, and embedding deterministic quality gates across every microservice and AI pipeline."
+        ),
+    },
+]
+
+
+ROADMAP_PHASE_SESSION_BUDGETS: Dict[int, int] = {
+    1: 10,  # Sessions 1–10   (Weeks 1–2)
+    2: 10,  # Sessions 11–20  (Weeks 3–4)
+    3: 20,  # Sessions 21–40  (Weeks 5–8)
+    4: 15,  # Sessions 41–55  (Weeks 9–11)
+    5: 5,   # Sessions 56–60  (Week 12)
+}
+
+
+def _milestone_session_map(items: List[Dict[str, Any]], total_sessions: int) -> Dict[int, List[Dict[str, Any]]]:
+    """Place Workbench Labs and Staff Mock Interviews on evenly spaced milestone sessions within a phase."""
+    by_s: Dict[int, List[Dict[str, Any]]] = {i: [] for i in range(total_sessions)}
+    n = len(items)
+    if n == 0 or total_sessions <= 0:
+        return by_s
+    for idx, it in enumerate(items):
+        target_s = min(total_sessions - 1, max(0, ((idx + 1) * total_sessions) // n - 1))
+        by_s[target_s].append(it)
+    return by_s
+
+
+def _sync_roadmap_locked(conn: sqlite3.Connection) -> None:
+    """Seed user_preferences and build the interleaved 60-Session (and 120-Light-Session) 5-Phase Staff SDET curriculum."""
+    now = time.time()
+    default_prefs = [
+        ("staff_sdet_roadmap_enabled", "1"),
+        ("active_roadmap_profile", "staff-sdet"),
+        ("roadmap_pace", "60d"),
+        ("current_streak_days", "14"),
+        ("base_xp", "1200"),
+    ]
+    for k, v in default_prefs:
+        conn.execute(
+            "INSERT OR IGNORE INTO user_preferences (key, value, updated_at) VALUES (?, ?, ?)",
+            (k, v, now),
+        )
+
+    chapter_rows = conn.execute(
+        """
+        SELECT c.slug, c.course_id, c.chapter_number, c.title, c.reading_time_minutes,
+               COALESCE(k.priority_rank, 99) AS priority_rank,
+               COALESCE(k.short_title, c.volume) AS course_short_title
+        FROM kb_chapters c
+        LEFT JOIN kb_courses k ON k.course_id = c.course_id
+        WHERE c.slug NOT LIKE 'lab-%'
+        ORDER BY priority_rank ASC, c.chapter_number ASC, c.module_number ASC, c.slug ASC
+        """
+    ).fetchall()
+    chapters_by_course: Dict[str, List[sqlite3.Row]] = {}
+    for r in chapter_rows:
+        chapters_by_course.setdefault(r["course_id"], []).append(r)
+
+    wb_by_id = {w["id"]: w for w in WORKBENCH_CATALOG}
+    mi_rows = {
+        r["session_id"]: r
+        for r in conn.execute("SELECT session_id, title FROM mock_interview_sessions ORDER BY session_id ASC").fetchall()
+    }
+    dsa_dash = state_manager.get_dashboard_payload().get("dsa", {})
+    dsa_by_ch: Dict[str, List[Dict[str, Any]]] = {}
+    for p in dsa_dash.get("problems", []):
+        ch_num = str(p.get("chapterNumber") or "01").zfill(2)
+        dsa_by_ch.setdefault(ch_num, []).append(p)
+
+    order_idx = 0
+    session_60_cursor = 0
+    session_120_cursor = 0
+    prev_item_id: Optional[str] = None
+    conn.execute("DELETE FROM roadmap_items;")
+
+    for phase in ROADMAP_PHASES_SPEC:
+        pnum = int(phase["phaseNumber"])
+        s_count = ROADMAP_PHASE_SESSION_BUDGETS.get(pnum, 10)
+        course_xp = 100 if pnum <= 2 else (125 if pnum == 3 else 150)
+
+        # 1. Build ordered per-track lists for this phase
+        phase_courses: List[Dict[str, Any]] = []
+        for cid in phase["courses"]:
+            for ch in chapters_by_course.get(cid, []):
+                c_rank = int(ch["priority_rank"] or 1)
+                ch_num = int(ch["chapter_number"] or 1)
+                alias_id = f"c{c_rank:02d}-ch{ch_num:02d}"
+                short_title_raw = str(ch["title"]).split(":")[0].strip()
+                if len(short_title_raw) > 22:
+                    short_title_raw = short_title_raw[:20].rstrip() + "…"
+                phase_courses.append({
+                    "item_id": ch["slug"],
+                    "track": "courses",
+                    "title": f"Course {c_rank:02d} · Ch {ch_num:02d}: {ch['title']}",
+                    "slug": ch["slug"],
+                    "estimated_minutes": int(ch["reading_time_minutes"] or 15),
+                    "xp_reward": course_xp,
+                    "meta": {
+                        "courseId": cid,
+                        "courseShortTitle": ch["course_short_title"],
+                        "chapterNumber": ch_num,
+                        "aliasId": alias_id,
+                        "shortChipLabel": f"C{c_rank:02d}·Ch{ch_num:02d}: {short_title_raw}",
+                        "actionType": "course-chapter",
+                    },
+                })
+
+        phase_dsa: List[Dict[str, Any]] = []
+        for ch_num in phase["dsaChapterNumbers"]:
+            for prob in dsa_by_ch.get(ch_num, []):
+                prob_id_num = int(prob["id"])
+                dsa_item_id = f"dsa-{prob_id_num:03d}"
+                f_slug = prob.get("folderSlug") or f"{prob_id_num:03d}-{prob['slug']}"
+                p_short = str(prob["title"])
+                if len(p_short) > 20:
+                    p_short = p_short[:18].rstrip() + "…"
+                phase_dsa.append({
+                    "item_id": dsa_item_id,
+                    "track": "dsa",
+                    "title": f"DSA #{prob_id_num:03d}: {prob['title']} ({prob.get('pattern', '')})",
+                    "slug": f_slug,
+                    "estimated_minutes": 20,
+                    "xp_reward": 120,
+                    "meta": {
+                        "problemId": prob_id_num,
+                        "folderSlug": f_slug,
+                        "aliasId": f_slug,
+                        "chapterNumber": ch_num,
+                        "pattern": prob.get("pattern", ""),
+                        "difficulty": prob.get("difficulty", "Medium"),
+                        "hasLocalFiles": bool(prob.get("hasLocalFiles")),
+                        "shortChipLabel": f"DSA #{prob_id_num:03d}: {p_short}",
+                        "actionType": "dsa-problem",
+                    },
+                })
+
+        phase_wb: List[Dict[str, Any]] = []
+        for wbid in phase["workbenchIds"]:
+            wb = wb_by_id.get(wbid)
+            if not wb:
+                continue
+            wb_short = re.sub(r"^\d+\.\s*", "", str(wb["title"]))
+            if len(wb_short) > 20:
+                wb_short = wb_short[:18].rstrip() + "…"
+            phase_wb.append({
+                "item_id": wbid,
+                "track": "workbench",
+                "title": f"Workbench Lab: {wb['title']}",
+                "slug": wbid,
+                "estimated_minutes": 25,
+                "xp_reward": 300,
+                "meta": {
+                    "category": wb["category"],
+                    "folderPath": wb["folderPath"],
+                    "relatedChapter": wb.get("relatedChapter", ""),
+                    "shortChipLabel": f"Lab: {wb_short}",
+                    "actionType": "workbench-lab",
+                },
+            })
+
+        phase_mock: List[Dict[str, Any]] = []
+        for mid in phase["mockIds"]:
+            mrow = mi_rows.get(mid)
+            title = mrow["title"] if mrow else f"Staff Mock Interview ({mid})"
+            phase_mock.append({
+                "item_id": mid,
+                "track": "mock",
+                "title": title,
+                "slug": mid,
+                "estimated_minutes": 45,
+                "xp_reward": 500,
+                "meta": {
+                    "sessionId": mid,
+                    "shortChipLabel": "Mock Sim #1 (100-Pt)",
+                    "actionType": "mock-interview",
+                },
+            })
+
+        wb_by_s = _milestone_session_map(phase_wb, s_count)
+        mock_by_s = _milestone_session_map(phase_mock, s_count)
+
+        # 2. Partition into `s_count` daily sessions with Course + DSA micro-interleaving
+        n_courses = len(phase_courses)
+        n_dsa = len(phase_dsa)
+        for s_idx in range(s_count):
+            session_60_cursor += 1
+            c_slice = phase_courses[(s_idx * n_courses) // s_count : ((s_idx + 1) * n_courses) // s_count]
+            d_slice = phase_dsa[math.ceil(s_idx * n_dsa / s_count) : math.ceil((s_idx + 1) * n_dsa / s_count)]
+
+            paired: List[Dict[str, Any]] = []
+            max_pair_len = max(len(c_slice), len(d_slice))
+            for k in range(max_pair_len):
+                if k < len(c_slice):
+                    paired.append(c_slice[k])
+                if k < len(d_slice):
+                    paired.append(d_slice[k])
+            paired.extend(wb_by_s[s_idx])
+            paired.extend(mock_by_s[s_idx])
+
+            mid_split = max(1, len(paired) // 2) if len(paired) > 1 else len(paired)
+            s120_a = session_120_cursor + 1
+            s120_b = session_120_cursor + 2
+            session_120_cursor += 2
+
+            for idx_in_s, entry in enumerate(paired):
+                order_idx += 1
+                meta_obj = dict(entry["meta"])
+                meta_obj["session60"] = session_60_cursor
+                meta_obj["session120"] = s120_a if idx_in_s < mid_split else s120_b
+                prereqs = [prev_item_id] if prev_item_id else []
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO roadmap_items (
+                        item_id, track, title, slug, phase_number, order_index,
+                        estimated_minutes, xp_reward, meta_json, prerequisites_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        entry["item_id"],
+                        entry["track"],
+                        entry["title"],
+                        entry["slug"],
+                        pnum,
+                        order_idx,
+                        entry["estimated_minutes"],
+                        entry["xp_reward"],
+                        json.dumps(meta_obj),
+                        json.dumps(prereqs),
+                    ),
+                )
+                prev_item_id = entry["item_id"]
+
+
+def _resolve_roadmap_item_id(conn: sqlite3.Connection, raw_item_id: str) -> Optional[str]:
+    """Resolve canonical item_id or shorthand alias (e.g. 'c01-ch01', 'dsa-001', or '001-two-sum')."""
+    candidate = (raw_item_id or "").strip()
+    if not candidate:
+        return None
+    direct = conn.execute("SELECT item_id FROM roadmap_items WHERE item_id = ? OR slug = ?", (candidate, candidate)).fetchone()
+    if direct:
+        return direct["item_id"]
+    m_dsa = re.match(r"^dsa-(\d+)$", candidate.lower())
+    if m_dsa:
+        prefix = f"{int(m_dsa.group(1)):03d}-%"
+        row = conn.execute(
+            "SELECT item_id FROM roadmap_items WHERE track = 'dsa' AND item_id LIKE ? LIMIT 1",
+            (prefix,),
+        ).fetchone()
+        if row:
+            return row["item_id"]
+    m = re.match(r"^c(\d+)-ch(\d+)$", candidate.lower())
+    if m:
+        c_rank = int(m.group(1))
+        ch_num = int(m.group(2))
+        row = conn.execute(
+            """
+            SELECT c.slug FROM kb_chapters c
+            JOIN kb_courses k ON k.course_id = c.course_id
+            WHERE k.priority_rank = ? AND c.chapter_number = ? AND c.slug NOT LIKE 'lab-%'
+            LIMIT 1
+            """,
+            (c_rank, ch_num),
+        ).fetchone()
+        if row:
+            return row["slug"]
+    return None
+
+
+def get_roadmap_status(db_path: pathlib.Path = DEFAULT_DB_PATH) -> Dict[str, Any]:
+    """Compute unified Staff SDET Roadmap status, 4-track counters, 5-phase progression, Rank/XP/Streak, and Up Next item."""
+    ensure_initialized(db_path)
+    conn = _get_connection(db_path)
+    try:
+        prefs = {
+            r["key"]: r["value"]
+            for r in conn.execute("SELECT key, value FROM user_preferences").fetchall()
+        }
+        roadmap_enabled = prefs.get("staff_sdet_roadmap_enabled", "1") in ("1", "true", "True", "yes")
+        raw_pace = str(prefs.get("roadmap_pace", "60d") or "60d").strip().lower()
+        pace = "120d" if "120" in raw_pace or raw_pace == "light" else "60d"
+        total_sessions = 120 if pace == "120d" else 60
+        streak_days = int(prefs.get("current_streak_days", "14") or 14)
+        base_xp = int(prefs.get("base_xp", "1200") or 1200)
+
+        manual_rows = {
+            r["item_id"]: (int(r["completed"]), r["source"], r["completed_at"])
+            for r in conn.execute("SELECT item_id, completed, source, completed_at FROM roadmap_completions").fetchall()
+        }
+        quiz_mastered = {
+            r["slug"]
+            for r in conn.execute("SELECT slug FROM kb_quiz_attempts WHERE mastered = 1").fetchall()
+        }
+        wb_passed = {
+            r["item_id"]
+            for r in conn.execute("SELECT item_id FROM workbench_runs WHERE status = 'PASS'").fetchall()
+        }
+        dsa_dash = state_manager.get_dashboard_payload().get("dsa", {})
+        dsa_done = set()
+        for p in dsa_dash.get("problems", []):
+            if p.get("bothDone"):
+                dsa_done.add(f"dsa-{int(p['id']):03d}")
+                if p.get("folderSlug"):
+                    dsa_done.add(p["folderSlug"])
+
+        item_rows = conn.execute(
+            "SELECT * FROM roadmap_items ORDER BY order_index ASC"
+        ).fetchall()
+
+        tracks_acc: Dict[str, Dict[str, Any]] = {
+            "courses": {
+                "track": "courses",
+                "title": "📖 Textbook Courses (01–12)",
+                "shortTitle": "Courses",
+                "unitLabel": "Chapters",
+                "total": 0,
+                "completed": 0,
+                "done": 0,
+                "remaining": 0,
+                "percentage": 0,
+                "pct": 0,
+                "nextItem": None,
+            },
+            "dsa": {
+                "track": "dsa",
+                "title": "🧩 DSA 50/50 Coding Studio",
+                "shortTitle": "Coding / DSA",
+                "unitLabel": "Problems",
+                "total": 0,
+                "completed": 0,
+                "done": 0,
+                "remaining": 0,
+                "percentage": 0,
+                "pct": 0,
+                "nextItem": None,
+            },
+            "workbench": {
+                "track": "workbench",
+                "title": "🛠️ Local Zero-AI Workbench",
+                "shortTitle": "Workbench",
+                "unitLabel": "Labs & Suites",
+                "total": 0,
+                "completed": 0,
+                "done": 0,
+                "remaining": 0,
+                "percentage": 0,
+                "pct": 0,
+                "nextItem": None,
+            },
+            "mock": {
+                "track": "mock",
+                "title": "🎙️ Staff Mock Simulator",
+                "shortTitle": "Mock Sim",
+                "unitLabel": "Scenarios",
+                "total": 0,
+                "completed": 0,
+                "done": 0,
+                "remaining": 0,
+                "percentage": 0,
+                "pct": 0,
+                "nextItem": None,
+            },
+        }
+
+        track_type_map = {
+            "courses": "course",
+            "dsa": "dsa",
+            "workbench": "workbench",
+            "mock": "interview",
+        }
+
+        items_by_phase: Dict[int, List[Dict[str, Any]]] = {1: [], 2: [], 3: [], 4: [], 5: []}
+        completions_map: Dict[str, bool] = {}
+        up_next_item: Optional[Dict[str, Any]] = None
+        total_items = 0
+        completed_items = 0
+        earned_xp = base_xp
+
+        for row in item_rows:
+            iid = row["item_id"]
+            trk = row["track"]
+            pnum = int(row["phase_number"])
+            order_idx = int(row["order_index"])
+            est_mins = int(row["estimated_minutes"])
+            meta = json.loads(row["meta_json"] or "{}")
+
+            if iid in manual_rows:
+                is_done = manual_rows[iid][0] == 1
+                comp_source = manual_rows[iid][1]
+            else:
+                if trk == "courses":
+                    is_done = iid in quiz_mastered
+                    comp_source = "quiz_100" if is_done else "pending"
+                elif trk == "dsa":
+                    is_done = iid in dsa_done
+                    comp_source = "dsa_passed" if is_done else "pending"
+                elif trk == "workbench":
+                    is_done = iid in wb_passed
+                    comp_source = "lab_verified" if is_done else "pending"
+                else:
+                    is_done = False
+                    comp_source = "pending"
+
+            completions_map[iid] = is_done
+            if meta.get("aliasId"):
+                completions_map[meta["aliasId"]] = is_done
+            if trk == "dsa" and meta.get("problemId") is not None:
+                completions_map[f"dsa-{int(meta['problemId']):03d}"] = is_done
+
+            parent_group = (
+                meta.get("courseShortTitle")
+                or (f"Ch {meta.get('chapterNumber')}: {meta.get('pattern')}" if trk == "dsa" else "")
+                or meta.get("category")
+                or "Staff Bar-Raiser"
+            )
+            s60 = int(meta.get("session60") or 1)
+            s120 = int(meta.get("session120") or (s60 * 2 - 1))
+            active_s_num = s120 if pace == "120d" else s60
+            short_chip = str(meta.get("shortChipLabel") or row["title"][:28])
+            why_now = (
+                f"Session {active_s_num} of {total_sessions} (Phase {pnum} · {parent_group}) — interleaved daily slot keeping Course architecture + DSA reps synchronized."
+            )
+
+            item_obj = {
+                "itemId": iid,
+                "aliasId": meta.get("aliasId", iid),
+                "track": trk,
+                "trackType": track_type_map.get(trk, "course"),
+                "title": row["title"],
+                "shortChipLabel": short_chip,
+                "slug": row["slug"],
+                "phaseNumber": pnum,
+                "session60": s60,
+                "session120": s120,
+                "sessionNumber": active_s_num,
+                "orderIndex": order_idx,
+                "globalOrder": order_idx,
+                "estimatedMinutes": est_mins,
+                "estMinutes": est_mins,
+                "xpReward": int(row["xp_reward"]),
+                "completed": is_done,
+                "source": comp_source,
+                "parentGroup": parent_group,
+                "whyNow": why_now,
+                "meta": meta,
+            }
+
+            total_items += 1
+            if is_done:
+                completed_items += 1
+                earned_xp += int(row["xp_reward"])
+            elif up_next_item is None:
+                up_next_item = item_obj
+
+            if trk in tracks_acc:
+                tracks_acc[trk]["total"] += 1
+                if is_done:
+                    tracks_acc[trk]["completed"] += 1
+                    tracks_acc[trk]["done"] += 1
+                elif tracks_acc[trk]["nextItem"] is None:
+                    tracks_acc[trk]["nextItem"] = item_obj
+
+            items_by_phase.setdefault(pnum, []).append(item_obj)
+
+        for t_obj in tracks_acc.values():
+            t_tot = t_obj["total"]
+            t_comp = t_obj["completed"]
+            t_obj["remaining"] = max(0, t_tot - t_comp)
+            pct_val = round((t_comp / t_tot) * 100, 1) if t_tot > 0 else 0.0
+            t_obj["percentage"] = pct_val
+            t_obj["pct"] = pct_val
+
+        overall_pct = round((completed_items / total_items) * 100, 1) if total_items > 0 else 0.0
+        if overall_pct >= 90:
+            rank_icon = "👑"
+            rank_short = "Staff Bar-Raiser"
+            rank_title = "👑 Staff Bar-Raiser (Principal Systems Architect)"
+            next_rank = "🏆 Principal Quality Fellow (Max Rank)"
+            next_rank_pct = 100
+        elif overall_pct >= 60:
+            rank_icon = "⚡"
+            rank_short = "Staff SDET Candidate"
+            rank_title = "⚡ Staff SDET Candidate (SRE, Data & Security)"
+            next_rank = "👑 Staff Bar-Raiser (Principal Systems Architect)"
+            next_rank_pct = 90
+        elif overall_pct >= 30:
+            rank_icon = "🛠️"
+            rank_short = "Lead SDET"
+            rank_title = "🛠️ Lead SDET (Frameworks & Concurrency)"
+            next_rank = "⚡ Staff SDET Candidate (SRE, Data & Security)"
+            next_rank_pct = 60
+        else:
+            rank_icon = "🌱"
+            rank_short = "Senior SDET"
+            rank_title = "🌱 Senior SDET (Foundations & Scale)"
+            next_rank = "🛠️ Lead SDET (Frameworks & Concurrency)"
+            next_rank_pct = 30
+
+        phase_weeks_map = {
+            1: "Weeks 1–2",
+            2: "Weeks 3–4",
+            3: "Weeks 5–8",
+            4: "Weeks 9–11",
+            5: "Week 12",
+        }
+        phases_out = []
+        active_phase_found = False
+        unlocked_soundbites = 0
+        all_items_flat: List[Dict[str, Any]] = []
+        for p_spec in ROADMAP_PHASES_SPEC:
+            pnum = int(p_spec["phaseNumber"])
+            p_items = items_by_phase.get(pnum, [])
+            all_items_flat.extend(p_items)
+            p_tot = len(p_items)
+            p_comp = sum(1 for x in p_items if x["completed"])
+            p_rem = max(0, p_tot - p_comp)
+            p_pct = round((p_comp / p_tot) * 100, 1) if p_tot > 0 else 0.0
+            if p_tot > 0 and p_comp == p_tot:
+                p_status = "completed"
+            elif not active_phase_found:
+                p_status = "active"
+                active_phase_found = True
+            else:
+                p_status = "locked"
+
+            sb_unlocked = p_comp > 0 or pnum == 1
+            if sb_unlocked:
+                unlocked_soundbites += 1
+
+            if p_items:
+                s_min = min(x["sessionNumber"] for x in p_items)
+                s_max = max(x["sessionNumber"] for x in p_items)
+                session_range = f"S{s_min}–S{s_max}"
+            else:
+                session_range = f"Phase {pnum}"
+
+            p_next = next((x for x in p_items if not x["completed"]), None)
+            phases_out.append({
+                "phaseNumber": pnum,
+                "title": p_spec["title"],
+                "shortTitle": p_spec["shortTitle"],
+                "subtitle": p_spec["objective"],
+                "objective": p_spec["objective"],
+                "weeks": phase_weeks_map.get(pnum, f"Phase {pnum}"),
+                "sessionRange": session_range,
+                "exitGate": p_spec["exitGate"],
+                "status": p_status,
+                "total": p_tot,
+                "totalItems": p_tot,
+                "completed": p_comp,
+                "completedItems": p_comp,
+                "remaining": p_rem,
+                "percentage": p_pct,
+                "pct": p_pct,
+                "soundbite": p_spec["soundbiteQuote"],
+                "soundbiteTitle": p_spec["soundbiteTitle"],
+                "soundbiteQuote": p_spec["soundbiteQuote"],
+                "soundbiteUnlocked": sb_unlocked,
+                "nextItem": p_next,
+                "items": p_items,
+            })
+
+        # Compute Today's Active Rigid Session summary & item chips
+        active_session_num = up_next_item["sessionNumber"] if up_next_item else total_sessions
+        today_items = [x for x in all_items_flat if x["sessionNumber"] == active_session_num]
+        if not today_items and all_items_flat:
+            today_items = [all_items_flat[0]]
+        td_phase = today_items[0]["phaseNumber"] if today_items else 1
+        td_comp = sum(1 for x in today_items if x["completed"])
+        td_tot = len(today_items)
+        td_rem_mins = sum(x["estMinutes"] for x in today_items if not x["completed"])
+        c_tot = sum(1 for x in today_items if x["track"] == "courses")
+        c_done = sum(1 for x in today_items if x["track"] == "courses" and x["completed"])
+        d_tot = sum(1 for x in today_items if x["track"] == "dsa")
+        d_done = sum(1 for x in today_items if x["track"] == "dsa" and x["completed"])
+        w_tot = sum(1 for x in today_items if x["track"] == "workbench")
+        w_done = sum(1 for x in today_items if x["track"] == "workbench" and x["completed"])
+        m_tot = sum(1 for x in today_items if x["track"] == "mock")
+        m_done = sum(1 for x in today_items if x["track"] == "mock" and x["completed"])
+
+        quota_parts: List[str] = []
+        if c_tot:
+            quota_parts.append(f"📚 {c_done}/{c_tot} Ch")
+        if d_tot:
+            quota_parts.append(f"💻 {d_done}/{d_tot} DSA")
+        if w_tot:
+            quota_parts.append(f"🛠️ {w_done}/{w_tot} Lab")
+        if m_tot:
+            quota_parts.append(f"🎙️ {m_done}/{m_tot} Mock")
+        quota_parts.append(f"{td_comp}/{td_tot} Done (~{td_rem_mins}m left)")
+
+        today_session = {
+            "sessionNumber": active_session_num,
+            "totalSessions": total_sessions,
+            "pace": pace,
+            "phaseNumber": td_phase,
+            "completedCount": td_comp,
+            "totalCount": td_tot,
+            "remainingMinutes": td_rem_mins,
+            "quotaSummary": " · ".join(quota_parts),
+            "items": [
+                {
+                    "itemId": x["itemId"],
+                    "globalOrder": x["globalOrder"],
+                    "track": x["track"],
+                    "trackType": x["trackType"],
+                    "title": x["title"],
+                    "shortChipLabel": x["shortChipLabel"],
+                    "estMinutes": x["estMinutes"],
+                    "completed": x["completed"],
+                    "isUpNext": bool(up_next_item and x["itemId"] == up_next_item["itemId"]),
+                }
+                for x in today_items
+            ],
+        }
+
+        pages_alias = {
+            "courses": tracks_acc["courses"],
+            "dsa": tracks_acc["dsa"],
+            "workbench": tracks_acc["workbench"],
+            "interviews": tracks_acc["mock"],
+            "mock": tracks_acc["mock"],
+        }
+
+        return {
+            "roadmapEnabled": roadmap_enabled,
+            "profile": prefs.get("active_roadmap_profile", "staff-sdet"),
+            "pace": pace,
+            "totalSessions": total_sessions,
+            "todaySession": today_session,
+            "macro": {
+                "totalItems": total_items,
+                "completedItems": completed_items,
+                "remainingItems": max(0, total_items - completed_items),
+                "pct": overall_pct,
+            },
+            "gamification": {
+                "rankIcon": rank_icon,
+                "rankTitle": rank_short,
+                "fullRankTitle": rank_title,
+                "nextRank": next_rank,
+                "nextRankAtPct": next_rank_pct,
+                "xp": earned_xp,
+                "streakDays": streak_days,
+                "freezeAvailable": True,
+                "unlockedSoundbitesCount": unlocked_soundbites,
+            },
+            "overall": {
+                "total": total_items,
+                "completed": completed_items,
+                "remaining": max(0, total_items - completed_items),
+                "percentage": overall_pct,
+                "rank": rank_title,
+                "nextRank": next_rank,
+                "nextRankAtPct": next_rank_pct,
+                "xp": earned_xp,
+                "streakDays": streak_days,
+                "unlockedSoundbitesCount": unlocked_soundbites,
+            },
+            "upNext": up_next_item,
+            "pages": pages_alias,
+            "tracks": tracks_acc,
+            "phases": phases_out,
+            "completedMap": completions_map,
+            "completionsMap": completions_map,
+        }
+    finally:
+        conn.close()
+
+
+def set_roadmap_pace(pace: str, db_path: pathlib.Path = DEFAULT_DB_PATH) -> Dict[str, Any]:
+    """Configure daily session pace ('60d' Standard ~80m/day vs '120d' Light ~40m/day)."""
+    ensure_initialized(db_path)
+    norm_pace = "120d" if "120" in str(pace or "").lower() or str(pace or "").lower() == "light" else "60d"
+    conn = _get_connection(db_path)
+    try:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO user_preferences (key, value, updated_at)
+            VALUES ('roadmap_pace', ?, ?)
+            """,
+            (norm_pace, time.time()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return get_roadmap_status(db_path)
+
+
+def set_roadmap_toggle(enabled: bool, db_path: pathlib.Path = DEFAULT_DB_PATH) -> Dict[str, Any]:
+    """Enable or disable the configurable Staff SDET Roadmap tracker on the Home page & across views."""
+    ensure_initialized(db_path)
+    conn = _get_connection(db_path)
+    try:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO user_preferences (key, value, updated_at)
+            VALUES ('staff_sdet_roadmap_enabled', ?, ?)
+            """,
+            ("1" if enabled else "0", time.time()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return get_roadmap_status(db_path)
+
+
+def set_roadmap_item_done(
+    item_id: str,
+    completed: Optional[bool] = None,
+    source: str = "manual",
+    db_path: pathlib.Path = DEFAULT_DB_PATH,
+) -> Tuple[int, Dict[str, Any]]:
+    """Mark any Course chapter, DSA problem, Workbench lab, or Mock Interview scenario as done/undone (toggles if completed is None)."""
+    ensure_initialized(db_path)
+    conn = _get_connection(db_path)
+    try:
+        resolved_id = _resolve_roadmap_item_id(conn, item_id)
+        if not resolved_id:
+            return 404, {"error": f"Roadmap item '{item_id}' not found"}
+        if completed is None:
+            cur_status = get_roadmap_status(db_path)
+            cur_val = bool(cur_status.get("completedMap", {}).get(resolved_id))
+            next_completed = not cur_val
+        else:
+            next_completed = bool(completed)
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO roadmap_completions (item_id, completed, completed_at, source, notes)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                resolved_id,
+                1 if next_completed else 0,
+                time.time() if next_completed else None,
+                source or "manual",
+                "",
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    status = get_roadmap_status(db_path)
+    status["itemId"] = resolved_id
+    status["requestedId"] = item_id
+    status["completed"] = bool(next_completed)
+    status["updatedItem"] = {
+        "itemId": resolved_id,
+        "requestedId": item_id,
+        "completed": bool(next_completed),
+        "source": source or "manual",
+    }
+    return 200, status
+
