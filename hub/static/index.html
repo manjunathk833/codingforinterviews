@@ -143,7 +143,7 @@
     }
 
     /* Neutralize hardcoded white glare & noisy utility borders across all views */
-    .bg-white, .bg-\[\#FFFDF9\], .bg-\[\#FAF7F2\], .bg-\[\#F3EDE2\], .bg-\[\#F4F9FF\] {
+    .bg-white, .bg-\[\#FFFDF9\], .bg-\[\#FAF7F2\], .bg-\[\#F3EDE2\], .bg-\[\#F4F9FF\], .bg-\[\#EFEAE0\] {
       background-color: var(--bg-subtle) !important;
       color: var(--ink-primary) !important;
     }
@@ -800,6 +800,206 @@
       filter: none;
       user-select: auto;
     }
+    /* Staff SDET Roadmap & Gamified Habit Engine Styles (100% Theme-Adaptive across Sepia, Oat, Ink & Dusk) */
+    .roadmap-switch-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1.5px solid rgba(132, 118, 104, 0.38);
+      background: var(--bg-subtle);
+      color: var(--ink-secondary);
+    }
+    .roadmap-switch-pill:hover {
+      border-color: var(--ink-secondary);
+      color: var(--ink-primary);
+    }
+    .roadmap-switch-pill.active,
+    .roadmap-switch-pill.on {
+      background: var(--accent-sage-soft);
+      color: var(--accent-sage);
+      border-color: var(--accent-sage);
+    }
+    .mark-done-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.14s ease;
+      border: 1.5px solid rgba(132, 118, 104, 0.44);
+      background: var(--bg-subtle);
+      color: var(--ink-primary);
+      white-space: nowrap;
+    }
+    .mark-done-btn:hover {
+      border-color: var(--accent-sage);
+      color: var(--accent-sage);
+      background: var(--accent-sage-soft);
+    }
+    .mark-done-btn.done,
+    .mark-done-btn.completed {
+      background: var(--accent-sage-soft);
+      color: var(--accent-sage);
+      border-color: var(--accent-sage);
+    }
+    .page-tracker-banner {
+      display: none;
+      background: var(--bg-card);
+      border: 1px solid rgba(132, 118, 104, 0.25);
+      border-left: 4px solid var(--accent-terra);
+      border-radius: 12px;
+      padding: 11px 16px;
+      box-shadow: var(--shadow-tactile);
+    }
+    .page-tracker-banner.active-tracker {
+      display: flex;
+    }
+    .connected-flow-row {
+      display: flex;
+      align-items: stretch;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .connected-flow-box {
+      flex: 1 1 0%;
+      min-width: 152px;
+      border: 1.5px solid rgba(132, 118, 104, 0.28);
+      border-radius: 11px;
+      padding: 10px 12px;
+      background: var(--bg-subtle);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .connected-flow-box:hover {
+      border-color: var(--accent-terra);
+    }
+    .connected-flow-box.active {
+      border-color: var(--accent-terra);
+      background: var(--accent-terra-soft);
+    }
+    .connected-flow-box.completed {
+      border-color: var(--accent-sage);
+      background: var(--accent-sage-soft);
+    }
+    .connected-flow-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 0 2px;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .phase-step-pill {
+      border: 1.5px solid rgba(132, 118, 104, 0.28);
+      border-radius: 11px;
+      padding: 10px 13px;
+      background: var(--bg-subtle);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+    .phase-step-pill.active {
+      border-color: var(--accent-terra);
+      background: var(--accent-terra-soft);
+    }
+    .phase-step-pill.completed {
+      border-color: var(--accent-sage);
+      background: var(--accent-sage-soft);
+    }
+    .roadmap-pace-group {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-warm);
+      border-radius: 999px;
+      padding: 2px;
+      gap: 2px;
+    }
+    .roadmap-pace-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-muted);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.14s ease;
+      white-space: nowrap;
+    }
+    .roadmap-pace-btn:hover {
+      color: var(--ink-primary);
+    }
+    .roadmap-pace-btn.active {
+      background: var(--accent-terra-soft);
+      color: var(--accent-terra);
+    }
+    .session-step-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding-top: 9px;
+      margin-top: 6px;
+      border-top: 1px solid var(--border-warm);
+    }
+    .session-step-chip {
+      border: 1px solid var(--border-warm);
+      background: var(--bg-card);
+      color: var(--ink-secondary);
+      border-radius: 8px;
+      padding: 4px 9px;
+      font-size: 0.69rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.14s ease;
+    }
+    .session-step-chip:hover {
+      border-color: var(--accent-terra);
+      color: var(--ink-primary);
+    }
+    .session-step-chip.current {
+      border-color: var(--accent-terra);
+      color: var(--ink-primary);
+      font-weight: 700;
+    }
+    .session-step-chip.done {
+      background: var(--accent-sage-soft);
+      color: var(--accent-sage);
+      border-color: var(--accent-sage);
+    }
+    .arena-gauge-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    @media (max-width: 820px) {
+      .arena-gauge-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
     @media print {
       .topbar, aside, .revise-sticky-bar, .zen-floating-bar, .kb-edge-rail, #kb-hover-edge-zone, #kb-peek-drawer, #kb-sec-header button { display: none !important; }
       .compendium-chapter-card { break-inside: avoid-page; box-shadow: none; }
@@ -875,6 +1075,12 @@
         <div id="global-search-dropdown" class="hidden absolute right-0 mt-1.5 w-96 max-h-96 overflow-y-auto panel p-2.5 z-50 space-y-1"></div>
       </div>
 
+      <!-- 1-Click Staff SDET Roadmap Mode Toggle + Eye-Comfort Palette Switcher -->
+      <button onclick="toggleStaffRoadmap()" id="topbar-roadmap-toggle-btn" class="roadmap-switch-pill active" title="Toggle Guided 5-Phase Staff SDET Roadmap & Cross-Page Progress Tracker">
+        <span id="topbar-roadmap-toggle-dot">●</span>
+        <span id="topbar-roadmap-toggle-label">Roadmap: ON</span>
+      </button>
+
       <!-- 1-Click Eye-Comfort Palette Switcher (Sepia · Oat · Ink · Dusk) + Font Size + Universal Focus Fullscreen -->
       <div class="flex items-center gap-0.5 rounded-lg p-0.5" style="background: var(--bg-card);" role="group" aria-label="Eye Comfort & Focus Controls">
         <button onclick="setEyeComfortTheme('sepia')" id="theme-btn-sepia" class="nav-tab active" style="padding: 4px 7px; font-size: 0.71rem;" title="Kindle Warm Sepia (77% Luminance — Best for daytime long reading)">📜 Sepia</button>
@@ -894,23 +1100,29 @@
        VIEW 1: UNCLUTTERED MINIMALIST HOME (RESUME STRIP + 8 COURSES + PROGRESSIVE DISCLOSURE)
        ========================================================================== -->
   <main id="view-home" class="hub-container space-y-6" style="max-width: 1080px;">
-    <!-- Minimalist Calm Resume & Quick-Switch Strip -->
-    <section class="hero-panel space-y-3">
+    <!-- Freeform Hero Card (Shown when Staff SDET Roadmap is toggled OFF so Home never stacks two competing dashboards) -->
+    <section id="home-freeform-hero" class="hero-panel space-y-3 hidden">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="space-y-1 max-w-3xl">
           <div id="home-hero-kicker" class="mono text-[11px] font-semibold uppercase tracking-wider" style="color: var(--accent-terra);">
-            CONTINUE WHERE YOU LEFT OFF · DISTRACTION-FREE MASTERY
+            FREEFORM EXPLORATION MODE · DISTRACTION-FREE MASTERY
           </div>
           <h1 id="home-hero-title" style="font-size: 1.55rem; font-weight: 650; margin: 2px 0;">
-            8 Textbook Courses (74 Chapters) &amp; 50/50 Coding Studio
+            12 Textbook Courses (114 Chapters) &amp; 50/50 Coding Studio
           </h1>
           <p id="home-hero-desc" style="color: var(--ink-secondary); font-size: 0.88rem; max-width: 780px; margin: 0;">
             Zero card clutter, calibrated <code>12:1</code> paper-and-ink contrast for long reading hours, and instant <code>F</code> fullscreen focus on every screen.
           </p>
         </div>
-        <span id="home-dsa-progress" class="mono text-xs px-3 py-1.5 rounded-lg font-semibold" style="background: var(--bg-subtle); color: var(--ink-secondary);">
-          3 / 128 DSA · 8 Courses (74 Ch)
-        </span>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="toggleStaffRoadmap()" id="home-roadmap-switch-btn" class="roadmap-switch-pill" title="Turn ON the Guided 5-Phase Staff SDET Roadmap & Cross-Page Progress Tracker">
+            <span id="home-roadmap-switch-dot">○</span>
+            <span id="home-roadmap-switch-text">Track Staff SDET Roadmap: OFF</span>
+          </button>
+          <span id="home-dsa-progress" class="mono text-xs px-3 py-1.5 rounded-lg font-semibold" style="background: var(--bg-subtle); color: var(--ink-secondary);">
+            3 / 128 DSA · 12 Courses (114 Ch)
+          </span>
+        </div>
       </div>
 
       <div class="pt-2 flex flex-wrap items-center justify-between gap-3">
@@ -937,12 +1149,128 @@
       </div>
     </section>
 
-    <!-- Ordered 8 Textbook Courses Runway (01 -> 08) -->
+    <!-- ========================================================================
+         CALM CONNECTED-ARROW STAFF SDET ROADMAP (SHOWN WHEN TOGGLED ON)
+         ======================================================================== -->
+    <section id="home-roadmap-dashboard" class="panel space-y-4" style="padding: 22px 24px;">
+      <!-- 1. Calm Single Header Row: Title + Subtle Dark-Safe Badges + Synced Toggle Switch -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="space-y-1">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <h1 style="font-size: 1.48rem; font-weight: 650; margin: 0;">
+              Staff SDET Preparation Roadmap
+            </h1>
+            <span id="rm-overall-pill" class="mono text-xs px-2.5 py-0.5 rounded-full font-semibold" style="background: var(--bg-subtle); color: var(--ink-primary);">
+              3 / 256 Done · 1.2%
+            </span>
+            <span id="rm-streak-pill" class="mono text-xs px-2.5 py-0.5 rounded-full font-semibold" style="background: var(--bg-subtle); color: var(--ink-secondary);">
+              🔥 14d Streak
+            </span>
+            <span id="rm-rank-badge" class="mono text-xs px-2.5 py-0.5 rounded-full font-semibold hidden sm:inline-block" style="background: var(--accent-sage-soft); color: var(--accent-sage);">
+              🌱 Senior SDET
+            </span>
+            <span id="rm-xp-pill" class="mono text-xs px-2.5 py-0.5 rounded-full font-semibold hidden md:inline-block" style="background: var(--bg-subtle); color: var(--ink-muted);">
+              ⚡ 1,560 XP
+            </span>
+          </div>
+          <div id="rm-next-rank-hint" class="text-xs" style="color: var(--ink-secondary);">
+            Interleaved daily prep across Courses + Coding/DSA + Weekend Workbench Labs + Staff Mock Sim.
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="roadmap-pace-group mono" role="group" aria-label="Daily Session Pace">
+            <button onclick="setRoadmapPace('60d')" id="rm-pace-60d-btn" class="roadmap-pace-btn active" title="60 Interleaved Sessions (~80 min/day)">
+              60d Standard (~80m/d)
+            </button>
+            <button onclick="setRoadmapPace('120d')" id="rm-pace-120d-btn" class="roadmap-pace-btn" title="120 Light Half-Sessions (~40 min/day)">
+              120d Light (~40m/d)
+            </button>
+          </div>
+          <button onclick="toggleStaffRoadmap()" id="home-roadmap-on-switch-btn" class="roadmap-switch-pill active" title="Toggle Staff SDET Roadmap ON or OFF">
+            <span id="home-roadmap-on-switch-dot">●</span>
+            <span id="home-roadmap-on-switch-text">Track Staff SDET Roadmap: ON</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Sleek Thin Macro Progress Rail (Zero White Bar!) -->
+      <div class="space-y-1">
+        <div class="flex items-center justify-between mono text-[11px]">
+          <span id="rm-macro-label" style="color: var(--ink-muted);">Overall Readiness Progress</span>
+          <span id="rm-macro-pct" style="color: var(--accent-terra); font-weight: 600;">1.2% Complete · 253 Remaining</span>
+        </div>
+        <div class="w-full h-2 rounded-full overflow-hidden" style="background: var(--bg-subtle);">
+          <div id="rm-macro-bar" class="h-full rounded-full transition-all duration-300" style="width: 2%; background: linear-gradient(90deg, var(--accent-terra), var(--accent-sage));"></div>
+        </div>
+      </div>
+
+      <!-- 3. Single Focal "Today's Rigid Session" Action Card -->
+      <div id="rm-up-next-card" class="rounded-xl" style="padding: 14px 18px; background: var(--bg-subtle); border-left: 4px solid var(--accent-terra);">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="space-y-0.5 max-w-2xl">
+            <div class="flex flex-wrap items-center gap-2 mono text-[10.5px] font-bold" style="color: var(--accent-terra);">
+              <span id="rm-up-next-phase-badge">TODAY'S RIGID SESSION · SESSION 1 OF 60 (PHASE 1)</span>
+              <span id="rm-up-next-order-badge" style="color: var(--ink-muted);">📚 0/2 Ch · 💻 0/2 DSA</span>
+            </div>
+            <div id="rm-up-next-title" class="font-bold text-sm sm:text-base" style="color: var(--ink-primary);">
+              Ch 01: Quality Engineering Economics &amp; Flaky Combinatorics
+            </div>
+            <div id="rm-up-next-why" class="text-xs" style="color: var(--ink-secondary);">
+              Master flaky test combinatorics (p^N), boundary value analysis, and seam economics.
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button id="rm-up-next-open-btn" class="btn-primary">
+              Continue →
+            </button>
+            <button id="rm-up-next-mark-btn" class="mark-done-btn" title="Mark this Up Next item as Done">
+              ○ Mark Done
+            </button>
+          </div>
+        </div>
+        <div id="rm-today-session-chips" class="session-step-chips mono"></div>
+      </div>
+
+      <!-- 4. Connected 5-Phase Flow Pipeline (Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5) -->
+      <div class="space-y-1.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="mono text-[10.5px] font-semibold uppercase tracking-wider" style="color: var(--ink-muted);">
+            5-Phase Sequential Order — Do Phases 1 → 5 in Order (Click any phase to inspect sessions)
+          </span>
+          <span id="rm-soundbite-count-pill" class="mono text-[10.5px] font-semibold" style="color: var(--accent-sage);">
+            🎙️ 1 / 5 Staff Soundbites Unlocked
+          </span>
+        </div>
+        <div id="rm-phases-tabs" class="connected-flow-row"></div>
+      </div>
+
+      <!-- 5. 4 Practice Arenas (Interleaved Daily — Parallel Gauges, Zero Misleading Sequential Arrows) -->
+      <div class="space-y-1.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="mono text-[10.5px] font-semibold uppercase tracking-wider" style="color: var(--ink-muted);">
+            Progress by Practice Arena — Interleaved Daily, Not Sequential
+          </span>
+          <span class="mono text-[10.5px]" style="color: var(--ink-muted);">Click any arena to jump directly</span>
+        </div>
+        <div id="rm-tracks-grid" class="arena-gauge-grid"></div>
+      </div>
+
+      <!-- 6. Calm Progressive Disclosure Checklist Drawer (Collapsed by default so Home stays uncluttered) -->
+      <details id="rm-phase-checklist-details" class="minimal-disclosure" ontoggle="state.roadmapChecklistOpen = this.open">
+        <summary style="padding: 10px 14px; font-size: 0.8rem;">
+          <span id="rm-phase-checklist-summary">▸ View Phase 1 Interleaved Checklist (Sessions 1–10 · 42 items)</span>
+          <span class="mono text-[10.5px]" style="color: var(--ink-muted);">Inspect &amp; Mark Done ▾</span>
+        </summary>
+        <div id="rm-active-phase-detail" class="space-y-3 pt-3"></div>
+      </details>
+    </section>
+
+    <!-- Ordered 12 Textbook Courses Runway (01 -> 12) -->
     <section class="space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2 px-1">
         <div>
           <div class="mono text-[10.5px] font-semibold uppercase tracking-wider" style="color: var(--ink-muted);">
-            ORDERED CURRICULUM RUNWAY (01 → 08 · 74 TRUE-ZERO 4-STEP CHAPTERS)
+            ORDERED CURRICULUM RUNWAY (01 → 12 · 114 TRUE-ZERO CHAPTERS)
           </div>
           <h2 style="font-size: 1.22rem; font-weight: 650; margin-top: 2px;">
             Textbook Courses
@@ -984,18 +1312,21 @@
   <!-- ==========================================================================
        VIEW 2: DISTRACTION-FREE TEXTBOOK READER (COLLAPSIBLE SIDEBARS + 68CH CANVAS)
        ========================================================================== -->
-  <main id="view-textbook" class="hidden hub-container">
+  <main id="view-textbook" class="hidden hub-container space-y-4">
+    <!-- COURSES PAGE ROADMAP COMPLETION TRACKER BANNER -->
+    <div id="kb-page-tracker-bar" class="page-tracker-banner flex flex-wrap items-center justify-between gap-3 text-xs"></div>
+
     <div class="kb-layout">
-      <!-- LEFT SPINE: 8 TEXTBOOK COURSES + SYLLABUS (COLLAPSIBLE VIA [‹ Hide] OR `[` KEY) -->
+      <!-- LEFT SPINE: 12 TEXTBOOK COURSES + SYLLABUS (COLLAPSIBLE VIA [‹ Hide] OR `[` KEY) -->
       <aside id="kb-left-aside" class="panel space-y-3 lg:sticky lg:top-16 max-h-[86vh] overflow-y-auto" style="padding: 15px;">
         <div>
           <div class="flex items-center justify-between gap-1.5">
             <span class="mono font-semibold uppercase whitespace-nowrap" style="font-size: 0.67rem; color: var(--accent-terra);">
-              📚 8 COURSES
+              📚 12 COURSES
             </span>
             <div class="flex items-center gap-1 shrink-0">
               <span id="kb-total-count-pill" class="mono text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap" style="background: var(--bg-subtle); color: var(--ink-muted);">
-                74 Ch
+                114 Ch
               </span>
               <button onclick="toggleKbSidebar('left')" class="nav-tab mono" style="padding: 2px 6px; font-size: 0.67rem;" title="Collapse Left Sidebar to Screen Edge (Shortcut: [)">‹ Hide</button>
             </div>
@@ -1047,6 +1378,9 @@
               <span id="kb-chapter-mastery-badge" class="mono text-[10.5px] font-semibold px-2 py-0.5 rounded-full" style="background: var(--bg-subtle); color: var(--ink-muted);">
                 Quiz Pending
               </span>
+              <button onclick="toggleActiveChapterDone()" id="kb-mark-done-btn" class="mark-done-btn" title="Mark or unmark this chapter as Done in your Staff SDET Roadmap">
+                ○ Mark Done
+              </button>
             </div>
           </div>
           <h1 id="kb-chapter-title" style="font-size: 1.68rem; font-weight: 700; line-height: 1.25; margin: 2px 0;">
@@ -1318,6 +1652,7 @@
        VIEW 3: ENGINEERING PULSE NEWSFEED + CONCEPT CARDS
        ========================================================================== -->
   <main id="view-newsfeed" class="hidden hub-container space-y-6">
+    <div id="pulse-page-tracker-bar" class="page-tracker-banner flex flex-wrap items-center justify-between gap-3 text-xs"></div>
     <section class="panel space-y-4">
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -1361,6 +1696,7 @@
        VIEW 4: DYNAMIC 15-CHAPTER DSA TRACK ROADMAP (BANKED OPTION 1)
        ========================================================================== -->
   <main id="view-roadmap" class="hidden hub-container">
+    <div id="dsa-page-tracker-bar" class="page-tracker-banner flex flex-wrap items-center justify-between gap-3 text-xs mb-5"></div>
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       <aside id="roadmap-left-aside" class="lg:col-span-3 panel space-y-2 max-h-[82vh] overflow-y-auto">
         <div class="flex items-center justify-between gap-2 px-1 pb-1">
@@ -1410,6 +1746,7 @@
        VIEW 5: 50/50 EDITORIAL SPLIT STUDIO (BANKED WS 1 — DSA)
        ========================================================================== -->
   <main id="view-workspace" class="hidden hub-container space-y-4">
+    <div id="ws-page-tracker-bar" class="page-tracker-banner flex flex-wrap items-center justify-between gap-3 text-xs"></div>
     <div class="panel flex flex-wrap items-center justify-between gap-3 py-3 px-4 text-xs">
       <div class="flex items-center gap-2">
         <button onclick="showView('roadmap')" id="ws-breadcrumb-chapter" class="font-bold hover:underline" style="color: var(--ink-secondary);">
@@ -1419,6 +1756,9 @@
         <span id="ws-breadcrumb-title" class="font-bold">003. Group Anagrams</span>
       </div>
       <div class="flex flex-wrap items-center gap-1.5">
+        <button onclick="toggleActiveDsaProblemDone()" id="ws-roadmap-done-btn" class="mark-done-btn mr-1" title="Mark this DSA Problem as Done in your Staff SDET Roadmap">
+          ○ Mark Done
+        </button>
         <span class="mono text-[11px] mr-1" style="color: var(--ink-muted);">Quick Switch:</span>
         <button onclick="openProblemWorkspace('001-two-sum')" id="prob-pill-001-two-sum" class="nav-tab" style="padding: 4px 9px; font-size: 0.74rem;">001. Two Sum</button>
         <button onclick="openProblemWorkspace('002-valid-anagram')" id="prob-pill-002-valid-anagram" class="nav-tab" style="padding: 4px 9px; font-size: 0.74rem;">002. Valid Anagram</button>
@@ -1453,7 +1793,12 @@
 
           <div id="left-pane-problem" class="space-y-4">
             <div>
-              <h2 id="ws-problem-title" style="font-size: 1.45rem; font-weight: 700;">003. Group Anagrams</h2>
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 id="ws-problem-title" style="font-size: 1.45rem; font-weight: 700;">003. Group Anagrams</h2>
+                <button onclick="toggleActiveDsaProblemDone()" id="ws-title-mark-done-btn" class="mark-done-btn" title="Mark or unmark this DSA Problem as Done in your Staff SDET Roadmap">
+                  ○ Mark Problem Done
+                </button>
+              </div>
               <p id="ws-problem-prompt" class="text-sm mt-1" style="color: var(--ink-secondary);">
                 Given an array of strings <code class="mono bg-[#FAF7F2] px-1 rounded">strs</code>, group the anagrams together in <code class="mono text-emerald-800 font-semibold">O(N · K)</code> time using a 26-letter canonical frequency signature.
               </p>
@@ -1580,7 +1925,10 @@
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div id="ws-case-pills" class="flex flex-wrap items-center gap-2 text-xs mono"></div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="toggleActiveDsaProblemDone()" id="ws-footer-mark-done-btn" class="mark-done-btn" title="Mark or unmark this DSA Problem as Done in your Staff SDET Roadmap">
+                ○ Mark Done
+              </button>
               <button onclick="markProblemMastered()" id="ws-mastery-btn" class="hidden btn-primary" style="background: var(--accent-sage);">
                 🏆 Mark Mastered
               </button>
@@ -1639,6 +1987,7 @@
 
     <!-- SUB-PANE A: LOCAL IDE ENGINEERING WORKBENCH -->
     <section id="wb-pane-frameworks" class="space-y-4">
+      <div id="wb-page-tracker-bar" class="page-tracker-banner flex flex-wrap items-center justify-between gap-3 text-xs"></div>
       <div class="panel" style="background: #F4F9FF; border-color: #BFDBFE; padding: 14px 18px;">
         <div class="flex flex-wrap items-center justify-between gap-2 text-xs" style="color: #1E3A8A;">
           <span><strong>100% Deterministic · Strictly Zero AI Dependency:</strong> Build multi-file frameworks in your local IDE (<code class="mono">frameworks/</code>) and run deterministic verification below.</span>
@@ -1659,6 +2008,7 @@
 
     <!-- SUB-PANE B: STAFF & SENIOR MOCK INTERVIEW SIMULATOR -->
     <section id="wb-pane-interviews" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <div id="mi-page-tracker-bar" class="lg:col-span-12 page-tracker-banner flex flex-wrap items-center justify-between gap-3 text-xs"></div>
       <div id="mi-left-pane" class="lg:col-span-7 panel space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#E6DEC8] pb-3">
           <div>
@@ -1670,6 +2020,9 @@
             </h3>
           </div>
           <div class="flex flex-wrap items-center gap-1.5">
+            <button onclick="toggleRoadmapItemDone('interview-1')" id="mi-mark-done-btn" class="mark-done-btn" title="Mark this Staff Mock Interview Scenario as Done">
+              ○ Mark Done
+            </button>
             <button onclick="switchInterviewDocTab('questions')" id="mi-tab-questions" class="nav-tab active">Prompts</button>
             <button onclick="switchInterviewDocTab('evaluation')" id="mi-tab-evaluation" class="nav-tab">100-Pt Feedback</button>
             <button onclick="toggleSplitPaneMaximize('mi-left')" id="mi-left-expand-btn" class="expand-cta-btn" title="Expand Interview Prompt &amp; Rubric Reader">⤢ Expand Reader</button>
@@ -1699,11 +2052,16 @@
             placeholder="Draft your architectural assumptions, back-of-the-envelope capacity math, invariants, and trade-offs here..."
             class="w-full bg-[#FAF7F2] border border-[#E6DEC8] rounded-lg p-3 text-xs mono focus:outline-none focus:border-zinc-900"
           ></textarea>
-          <div class="flex items-center justify-between">
+          <div class="flex flex-wrap items-center justify-between gap-2">
             <span id="mi-save-status" class="text-[11px] mono" style="color: var(--ink-muted);">Synced with SQLite mock_interview_sessions</span>
-            <button onclick="saveInterviewDraft()" class="btn-primary" style="background: var(--accent-crimson);">
-              Save Response
-            </button>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleRoadmapItemDone('interview-1')" id="mi-studio-mark-done-btn" class="mark-done-btn" title="Mark this Staff Mock Interview Scenario as Done">
+                ○ Mark Interview Done
+              </button>
+              <button onclick="saveInterviewDraft()" class="btn-primary" style="background: var(--accent-crimson);">
+                Save Response
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1738,7 +2096,11 @@
       "frameworks/design-challenges/05-microservice-mocking": "wb-microservice-mocking",
       "frameworks/ui-automation/playwright-python": "wb-playwright-ui-framework",
       "frameworks/api-automation/pytest-requests-python": "wb-api-automation-suite",
-      "frameworks/api-automation/pytest-requests": "wb-api-automation-suite"
+      "frameworks/api-automation/pytest-requests": "wb-api-automation-suite",
+      "frameworks/data-validation/01-sql-reconciliation-and-isolation": "wb-sql-data-reconciliation",
+      "frameworks/cicd-infra/01-container-and-sharding-orchestrator": "wb-cicd-container-sharding",
+      "frameworks/performance-sre/01-load-coordinated-omission-and-chaos": "wb-perf-chaos-sre-harness",
+      "frameworks/security-testing/01-bola-jwt-and-prompt-shield": "wb-security-bola-jwt-llm"
     };
 
     const TRACK_VISUAL_THEME = {
@@ -1871,6 +2233,8 @@
     let state = {
       activeView: 'home',
       workbenchSubmode: 'frameworks',
+      roadmap: null,
+      activeRoadmapPhase: 1,
       tracks: [],
       kbCourses: [],
       kbChapters: [],
@@ -2616,9 +2980,9 @@
         document.getElementById('home-hero-cta').onclick = () => openOrScaffoldProblem(p.id, p.folderSlug || p.slug, p.hasLocalFiles);
       } else {
         document.getElementById('home-hero-kicker').textContent = "LOCAL-FIRST MULTI-MODAL ENGINEERING MASTERY";
-        document.getElementById('home-hero-title').textContent = "8 Prioritized Textbook Courses · 4 Execution Archetypes";
+        document.getElementById('home-hero-title').textContent = "12 Prioritized Textbook Courses · 4 Execution Archetypes";
         document.getElementById('home-hero-desc').innerHTML =
-          'Every track in <strong>The Hub of Learning</strong> uses a purpose-built learning modality: <strong>Textbook Courses</strong> (Zero to Staff SDET, Testing Frameworks, Playwright UI, API &amp; Contracts, AI Engineering, AI QA, System Design &amp; Core CS), <strong>In-Browser 50/50 Split Studio</strong> (DSA), <strong>Local IDE Deterministic Workbench</strong> (Automation Frameworks — strictly zero AI), and <strong>Staff Mock Interview Simulations</strong>.';
+          'Every track in <strong>The Hub of Learning</strong> uses a purpose-built learning modality: <strong>Textbook Courses</strong> (Zero to Staff SDET, Testing Frameworks, Playwright UI, API &amp; Contracts, AI Engineering, AI QA, System Design, Core CS, SQL &amp; Data, Docker/CI/CD/Cloud, Performance &amp; SRE, App/API Security), <strong>In-Browser 50/50 Split Studio</strong> (DSA), <strong>Local IDE Deterministic Workbench</strong> (Automation Frameworks — strictly zero AI), and <strong>Staff Mock Interview Simulations</strong>.';
         document.getElementById('home-hero-cta').textContent = 'Start Course 01: Zero to Staff SDET →';
         document.getElementById('home-hero-cta').onclick = () => openCourseById('01-zero-to-staff-sdet');
       }
@@ -2808,7 +3172,11 @@
       { courseId: '05-ai-engineering', priorityRank: 5, shortTitle: 'AI Engineering (ML → LLMs)', title: '05. Zero to Mastery: AI Engineering', accentColor: '#5B3FD9', pillBg: '#F0EBFF', plannedModules: 5, publishedChapters: 12, masteredChapters: 0, tagline: 'Loss functions, embeddings, Self-Attention, RoPE/GQA/MoE, KV-Cache, Hybrid RRF RAG, LoRA/DPO & MCP Agents.', modules: [] },
       { courseId: '06-ai-engineering-qa-focused', priorityRank: 6, shortTitle: 'AI Engineering — QA Focused', title: '06. Zero to Mastery: AI Engineering — QA Focused', accentColor: '#7C3AED', pillBg: '#F5F3FF', plannedModules: 4, publishedChapters: 10, masteredChapters: 0, tagline: 'Golden datasets, RAG Triad entailment, negation traps, Rogan-Gladen Judge calibration, red-teaming & AST healing.', modules: [] },
       { courseId: '07-distributed-system-design', priorityRank: 7, shortTitle: 'Distributed System Design', title: '07. Distributed System Design', accentColor: '#B45309', pillBg: '#FEF3C7', plannedModules: 2, publishedChapters: 5, masteredChapters: 0, tagline: 'Backpressure, Full Jitter, consistent hashing, Kafka outbox CDC, Singleflight caching & Raft quorums.', modules: [] },
-      { courseId: '08-core-cs-internals', priorityRank: 8, shortTitle: 'Core CS: OS, Net & Storage', title: '08. Core CS: OS, Networking & Storage', accentColor: '#374151', pillBg: '#F3F4F6', plannedModules: 2, publishedChapters: 5, masteredChapters: 0, tagline: 'Linux virtual memory, post-GC RSS slopes, TLS 1.3/HTTP2, B+Trees vs LSM-Trees, WAL, CAS & epoll/cgroups.', modules: [] }
+      { courseId: '08-core-cs-internals', priorityRank: 8, shortTitle: 'Core CS: OS, Net & Storage', title: '08. Core CS: OS, Networking & Storage', accentColor: '#374151', pillBg: '#F3F4F6', plannedModules: 2, publishedChapters: 5, masteredChapters: 0, tagline: 'Linux virtual memory, post-GC RSS slopes, TLS 1.3/HTTP2, B+Trees vs LSM-Trees, WAL, CAS & epoll/cgroups.', modules: [] },
+      { courseId: '09-sql-and-data-engineering', priorityRank: 9, shortTitle: 'SQL & Data Engineering', title: '09. Zero to Mastery: SQL, Databases & Data Engineering', accentColor: '#0369A1', pillBg: '#E0F2FE', plannedModules: 4, publishedChapters: 10, masteredChapters: 0, tagline: 'Relational algebra, B+Tree composite indexes, EXPLAIN BUFFERS, MVCC isolation anomalies, CDC & Great Expectations.', modules: [] },
+      { courseId: '10-docker-cicd-and-cloud-infra', priorityRank: 10, shortTitle: 'Docker, CI/CD & Cloud Infra', title: '10. Zero to Mastery: Docker, CI/CD & Cloud Test Infrastructure', accentColor: '#0284C7', pillBg: '#F0F9FF', plannedModules: 4, publishedChapters: 10, masteredChapters: 0, tagline: 'Linux namespaces & cgroups v2, OverlayFS multi-stage builds, Testcontainers, LPT CI sharding, K8s & Terraform.', modules: [] },
+      { courseId: '11-performance-load-and-sre', priorityRank: 11, shortTitle: 'Performance, Load & SRE', title: '11. Zero to Mastery: Performance, Load Testing & SRE Observability', accentColor: '#D97706', pillBg: '#FEF3C7', plannedModules: 4, publishedChapters: 10, masteredChapters: 0, tagline: 'Little’s Law, Coordinated Omission, HdrHistogram, k6/Locust executors, USL contention, FlameGraphs & Chaos.', modules: [] },
+      { courseId: '12-application-and-api-security', priorityRank: 12, shortTitle: 'App, API & AI Security', title: '12. Zero to Mastery: Application, API & AI Security Testing', accentColor: '#BE123C', pillBg: '#FFE4E6', plannedModules: 4, publishedChapters: 10, masteredChapters: 0, tagline: 'OWASP API Top 10, BOLA/BOPLA matrix, JWT/JWKS Confusion, OAuth2 PKCE, SSRF, SAST/DAST & LLM Prompt Shields.', modules: [] }
     ];
 
     async function loadKbCatalogAndDefaultChapter() {
@@ -2888,16 +3256,14 @@
       const pillsHtml = coursesList.map(course => {
         const isSelected = course.courseId === activeCourse.courseId;
         const numPrefix = String(course.priorityRank).padStart(2, '0');
-        const rightBadge = course.priorityRank === 1 && isSelected
-          ? `Priority #1`
-          : `${course.publishedChapters || 0} Ch`;
+        const rightBadge = `${course.masteredChapters || 0}/${course.publishedChapters || 0} Ch`;
         return `
           <button
             onclick="toggleSpineCourse('${course.courseId}')"
             class="course-pill ${isSelected ? 'active' : ''}"
           >
             <span class="truncate">${numPrefix}. ${escapeHtml(course.shortTitle || course.title)}</span>
-            <span class="mono shrink-0" style="font-size: 0.68rem; color: ${isSelected ? 'var(--accent-terra)' : 'var(--ink-muted)'};">
+            <span class="mono shrink-0" style="font-size: 0.68rem; color: ${(course.masteredChapters && course.masteredChapters === course.publishedChapters) ? 'var(--accent-sage)' : (isSelected ? 'var(--accent-terra)' : 'var(--ink-muted)')};">
               ${escapeHtml(rightBadge)}
             </span>
           </button>
@@ -2923,13 +3289,22 @@
             const isActive = !isReviseMode && state.activeKbChapter && state.activeKbChapter.slug === ch.slug;
             const chNum = String(ch.chapterNumber).padStart(2, '0');
             return `
-              <button
-                onclick="handleSpineChapterClick('${ch.slug}')"
-                class="syllabus-ch-row ${isActive ? 'active' : ''}"
-              >
-                <span>Mod ${mod.moduleNumber} · Ch ${chNum}: ${escapeHtml(ch.title)}</span>
-                ${ch.mastered ? `<span class="mono text-[10px] ml-1" style="color: var(--accent-sage);">✓</span>` : ''}
-              </button>
+              <div class="flex items-center gap-1">
+                <button
+                  onclick="handleSpineChapterClick('${ch.slug}')"
+                  class="syllabus-ch-row flex-1 ${isActive ? 'active' : ''}"
+                >
+                  <span class="truncate">Mod ${mod.moduleNumber} · Ch ${chNum}: ${escapeHtml(ch.title)}</span>
+                </button>
+                <button
+                  onclick="event.stopPropagation(); toggleRoadmapItemDone('${ch.slug}')"
+                  class="mono text-[10px] px-1.5 py-0.5 rounded border shrink-0 cursor-pointer transition"
+                  style="${ch.mastered ? 'background:#E6F4F0; color:#1E6F5C; border-color:#B7E4D8; font-weight:700;' : 'background:var(--bg-subtle); color:var(--ink-muted); border-color:var(--border-warm);'}"
+                  title="${ch.mastered ? 'Completed in Roadmap (Click to unmark)' : 'Mark Chapter as Done'}"
+                >
+                  ${ch.mastered ? '✓' : '○'}
+                </button>
+              </div>
             `;
           }).join('')}
         </div>
@@ -3707,6 +4082,9 @@
                 <p class="text-xs" style="color: var(--ink-secondary); margin: 0;">${escapeHtml(ch.summary || '')}</p>
               </div>
               <div class="flex items-center gap-2 shrink-0">
+                <button onclick="toggleRoadmapItemDone('${escapeHtml(ch.slug)}')" class="mark-done-btn ${ch.mastered ? 'completed' : ''}" title="Mark this Chapter as Done in your Staff SDET Roadmap">
+                  ${ch.mastered ? '✓ Completed' : '○ Mark Done'}
+                </button>
                 <button onclick="state.kbReadingMode='guided'; openTextbookChapter('${escapeHtml(ch.slug)}', false);" class="btn-subtle" style="padding: 5px 10px; font-size: 0.72rem;" title="Switch to Guided 4-Step Mode for this specific chapter">
                   🎯 Open in Guided Mode ↗
                 </button>
@@ -4084,12 +4462,19 @@
 
         const mBadge = document.getElementById('kb-chapter-mastery-badge');
         if (ch.mastered) {
-          mBadge.textContent = `✓ Mastered (${ch.quizScore}/${ch.quizTotal})`;
+          mBadge.textContent = ch.quizTotal ? `✓ Mastered (${ch.quizScore}/${ch.quizTotal})` : `✓ Completed in Roadmap`;
           mBadge.className = 'mono text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#E6F4F0] text-[#1E6F5C] border border-[#B7E4D8]';
         } else {
           mBadge.textContent = ch.quizTotal ? `Quiz: ${ch.quizScore || 0}/${ch.quizTotal}` : `${ch.quizCount || (ch.quizzes || []).length} Quiz Questions`;
           mBadge.className = 'mono text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#F3EDE2] border border-[#E6DEC8]';
         }
+
+        const kbDoneBtn = document.getElementById('kb-mark-done-btn');
+        if (kbDoneBtn) {
+          kbDoneBtn.classList.toggle('completed', Boolean(ch.mastered));
+          kbDoneBtn.textContent = ch.mastered ? '✓ Completed' : '○ Mark Done';
+        }
+        renderRoadmapEverywhere();
 
         document.getElementById('kb-chapter-tags').innerHTML = (ch.tags || []).map(t => `
           <span class="tag">#${escapeHtml(t)}</span>
@@ -4120,12 +4505,13 @@
         const pnBar = document.getElementById('kb-prev-next-bar');
         if (pnBar) {
           const prevBtn = ch.prevChapter
-            ? `<button onclick="openTextbookChapter('${ch.prevChapter.slug}')" class="btn-subtle">← Ch ${String(ch.prevChapter.chapterNumber).padStart(2, '0')}: ${escapeHtml(ch.prevChapter.title.slice(0, 38))}</button>`
+            ? `<button onclick="openTextbookChapter('${ch.prevChapter.slug}')" class="btn-subtle">← Ch ${String(ch.prevChapter.chapterNumber).padStart(2, '0')}: ${escapeHtml(ch.prevChapter.title.slice(0, 34))}</button>`
             : `<span></span>`;
+          const markFooterBtn = `<button onclick="toggleActiveChapterDone()" id="kb-footer-mark-done-btn" class="mark-done-btn ${ch.mastered ? 'completed' : ''}" title="Mark or unmark this chapter as Done in your Staff SDET Roadmap">${ch.mastered ? '✓ Chapter Completed' : '○ Mark Chapter Done'}</button>`;
           const nextBtn = ch.nextChapter
-            ? `<button onclick="openTextbookChapter('${ch.nextChapter.slug}')" class="btn-primary">Next: Ch ${String(ch.nextChapter.chapterNumber).padStart(2, '0')}: ${escapeHtml(ch.nextChapter.title.slice(0, 38))} →</button>`
+            ? `<button onclick="openTextbookChapter('${ch.nextChapter.slug}')" class="btn-primary">Next: Ch ${String(ch.nextChapter.chapterNumber).padStart(2, '0')}: ${escapeHtml(ch.nextChapter.title.slice(0, 34))} →</button>`
             : `<span class="mono text-xs font-semibold" style="color: var(--accent-sage);">✓ End of Course Volume</span>`;
-          pnBar.innerHTML = prevBtn + nextBtn;
+          pnBar.innerHTML = `${prevBtn}<div class="flex flex-wrap items-center gap-2">${markFooterBtn}${nextBtn}</div>`;
         }
 
         const relEl = document.getElementById('kb-related-news');
@@ -4310,6 +4696,7 @@
 
         await loadKbCatalogAndDefaultChapter();
         await loadTracksAndHome();
+        await loadRoadmapStatus();
       } catch (_) {}
     }
 
@@ -4438,12 +4825,23 @@
           const grid = document.getElementById('workbench-items-grid');
           grid.innerHTML = (data.items || []).map(item => {
             const last = item.lastRun;
+            const isDone = Boolean(item.completed || (last && last.status === 'PASS'));
             return `
               <div class="track-card flex flex-col justify-between space-y-4">
                 <div class="space-y-2">
                   <div class="flex items-center justify-between gap-2">
                     <span class="archetype-pill" style="background:#EBF8FF; color:#2B6CB0;">${escapeHtml(item.category)}</span>
-                    <span class="mono text-[11px]" style="color: var(--ink-muted);">${escapeHtml(item.stack)}</span>
+                    <div class="flex items-center gap-2">
+                      <span class="mono text-[11px]" style="color: var(--ink-muted);">${escapeHtml(item.stack)}</span>
+                      <button
+                        onclick="toggleRoadmapItemDone('${item.id}')"
+                        class="mark-done-btn ${isDone ? 'completed' : ''}"
+                        style="padding: 3px 9px; font-size: 0.69rem;"
+                        title="Mark this Workbench Lab as Done in your Staff SDET Roadmap"
+                      >
+                        ${isDone ? '✓ Completed' : '○ Mark Done'}
+                      </button>
+                    </div>
                   </div>
                   <h4 style="font-size: 1.1rem; font-weight: 700;">${escapeHtml(item.title)}</h4>
                   <p class="text-xs leading-relaxed" style="color: var(--ink-secondary);">${escapeHtml(item.invariant)}</p>
@@ -4452,14 +4850,21 @@
                     <div class="mt-0.5" style="color: var(--ink-secondary);">$ ${escapeHtml(item.cliDisplay)}</div>
                   </div>
                 </div>
-                <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#EFEAE0]">
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2" style="border-top: 1px solid var(--border-warm);">
                   ${item.relatedChapter ? `
                     <button onclick="openTextbookChapter('${item.relatedChapter}')" class="mono text-[11px] font-semibold hover:underline" style="color: var(--accent-sage);">
                       📖 Textbook Theory →
                     </button>
                   ` : '<span></span>'}
-                  <div class="flex items-center gap-2">
-                    ${last ? `<span class="mono px-2 py-0.5 rounded text-[10px] font-semibold ${last.status === 'PASS' ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'}">${last.status} (${last.durationMs}ms)</span>` : ''}
+                  <div class="flex flex-wrap items-center gap-2">
+                    ${last ? `<span class="mono px-2 py-0.5 rounded text-[10px] font-semibold" style="background: var(--bg-subtle); color: ${last.status === 'PASS' ? 'var(--accent-sage)' : 'var(--accent-crimson)'};">${last.status} (${last.durationMs}ms)</span>` : ''}
+                    <button
+                      onclick="toggleRoadmapItemDone('${item.id}')"
+                      class="mark-done-btn ${isDone ? 'completed' : ''}"
+                      title="Mark or unmark this Workbench Lab as Done in your Staff SDET Roadmap"
+                    >
+                      ${isDone ? '✓ Lab Completed' : '○ Mark Lab Done'}
+                    </button>
                     <button onclick="verifyWorkbenchItem('${item.id}')" id="wb-btn-${item.id}" class="btn-primary" style="background: var(--accent-blue);">
                       ▶ Verify Locally (Zero AI)
                     </button>
@@ -4477,6 +4882,11 @@
           state.interviewSession = await miRes.json();
           document.getElementById('mi-session-title').textContent = state.interviewSession.title;
           document.getElementById('mi-status-pill').textContent = `${state.interviewSession.status} · ${state.interviewSession.overallScore}`;
+          const miDoneBtn = document.getElementById('mi-mark-done-btn');
+          if (miDoneBtn) {
+            miDoneBtn.classList.toggle('completed', Boolean(state.interviewSession.completed));
+            miDoneBtn.textContent = state.interviewSession.completed ? '✓ Completed' : '○ Mark Done';
+          }
           switchInterviewDocTab('questions');
           loadSelectedInterviewQuestionResponse();
 
@@ -4487,6 +4897,7 @@
           `).join('');
         }
       } catch (_) {}
+      renderRoadmapEverywhere();
     }
 
     async function verifyWorkbenchItem(itemId) {
@@ -4507,6 +4918,7 @@
           document.getElementById('workbench-console-output').textContent = data.output || '';
           await loadWorkbenchAndInterviews();
           await loadTracksAndHome();
+          await loadRoadmapStatus();
         }
       } catch (_) {}
       if (btn) btn.textContent = '▶ Verify Locally (Zero AI)';
@@ -4596,7 +5008,9 @@
       document.getElementById('roadmap-problems-grid').innerHTML = (activeCh.problems || []).map(p => {
         const numStr = String(p.id).padStart(3, '0');
         const targetSlug = p.folderSlug || `${numStr}-${p.slug}`;
-        const isMastered = p.bothDone;
+        const dsaItemId = `dsa-${numStr}`;
+        const rmCompleted = Boolean(state.roadmap && state.roadmap.completedMap && state.roadmap.completedMap[dsaItemId]);
+        const isMastered = Boolean(p.bothDone || rmCompleted);
         const isScaffolded = p.hasLocalFiles;
 
         const badgeHtml = isMastered
@@ -4614,7 +5028,17 @@
                 <div class="font-bold text-sm leading-snug">${numStr}. ${p.title}</div>
                 <span class="tag shrink-0">${p.difficulty}</span>
               </div>
-              <div>${badgeHtml}</div>
+              <div class="flex items-center justify-between gap-2">
+                ${badgeHtml}
+                <button
+                  onclick="event.stopPropagation(); toggleRoadmapItemDone('${dsaItemId}')"
+                  class="mark-done-btn ${isMastered ? 'completed' : ''}"
+                  style="padding: 2px 8px; font-size: 0.68rem;"
+                  title="Mark Problem #${numStr} as Done in your Staff SDET Roadmap"
+                >
+                  ${isMastered ? '✓ Done' : '○ Mark Done'}
+                </button>
+              </div>
               <div class="flex gap-1.5 text-[11px] mono pt-0.5">
                 <span class="px-2 py-0.5 rounded ${p.pyDone ? 'bg-[#E6F4F0] text-[#1E6F5C] font-semibold' : 'bg-[#F3EDE2] text-[#5C554E]'}">Python ${p.pyDone ? '✓' : '○'}</span>
                 <span class="px-2 py-0.5 rounded ${p.javaDone ? 'bg-[#E6F4F0] text-[#1E6F5C] font-semibold' : 'bg-[#F3EDE2] text-[#5C554E]'}">Java ${p.javaDone ? '✓' : '○'}</span>
@@ -4751,6 +5175,17 @@
         }
       } catch (_) {}
 
+      if (probMeta && probMeta.id) {
+        state.activeProblemId = Number(probMeta.id);
+      } else {
+        for (let cIdx = 0; cIdx < (state.chapters || []).length; cIdx++) {
+          const matchP = (state.chapters[cIdx].problems || []).find(pr => pr.folderSlug === slug || pr.slug === slug);
+          if (matchP && matchP.id) {
+            state.activeProblemId = Number(matchP.id);
+            break;
+          }
+        }
+      }
       state.activeVisualizerId = probMeta.visualizerId || 'dsa-group-anagrams';
       document.getElementById('ws-breadcrumb-chapter').textContent = `← ${probMeta.chapter || 'Ch 01: Arrays & Hashing'}`;
       document.getElementById('ws-breadcrumb-title').textContent = probMeta.title || slug;
@@ -4763,12 +5198,13 @@
 
       state.currentHints = probMeta.hints || fb.hints;
       renderHints(state.currentHints);
-      switchEditorLang(state.activeLang);
+      switchEditorLang(state.activeLang, false);
       renderCasePills();
       selectTestCaseIndex(0);
 
       const firstInput = state.cases[0] ? state.cases[0].input : null;
       if (firstInput) document.getElementById('viz-custom-input').value = JSON.stringify(firstInput);
+      renderRoadmapEverywhere();
       await loadVisualizerTrace(state.activeVisualizerId, firstInput);
     }
 
@@ -4789,9 +5225,9 @@
       renderHints(state.currentHints || []);
     }
 
-    function switchEditorLang(lang) {
+    function switchEditorLang(lang, preserveCurrentEditor = true) {
       const editor = document.getElementById('ws-code-editor');
-      if (editor && state.files[state.activeLang] && editor.value) {
+      if (preserveCurrentEditor && editor && state.files[state.activeLang] && editor.value) {
         state.files[state.activeLang].content = editor.value;
       }
       state.activeLang = lang;
@@ -4887,6 +5323,7 @@
         });
         await refreshDashboardState();
         await loadTracksAndHome();
+        await loadRoadmapStatus();
         btn.textContent = '✓ Mastered in MASTER_SHEET.md!';
       } catch (_) {
         btn.textContent = '✓ Mastered!';
@@ -5219,11 +5656,619 @@
       } catch (_) {}
     }
 
+    /* ========================================================================
+       STAFF SDET CAREER ROADMAP, GAMIFIED HABIT ENGINE & CROSS-PAGE TRACKER
+       ======================================================================== */
+    const DSA_QUICK_SLUG_TO_ID = {
+      '001-two-sum': 'dsa-001',
+      '002-contains-duplicate': 'dsa-002',
+      '002-valid-anagram': 'dsa-003',
+      '003-group-anagrams': 'dsa-004',
+      '005-top-k-frequent-elements': 'dsa-005',
+      '004-longest-consecutive-sequence': 'dsa-008'
+    };
+
+    function resolveDsaRoadmapItemId(slugOrId) {
+      const raw = String(slugOrId || state.activeSlug || '').trim();
+      if (raw.startsWith('dsa-')) return raw;
+      for (let cIdx = 0; cIdx < (state.chapters || []).length; cIdx++) {
+        const ch = state.chapters[cIdx];
+        const found = (ch.problems || []).find(p => {
+          const numStr = String(p.id).padStart(3, '0');
+          return p.folderSlug === raw || p.slug === raw || `${numStr}-${p.slug}` === raw;
+        });
+        if (found && found.id) {
+          return `dsa-${String(found.id).padStart(3, '0')}`;
+        }
+      }
+      if (DSA_QUICK_SLUG_TO_ID[raw]) return DSA_QUICK_SLUG_TO_ID[raw];
+      if (state.activeProblemId) {
+        return `dsa-${String(state.activeProblemId).padStart(3, '0')}`;
+      }
+      const m = raw.match(/^(\d{3})/);
+      return m ? `dsa-${m[1]}` : 'dsa-001';
+    }
+
+    async function loadRoadmapStatus() {
+      try {
+        const res = await fetch('/api/roadmap/status');
+        if (res.ok) {
+          state.roadmap = await res.json();
+          if (!state.activeRoadmapPhase && state.roadmap.upNext && state.roadmap.upNext.phaseNumber) {
+            state.activeRoadmapPhase = state.roadmap.upNext.phaseNumber;
+          }
+          renderRoadmapEverywhere();
+          renderRoadmapSpineAndChapter(state.activeChapterIdx || 0);
+        }
+      } catch (_) {}
+    }
+
+    async function toggleStaffRoadmap() {
+      const nextEnabled = !(state.roadmap && state.roadmap.roadmapEnabled);
+      if (state.roadmap) {
+        state.roadmap.roadmapEnabled = nextEnabled;
+        renderRoadmapEverywhere();
+      }
+      try {
+        const res = await fetch('/api/roadmap/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: nextEnabled })
+        });
+        if (res.ok) {
+          state.roadmap = await res.json();
+          renderRoadmapEverywhere();
+        }
+      } catch (_) {}
+    }
+
+    async function setRoadmapPace(pace) {
+      const normPace = pace === '120d' ? '120d' : '60d';
+      try {
+        const res = await fetch('/api/roadmap/pace', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pace: normPace })
+        });
+        if (res.ok) {
+          state.roadmap = await res.json();
+          renderRoadmapEverywhere();
+        }
+      } catch (_) {}
+    }
+
+    async function toggleRoadmapItemDone(itemId, explicitVal = null) {
+      if (!itemId) return;
+      try {
+        const payload = { itemId };
+        if (explicitVal !== null && explicitVal !== undefined) payload.completed = Boolean(explicitVal);
+        const res = await fetch('/api/roadmap/mark-done', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          state.roadmap = data;
+          state.kbCompendiumCache = {};
+          await Promise.all([
+            loadKbCatalogAndDefaultChapter(),
+            loadTracksAndHome(),
+            refreshDashboardState(),
+            loadWorkbenchAndInterviews()
+          ]);
+          if (state.activeKbChapter && state.activeKbChapter.slug === data.itemId) {
+            state.activeKbChapter.mastered = Boolean(data.completed);
+            ['kb-mark-done-btn', 'kb-footer-mark-done-btn'].forEach(bId => {
+              const btn = document.getElementById(bId);
+              if (btn) {
+                btn.classList.toggle('completed', Boolean(data.completed));
+                btn.textContent = data.completed
+                  ? (bId.includes('footer') ? '✓ Chapter Completed' : '✓ Completed')
+                  : (bId.includes('footer') ? '○ Mark Chapter Done' : '○ Mark Done');
+              }
+            });
+            const mBadge = document.getElementById('kb-chapter-mastery-badge');
+            if (mBadge) {
+              if (data.completed) {
+                mBadge.textContent = state.activeKbChapter.quizTotal
+                  ? `✓ Mastered (${state.activeKbChapter.quizScore || state.activeKbChapter.quizTotal}/${state.activeKbChapter.quizTotal})`
+                  : `✓ Completed in Roadmap`;
+                mBadge.className = 'mono text-[11px] font-semibold px-2.5 py-1 rounded-full';
+                mBadge.style.background = 'var(--accent-sage-soft)';
+                mBadge.style.color = 'var(--accent-sage)';
+              } else {
+                mBadge.textContent = `${state.activeKbChapter.quizCount || (state.activeKbChapter.quizzes || []).length} Quiz Questions`;
+                mBadge.className = 'mono text-[11px] font-semibold px-2.5 py-1 rounded-full';
+                mBadge.style.background = 'var(--bg-subtle)';
+                mBadge.style.color = 'var(--ink-muted)';
+              }
+            }
+          }
+          if (state.kbReadingMode === 'revise' && state.expandedCourseId) {
+            await openCourseCompendium(state.expandedCourseId, false);
+          }
+          renderRoadmapEverywhere();
+          renderRoadmapSpineAndChapter(state.activeChapterIdx || 0);
+        }
+      } catch (_) {}
+    }
+
+    async function toggleActiveChapterDone() {
+      if (!state.activeKbChapter || !state.activeKbChapter.slug) return;
+      await toggleRoadmapItemDone(state.activeKbChapter.slug);
+    }
+
+    async function toggleActiveDsaProblemDone() {
+      const dsaId = resolveDsaRoadmapItemId(state.activeSlug);
+      await toggleRoadmapItemDone(dsaId);
+    }
+
+    function selectRoadmapPhaseTab(phaseNumber) {
+      state.activeRoadmapPhase = Number(phaseNumber) || 1;
+      state.roadmapChecklistOpen = true;
+      const detailsEl = document.getElementById('rm-phase-checklist-details');
+      if (detailsEl) detailsEl.open = true;
+      renderRoadmapEverywhere();
+    }
+
+    function openRoadmapItem(itemId) {
+      if (!itemId) return;
+      if (itemId.startsWith('dsa-')) {
+        const num = parseInt(itemId.replace('dsa-', ''), 10);
+        for (let cIdx = 0; cIdx < (state.chapters || []).length; cIdx++) {
+          const ch = state.chapters[cIdx];
+          const p = (ch.problems || []).find(pr => Number(pr.id) === num);
+          if (p) {
+            const numStr = String(p.id).padStart(3, '0');
+            const targetSlug = p.folderSlug || `${numStr}-${p.slug}`;
+            openOrScaffoldProblem(p.id, targetSlug, p.hasLocalFiles);
+            return;
+          }
+        }
+        showView('roadmap');
+        return;
+      }
+      if (itemId.startsWith('wb-')) {
+        openWorkbenchSubmode('frameworks');
+        return;
+      }
+      if (itemId.startsWith('interview-')) {
+        openWorkbenchSubmode('interviews');
+        return;
+      }
+      openTextbookChapter(itemId, true);
+    }
+
+    function renderPageTrackerBannerHtml(pageKey, label, icon, meta, nextItem, currentActionHtml = '') {
+      if (!meta) return '';
+      const pct = meta.pct || 0;
+      const nextBtn = nextItem ? `
+        <button onclick="openRoadmapItem('${escapeHtml(nextItem.itemId)}')" class="btn-primary" style="padding: 4px 10px; font-size: 0.72rem;">
+          ▶ Up Next (#${nextItem.globalOrder}): ${escapeHtml(nextItem.title.slice(0, 36))} →
+        </button>
+      ` : `<span class="mono text-[11px] font-bold" style="color: var(--accent-sage);">🏆 Track 100% Complete!</span>`;
+
+      return `
+        <div class="flex flex-wrap items-center gap-2.5">
+          <span class="mono text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full" style="background: var(--accent-terra-soft); color: var(--accent-terra);">
+            ${icon} ${escapeHtml(label)} TRACKER
+          </span>
+          <span class="mono font-bold text-xs" style="color: var(--ink-primary);">
+            ${meta.done} / ${meta.total} Done (${pct}%)
+          </span>
+          <span class="mono text-[11px]" style="color: var(--ink-muted);">
+            · ${meta.remaining} Remaining
+          </span>
+          <div class="w-28 h-2 rounded-full overflow-hidden hidden sm:block" style="background: var(--bg-subtle);">
+            <div style="width: ${pct}%; background: var(--accent-sage);" class="h-full rounded-full transition-all"></div>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          ${currentActionHtml}
+          ${nextBtn}
+        </div>
+      `;
+    }
+
+    function renderRoadmapEverywhere() {
+      const rm = state.roadmap;
+      if (!rm) return;
+      const enabled = Boolean(rm.roadmapEnabled);
+      const pctStr = rm.macro ? `${rm.macro.pct}%` : '0%';
+
+      // 1. Sync Topbar & Both Home Switch Pills (.active + .on + dot + label)
+      const syncSwitchBtn = (btnId, dotId, lblId, onText, offText) => {
+        const btn = document.getElementById(btnId);
+        const dot = document.getElementById(dotId);
+        const lbl = document.getElementById(lblId);
+        if (btn) {
+          btn.classList.toggle('active', enabled);
+          btn.classList.toggle('on', enabled);
+        }
+        if (dot) dot.textContent = enabled ? '●' : '○';
+        if (lbl) lbl.textContent = enabled ? onText : offText;
+      };
+
+      syncSwitchBtn(
+        'topbar-roadmap-toggle-btn',
+        'topbar-roadmap-toggle-dot',
+        'topbar-roadmap-toggle-label',
+        `Roadmap: ON (${pctStr})`,
+        'Roadmap: OFF'
+      );
+      syncSwitchBtn(
+        'home-roadmap-switch-btn',
+        'home-roadmap-switch-dot',
+        'home-roadmap-switch-text',
+        'Track Staff SDET Roadmap: ON',
+        'Track Staff SDET Roadmap: OFF'
+      );
+      syncSwitchBtn(
+        'home-roadmap-on-switch-btn',
+        'home-roadmap-on-switch-dot',
+        'home-roadmap-on-switch-text',
+        'Track Staff SDET Roadmap: ON',
+        'Track Staff SDET Roadmap: OFF'
+      );
+
+      // 2. Calm Mode-Aware Home View: Show EITHER Roadmap Card OR Freeform Hero Card (never both stacked)
+      const homeDash = document.getElementById('home-roadmap-dashboard');
+      const freeformHero = document.getElementById('home-freeform-hero');
+      if (homeDash) homeDash.classList.toggle('hidden', !enabled);
+      if (freeformHero) freeformHero.classList.toggle('hidden', enabled);
+
+      // 3. Populate Home Roadmap Header & Macro Progress Rail
+      const rankBadge = document.getElementById('rm-rank-badge');
+      const streakPill = document.getElementById('rm-streak-pill');
+      const xpPill = document.getElementById('rm-xp-pill');
+      const overallPill = document.getElementById('rm-overall-pill');
+      const macroPct = document.getElementById('rm-macro-pct');
+      const macroBar = document.getElementById('rm-macro-bar');
+      const sbCountPill = document.getElementById('rm-soundbite-count-pill');
+
+      if (rankBadge && rm.gamification) {
+        rankBadge.textContent = `${rm.gamification.rankIcon} ${rm.gamification.rankTitle}`;
+      }
+      if (streakPill && rm.gamification) {
+        streakPill.textContent = `🔥 ${rm.gamification.streakDays}d Streak`;
+      }
+      if (xpPill && rm.gamification) {
+        xpPill.textContent = `⚡ ${(rm.gamification.xp || 0).toLocaleString()} XP`;
+      }
+      if (overallPill && rm.macro) {
+        overallPill.textContent = `${rm.macro.completedItems} / ${rm.macro.totalItems} Done · ${rm.macro.pct}%`;
+      }
+      if (macroPct && rm.macro) {
+        macroPct.textContent = `${rm.macro.pct}% Complete · ${rm.macro.remainingItems} Remaining`;
+      }
+      if (macroBar && rm.macro) {
+        macroBar.style.width = `${Math.max(1.5, rm.macro.pct || 0)}%`;
+      }
+      if (sbCountPill && rm.gamification) {
+        sbCountPill.textContent = `🎙️ ${rm.gamification.unlockedSoundbitesCount || rm.gamification.unlockedSoundbites || 1} / 5 Staff Soundbites Unlocked`;
+      }
+
+      // 3b. Sync Daily Pace Toggle Buttons ('60d' vs '120d')
+      const activePace = rm.pace === '120d' ? '120d' : '60d';
+      const pace60Btn = document.getElementById('rm-pace-60d-btn');
+      const pace120Btn = document.getElementById('rm-pace-120d-btn');
+      if (pace60Btn) pace60Btn.classList.toggle('active', activePace === '60d');
+      if (pace120Btn) pace120Btn.classList.toggle('active', activePace === '120d');
+
+      // 4. Populate Focal "Today's Rigid Session" Action Card (#rm-up-next-card)
+      const upNextCard = document.getElementById('rm-up-next-card');
+      const upNext = rm.upNext;
+      const todaySession = rm.todaySession || null;
+      if (upNextCard) {
+        if (upNext) {
+          upNextCard.classList.remove('hidden');
+          const phaseBadge = document.getElementById('rm-up-next-phase-badge');
+          const orderBadge = document.getElementById('rm-up-next-order-badge');
+          const titleEl = document.getElementById('rm-up-next-title');
+          const whyEl = document.getElementById('rm-up-next-why');
+          const openBtn = document.getElementById('rm-up-next-open-btn');
+          const doneBtn = document.getElementById('rm-up-next-mark-btn');
+          const chipsEl = document.getElementById('rm-today-session-chips');
+
+          if (phaseBadge) {
+            if (todaySession) {
+              phaseBadge.textContent = `TODAY'S RIGID SESSION · SESSION ${todaySession.sessionNumber} OF ${todaySession.totalSessions} (PHASE ${todaySession.phaseNumber})`;
+            } else {
+              phaseBadge.textContent = `UP NEXT · PHASE ${upNext.phaseNumber} · ${(upNext.trackType || '').toUpperCase()}`;
+            }
+          }
+          if (orderBadge) {
+            orderBadge.textContent = todaySession && todaySession.quotaSummary
+              ? todaySession.quotaSummary
+              : `Step #${upNext.globalOrder} of ${rm.macro.totalItems} · ~${upNext.estMinutes || 12}m`;
+          }
+          if (titleEl) titleEl.textContent = upNext.title;
+          if (whyEl) whyEl.textContent = upNext.whyNow || 'Next interleaved prerequisite in your sequential Staff SDET roadmap.';
+          if (openBtn) openBtn.onclick = () => openRoadmapItem(upNext.itemId);
+          if (doneBtn) {
+            doneBtn.classList.remove('completed');
+            doneBtn.textContent = '○ Mark Done';
+            doneBtn.onclick = () => toggleRoadmapItemDone(upNext.itemId, true);
+          }
+          if (chipsEl) {
+            const sItems = (todaySession && todaySession.items) ? todaySession.items : [];
+            if (sItems.length) {
+              chipsEl.classList.remove('hidden');
+              chipsEl.innerHTML = sItems.map(sit => {
+                const cls = sit.completed ? 'done' : (sit.isUpNext ? 'current' : '');
+                const icon = sit.completed ? '✓' : (sit.isUpNext ? '▶' : '○');
+                const suffix = sit.completed ? 'Done' : `${sit.estMinutes}m`;
+                return `
+                  <button
+                    onclick="openRoadmapItem('${escapeHtml(sit.itemId)}')"
+                    class="session-step-chip ${cls}"
+                    title="${escapeHtml(sit.title)}"
+                  >
+                    <span>${icon}</span>
+                    <span>#${sit.globalOrder} ${escapeHtml(sit.shortChipLabel || sit.title)} (${suffix})</span>
+                  </button>
+                `;
+              }).join('');
+            } else {
+              chipsEl.classList.add('hidden');
+              chipsEl.innerHTML = '';
+            }
+          }
+        } else {
+          upNextCard.classList.add('hidden');
+        }
+      }
+
+      // 5. Populate Connected 5-Phase Flow Pipeline with Explicit Directional Arrows (→)
+      const phases = rm.phases || [];
+      const phaseTabsEl = document.getElementById('rm-phases-tabs');
+      const phaseDetailEl = document.getElementById('rm-active-phase-detail');
+      const checklistSummaryEl = document.getElementById('rm-phase-checklist-summary');
+      const checklistDetailsEl = document.getElementById('rm-phase-checklist-details');
+
+      if (phaseTabsEl && phases.length) {
+        const activePhaseObj = phases.find(p => p.phaseNumber === state.activeRoadmapPhase) || phases[0];
+        const shortPhaseNames = {
+          1: 'Foundations & Core',
+          2: 'Microservices & Sync',
+          3: 'SQL, Cloud & CI/CD',
+          4: 'Chaos, Perf & Security',
+          5: 'Staff Bar-Raiser'
+        };
+        phaseTabsEl.innerHTML = phases.map((p, idx) => {
+          const isAct = p.phaseNumber === activePhaseObj.phaseNumber;
+          const isComp = p.completedItems >= p.totalItems && p.totalItems > 0;
+          const sRange = p.sessionRange ? ` · ${p.sessionRange}` : '';
+          const boxHtml = `
+            <button onclick="selectRoadmapPhaseTab(${p.phaseNumber})" class="connected-flow-box ${isAct ? 'active' : (isComp ? 'completed' : '')}">
+              <div>
+                <div class="flex items-center justify-between gap-1 mono text-[10.5px] font-bold" style="color: ${isAct ? 'var(--accent-terra)' : (isComp ? 'var(--accent-sage)' : 'var(--ink-muted)')};">
+                  <span>Phase ${p.phaseNumber}${escapeHtml(sRange)}</span>
+                  <span>${p.completedItems}/${p.totalItems}</span>
+                </div>
+                <div class="font-bold text-xs mt-0.5 truncate" style="color: var(--ink-primary);">
+                  ${escapeHtml(shortPhaseNames[p.phaseNumber] || p.title.replace(/^Phase \d+:\s*/, ''))}
+                </div>
+              </div>
+              <div class="w-full h-1 rounded-full overflow-hidden mt-2" style="background: var(--bg-card);">
+                <div style="width: ${p.pct}%; background: ${isAct ? 'var(--accent-terra)' : 'var(--accent-sage)'};" class="h-full rounded-full"></div>
+              </div>
+            </button>
+          `;
+          const arrowHtml = idx < phases.length - 1
+            ? `<div class="connected-flow-arrow" aria-hidden="true">→</div>`
+            : '';
+          return boxHtml + arrowHtml;
+        }).join('');
+
+        if (checklistSummaryEl && activePhaseObj) {
+          const rangeInfo = activePhaseObj.sessionRange ? `${activePhaseObj.sessionRange} · ` : '';
+          checklistSummaryEl.textContent =
+            `▸ View Phase ${activePhaseObj.phaseNumber} Interleaved Checklist: ${activePhaseObj.title.replace(/^Phase \d+:\s*/, '')} (${rangeInfo}${activePhaseObj.completedItems}/${activePhaseObj.totalItems} Done · ${activePhaseObj.weeks})`;
+        }
+        if (checklistDetailsEl && state.roadmapChecklistOpen !== undefined) {
+          checklistDetailsEl.open = Boolean(state.roadmapChecklistOpen);
+        }
+
+        if (phaseDetailEl && activePhaseObj) {
+          const items = activePhaseObj.items || [];
+          let lastSessionSeen = null;
+          const rowsHtml = items.map(it => {
+            const typeBadgeMap = {
+              course: { icon: '📖 Course', col: 'var(--accent-terra)' },
+              dsa: { icon: '💻 DSA', col: 'var(--accent-amber)' },
+              workbench: { icon: '🛠️ Lab', col: 'var(--accent-blue)' },
+              interview: { icon: '🎙️ Mock', col: 'var(--accent-crimson)' }
+            };
+            const tb = typeBadgeMap[it.trackType] || typeBadgeMap.course;
+            let sessionHeaderHtml = '';
+            if (it.sessionNumber && it.sessionNumber !== lastSessionSeen) {
+              lastSessionSeen = it.sessionNumber;
+              sessionHeaderHtml = `
+                <div class="mono text-[10px] font-bold uppercase pt-2 pb-0.5 px-1" style="color: var(--accent-terra);">
+                  Session ${it.sessionNumber} of ${rm.totalSessions || 60}
+                </div>
+              `;
+            }
+            return `
+              ${sessionHeaderHtml}
+              <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg text-xs" style="background: ${it.completed ? 'var(--accent-sage-soft)' : 'var(--bg-subtle)'};">
+                <div onclick="openRoadmapItem('${escapeHtml(it.itemId)}')" class="flex items-center gap-2 flex-1 min-w-[220px] cursor-pointer">
+                  <span class="mono text-[10px] font-bold px-1.5 py-0.5 rounded" style="background: var(--bg-card); color: var(--ink-muted);">
+                    #${it.globalOrder}
+                  </span>
+                  <span class="mono text-[10px] font-bold px-1.5 py-0.5 rounded" style="background: var(--bg-card); color: ${tb.col};">
+                    ${tb.icon}
+                  </span>
+                  <span class="font-semibold truncate ${it.completed ? 'line-through opacity-75' : ''}" style="color: var(--ink-primary);">
+                    ${escapeHtml(it.title)}
+                  </span>
+                  <span class="mono text-[10px] hidden md:inline" style="color: var(--ink-muted);">
+                    (${escapeHtml(it.parentGroup)})
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <button
+                    onclick="toggleRoadmapItemDone('${escapeHtml(it.itemId)}')"
+                    class="mark-done-btn ${it.completed ? 'completed' : ''}"
+                    style="padding: 3px 9px; font-size: 0.68rem;"
+                  >
+                    ${it.completed ? '✓ Completed' : '○ Mark Done'}
+                  </button>
+                  <button onclick="openRoadmapItem('${escapeHtml(it.itemId)}')" class="btn-subtle" style="padding: 3px 9px; font-size: 0.68rem;">
+                    Open →
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          phaseDetailEl.innerHTML = `
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5" style="border-bottom: 1px solid var(--border-warm);">
+              <p class="text-xs" style="color: var(--ink-secondary); margin: 0;">
+                ${escapeHtml(activePhaseObj.subtitle)}
+              </p>
+              <span class="mono text-[10.5px] px-2.5 py-1 rounded-full font-semibold" style="background: var(--bg-subtle); color: var(--accent-sage);">
+                🎙️ Soundbite: "${escapeHtml((activePhaseObj.soundbite || '').slice(0, 72))}..."
+              </span>
+            </div>
+            <div class="max-h-72 overflow-y-auto pr-1 space-y-1.5 pt-1">
+              ${rowsHtml}
+            </div>
+          `;
+        }
+      }
+
+      // 6. Populate 4 Practice Arena Gauges (#rm-tracks-grid — Parallel Daily Arenas, Zero Misleading Sequential Arrows)
+      const tracksGrid = document.getElementById('rm-tracks-grid');
+      if (tracksGrid && rm.pages) {
+        const pageCards = [
+          { key: 'courses', title: 'Textbook Courses', icon: '📚', accent: 'var(--accent-terra)', action: "showView('textbook')", unit: 'Chapters' },
+          { key: 'dsa', title: 'Coding & DSA', icon: '💻', accent: 'var(--accent-amber)', action: "showView('roadmap')", unit: 'Problems' },
+          { key: 'workbench', title: 'Local Workbench', icon: '🛠️', accent: 'var(--accent-blue)', action: "openWorkbenchSubmode('frameworks')", unit: 'Labs' },
+          { key: 'interviews', title: 'Staff Mock Sim', icon: '🎙️', accent: 'var(--accent-crimson)', action: "openWorkbenchSubmode('interviews')", unit: 'Scenarios' }
+        ];
+        tracksGrid.innerHTML = pageCards.map(pc => {
+          const stat = rm.pages[pc.key] || { done: 0, total: 0, remaining: 0, pct: 0 };
+          return `
+            <div onclick="${pc.action}" class="connected-flow-box">
+              <div>
+                <div class="flex items-center justify-between gap-1.5 mono text-[10.5px] font-bold" style="color: ${pc.accent};">
+                  <span>${pc.icon} ${escapeHtml(pc.title)}</span>
+                  <span>${stat.pct}%</span>
+                </div>
+                <div class="flex items-center justify-between mono text-[11px] mt-1" style="color: var(--ink-primary);">
+                  <span><strong>${stat.done}/${stat.total}</strong> ${pc.unit}</span>
+                  <span style="color: var(--ink-muted); font-size: 10px;">${stat.remaining} left</span>
+                </div>
+              </div>
+              <div class="w-full h-1 rounded-full overflow-hidden mt-2" style="background: var(--bg-card);">
+                <div style="width: ${stat.pct}%; background: ${pc.accent};" class="h-full rounded-full transition-all"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 7. Populate Cross-Page Completion Tracker Banners on ALL 6 Pages
+      const allItems = phases.flatMap(p => p.items || []);
+      const nextByTrack = (tType) => allItems.find(i => i.trackType === tType && !i.completed) || null;
+
+      const isChDone = Boolean(state.activeKbChapter && rm.completedMap && (rm.completedMap[state.activeKbChapter.slug] || state.activeKbChapter.mastered));
+      const activeDsaId = resolveDsaRoadmapItemId(state.activeSlug);
+      const isDsaDone = Boolean(rm.completedMap && rm.completedMap[activeDsaId]);
+      const isMiDone = Boolean(rm.completedMap && rm.completedMap['interview-1']);
+      const savedDraftCount = state.interviewSession && state.interviewSession.candidateResponses
+        ? Object.values(state.interviewSession.candidateResponses).filter(v => String(v || '').trim().length > 0).length
+        : 0;
+
+      const kbBannerAction = state.activeKbChapter
+        ? `<button onclick="toggleActiveChapterDone()" class="mark-done-btn ${isChDone ? 'completed' : ''}" style="padding: 4px 10px; font-size: 0.7rem;">${isChDone ? '✓ Current Chapter Done' : '○ Mark Current Chapter Done'}</button>`
+        : '';
+      const wsBannerAction = `<button onclick="toggleActiveDsaProblemDone()" class="mark-done-btn ${isDsaDone ? 'completed' : ''}" style="padding: 4px 10px; font-size: 0.7rem;">${isDsaDone ? '✓ Active Problem Done' : '○ Mark Active Problem Done'}</button>`;
+      const miBannerAction = `
+        <span class="mono text-[11px]" style="color: var(--ink-secondary);">Drafts Saved: <strong>${savedDraftCount} / 5</strong> Questions</span>
+        <button onclick="toggleRoadmapItemDone('interview-1')" class="mark-done-btn ${isMiDone ? 'completed' : ''}" style="padding: 4px 10px; font-size: 0.7rem;">${isMiDone ? '✓ Mock Sim Completed' : '○ Mark Mock Sim Done'}</button>
+      `;
+
+      const bannerConfigs = [
+        { id: 'kb-page-tracker-bar', key: 'courses', label: 'COURSES (01–12)', icon: '📚', next: nextByTrack('course'), extra: kbBannerAction },
+        { id: 'dsa-page-tracker-bar', key: 'dsa', label: 'CODING & DSA (128)', icon: '💻', next: nextByTrack('dsa'), extra: '' },
+        { id: 'ws-page-tracker-bar', key: 'dsa', label: '50/50 SPLIT STUDIO', icon: '💻', next: nextByTrack('dsa'), extra: wsBannerAction },
+        { id: 'wb-page-tracker-bar', key: 'workbench', label: 'LOCAL IDE WORKBENCH', icon: '🛠️', next: nextByTrack('workbench'), extra: '' },
+        { id: 'mi-page-tracker-bar', key: 'interviews', label: 'STAFF MOCK SIMULATOR', icon: '🎙️', next: nextByTrack('interview'), extra: miBannerAction }
+      ];
+
+      bannerConfigs.forEach(cfg => {
+        const el = document.getElementById(cfg.id);
+        if (!el) return;
+        el.classList.toggle('active-tracker', enabled);
+        if (enabled && rm.pages && rm.pages[cfg.key]) {
+          el.innerHTML = renderPageTrackerBannerHtml(cfg.key, cfg.label, cfg.icon, rm.pages[cfg.key], cfg.next, cfg.extra);
+        } else {
+          el.innerHTML = '';
+        }
+      });
+
+      const pulseBar = document.getElementById('pulse-page-tracker-bar');
+      if (pulseBar) {
+        pulseBar.classList.toggle('active-tracker', enabled);
+        if (enabled) {
+          pulseBar.innerHTML = `
+            <div class="flex flex-wrap items-center gap-2.5">
+              <span class="mono text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full" style="background: var(--accent-sage-soft); color: var(--accent-sage);">
+                📡 CONTINUOUS INDUSTRY RADAR
+              </span>
+              <span class="text-xs" style="color: var(--ink-secondary);">
+                Optional daily reading cross-linked to your 12 Courses — not required for 256-item Staff Roadmap completion.
+              </span>
+            </div>
+            ${upNext ? `<button onclick="openRoadmapItem('${escapeHtml(upNext.itemId)}')" class="btn-subtle" style="padding: 4px 10px; font-size: 0.72rem;">← Return to Up Next (#${upNext.globalOrder})</button>` : ''}
+          `;
+        } else {
+          pulseBar.innerHTML = '';
+        }
+      }
+
+      // 8. Sync All Individual Mark-Done Buttons Across Active Pages
+      ['kb-mark-done-btn', 'kb-footer-mark-done-btn'].forEach(bId => {
+        const kbBtn = document.getElementById(bId);
+        if (kbBtn) {
+          kbBtn.classList.toggle('completed', isChDone);
+          kbBtn.textContent = isChDone
+            ? (bId.includes('footer') ? '✓ Chapter Completed' : '✓ Completed')
+            : (bId.includes('footer') ? '○ Mark Chapter Done' : '○ Mark Done');
+        }
+      });
+
+      ['ws-roadmap-done-btn', 'ws-title-mark-done-btn', 'ws-footer-mark-done-btn'].forEach(bId => {
+        const wsBtn = document.getElementById(bId);
+        if (wsBtn) {
+          wsBtn.classList.toggle('completed', isDsaDone);
+          wsBtn.textContent = isDsaDone
+            ? (bId.includes('title') ? '✓ Problem Completed' : '✓ Completed')
+            : (bId.includes('title') ? '○ Mark Problem Done' : '○ Mark Done');
+        }
+      });
+
+      ['mi-mark-done-btn', 'mi-studio-mark-done-btn'].forEach(bId => {
+        const miBtn = document.getElementById(bId);
+        if (miBtn) {
+          miBtn.classList.toggle('completed', isMiDone);
+          miBtn.textContent = isMiDone
+            ? (bId.includes('studio') ? '✓ Interview Completed' : '✓ Completed')
+            : (bId.includes('studio') ? '○ Mark Interview Done' : '○ Mark Done');
+        }
+      });
+    }
+
     async function initHub() {
       initZenPreferences();
       attachSmartEditorKeybindings();
       await loadKbCatalogAndDefaultChapter();
       await Promise.all([
+        loadRoadmapStatus(),
         refreshDashboardState(),
         loadTracksAndHome(),
         loadNewsfeedView('all', false),

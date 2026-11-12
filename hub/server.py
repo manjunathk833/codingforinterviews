@@ -221,6 +221,12 @@ def get_dsa_problem_bundle(slug: str) -> Tuple[int, Dict[str, Any]]:
             _, fdata = read_workspace_file(rel)
             files_bundle[lang_key] = fdata
 
+    for p in state_manager.get_dsa_overview().get("problems", []):
+        if p.get("folderSlug") == prob_dir.name or p.get("slug") == prob_dir.name:
+            meta["id"] = int(p["id"])
+            meta["roadmapItemId"] = f"dsa-{int(p['id']):03d}"
+            break
+
     return 200, {
         "problem": meta,
         "folderPath": str(prob_dir.relative_to(REPO_ROOT)),
@@ -568,6 +574,7 @@ class LearningHubHandler(BaseHTTPRequestHandler):
                 html_bytes = STATIC_INDEX.read_bytes()
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
                 self.send_header("Content-Length", str(len(html_bytes)))
                 self.end_headers()
                 self.wfile.write(html_bytes)
@@ -733,6 +740,10 @@ class LearningHubHandler(BaseHTTPRequestHandler):
             self._send_json(code, data)
             return
 
+        if path in ("/api/roadmap/status", "/api/roadmap/journey"):
+            self._send_json(200, storage.get_roadmap_status())
+            return
+
         if path == "/api/telegram/status":
             from hub import telegram_bot
             bot = telegram_bot.AntigravityTelegramBot()
@@ -869,6 +880,26 @@ class LearningHubHandler(BaseHTTPRequestHandler):
             question_id = payload.get("questionId") or "q1"
             response_text = payload.get("response") or ""
             code, data = storage.save_interview_response(session_id, question_id, response_text)
+            self._send_json(code, data)
+            return
+
+        if path == "/api/roadmap/toggle":
+            enabled = bool(payload.get("enabled", True))
+            if "pace" in payload and payload["pace"]:
+                storage.set_roadmap_pace(str(payload["pace"]))
+            self._send_json(200, storage.set_roadmap_toggle(enabled))
+            return
+
+        if path == "/api/roadmap/pace":
+            pace = str(payload.get("pace") or "60d")
+            self._send_json(200, storage.set_roadmap_pace(pace))
+            return
+
+        if path == "/api/roadmap/mark-done":
+            item_id = str(payload.get("itemId") or payload.get("id") or payload.get("slug") or "")
+            completed = bool(payload["completed"]) if "completed" in payload and payload["completed"] is not None else None
+            source = str(payload.get("source") or "manual")
+            code, data = storage.set_roadmap_item_done(item_id, completed=completed, source=source)
             self._send_json(code, data)
             return
 
