@@ -1,0 +1,154 @@
+{
+  "id": 25,
+  "slug": "003-daily-temperatures",
+  "problemSlug": "daily-temperatures",
+  "title": "025. Daily Temperatures",
+  "chapter": "Ch 4: Stack And Queue",
+  "difficulty": "Medium",
+  "methodName": "dailyTemperatures",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int[] dailyTemperatures(int[] temperatures)",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(N)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given `temperatures`, return an array `ans` where `ans[i]` is the number of days until a warmer temperature (`0` if none).",
+  "invariant": "Monotonic decreasing stack of unresolved day indices",
+  "firstLine": "Create `ans = [0] * len(temperatures)` and `stack = []` (indices waiting for a warmer day).",
+  "steps": [
+    "Allocate `ans = [0] * len(temperatures)` and `stack = []`",
+    "For `i, temp in enumerate(temperatures)`: while `stack` and `temperatures[stack[-1]] < temp`, pop `prev` and set `ans[prev] = i - prev`",
+    "Append `i` to `stack` and return `ans`"
+  ],
+  "pythonOutlineComments": "# Step 1: Allocate `ans = [0] * len(temperatures)` and `stack = []`\n# Step 2: For `i, temp in enumerate(temperatures)`: while `stack` and `temperatures[stack[-1]] < temp`, pop `prev` and set `ans[prev] = i - prev`\n# Step 3: Append `i` to `stack` and return `ans`",
+  "javaOutlineComments": "// Step 1: Allocate `ans = [0] * len(temperatures)` and `stack = []`\n// Step 2: For `i, temp in enumerate(temperatures)`: while `stack` and `temperatures[stack[-1]] < temp`, pop `prev` and set `ans[prev] = i - prev`\n// Step 3: Append `i` to `stack` and return `ans`",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Create `ans = [0] * len(temperatures)` and `stack = []` (indices waiting for a warmer day)."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `Monotonic decreasing stack of unresolved day indices`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Allocate `ans = [0] * len(temperatures)` and `stack = []` -> Step 2: For `i, temp in enumerate(temperatures)`: while `stack` and `temperatures[stack[-1]] < temp`, pop `prev` and set `ans[prev] = i - prev` -> Step 3: Append `i` to `stack` and return `ans`"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N) time and O(N) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "temperatures": [
+          73,
+          74,
+          75,
+          71,
+          69,
+          72,
+          76,
+          73
+        ]
+      },
+      "expected": [
+        1,
+        1,
+        4,
+        2,
+        1,
+        1,
+        0,
+        0
+      ],
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "temperatures": [
+          30,
+          40,
+          50,
+          60
+        ]
+      },
+      "expected": [
+        1,
+        1,
+        1,
+        0
+      ],
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "temperatures": [
+          30
+        ]
+      },
+      "expected": [
+        0
+      ],
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "temperatures": [
+          90,
+          80,
+          70
+        ]
+      },
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "temperatures": [
+          55,
+          38,
+          53,
+          81,
+          61,
+          93,
+          97,
+          32,
+          43,
+          78
+        ]
+      },
+      "expected": [
+        3,
+        1,
+        1,
+        2,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+      ],
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

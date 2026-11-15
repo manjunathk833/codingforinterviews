@@ -1,0 +1,115 @@
+{
+  "id": 46,
+  "slug": "002-maximum-depth-of-binary-tree",
+  "problemSlug": "maximum-depth-of-binary-tree",
+  "title": "046. Maximum Depth Of Binary Tree",
+  "chapter": "Ch 7: Trees And Bst",
+  "difficulty": "Medium",
+  "methodName": "maxDepth",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {
+    "root": "TreeNode"
+  },
+  "returnType": null,
+  "javaSig": "public int maxDepth(TreeNode root)",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(H)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given `root` of a binary tree, return its maximum depth (number of nodes along the longest root-to-leaf path).",
+  "invariant": "depth(node) = 1 + max(depth(left), depth(right))",
+  "firstLine": "Base case `if not root: return 0`, else return `1 + max(...)`.",
+  "steps": [
+    "If `not root`, return `0`",
+    "Recursively compute `left_d = self.maxDepth(root.left)` and `right_d = self.maxDepth(root.right)`",
+    "Return `1 + max(left_d, right_d)`"
+  ],
+  "pythonOutlineComments": "# Step 1: If `not root`, return `0`\n# Step 2: Recursively compute `left_d = self.maxDepth(root.left)` and `right_d = self.maxDepth(root.right)`\n# Step 3: Return `1 + max(left_d, right_d)`",
+  "javaOutlineComments": "// Step 1: If `not root`, return `0`\n// Step 2: Recursively compute `left_d = self.maxDepth(root.left)` and `right_d = self.maxDepth(root.right)`\n// Step 3: Return `1 + max(left_d, right_d)`",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Base case `if not root: return 0`, else return `1 + max(...)`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `depth(node) = 1 + max(depth(left), depth(right))`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: If `not root`, return `0` -> Step 2: Recursively compute `left_d = self.maxDepth(root.left)` and `right_d = self.maxDepth(root.right)` -> Step 3: Return `1 + max(left_d, right_d)`"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N) time and O(H) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "root": [
+          3,
+          9,
+          20,
+          null,
+          null,
+          15,
+          7
+        ]
+      },
+      "expected": 3,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "root": [
+          1,
+          null,
+          2
+        ]
+      },
+      "expected": 2,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "root": []
+      },
+      "expected": 0,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "root": [
+          1
+        ]
+      },
+      "expected": 1,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "root": [
+          1,
+          2,
+          null,
+          3,
+          null,
+          4
+        ]
+      },
+      "expected": 4,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

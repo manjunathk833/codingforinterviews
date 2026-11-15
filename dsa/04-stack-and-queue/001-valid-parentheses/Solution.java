@@ -1,21 +1,19 @@
-import java.util.Stack;
+import java.util.*;
+import utils.ListNode;
+import utils.TreeNode;
+import utils.RandomNode;
+import utils.GraphNode;
 
+/**
+ * Problem #22: Valid Parentheses (Medium)
+ */
 public class Solution {
 
     public boolean isValid(String s) {
-        // TODO: Implement your solution here
-        return false;
+        throw new UnsupportedOperationException("Write your solution here");
     }
 
     public static void main(String[] args) {
-        Solution sol = new Solution();
-
-        assert sol.isValid("()") : "Test 1 Failed";
-        assert sol.isValid("()[]{}") : "Test 2 Failed";
-        assert !sol.isValid("(]") : "Test 3 Failed";
-        assert !sol.isValid("([)]") : "Test 4 Failed";
-        assert sol.isValid("{[]}") : "Test 5 Failed";
-
-        System.out.println("All 5 Java test cases passed!");
+        System.out.println("Java starter compiled cleanly for Valid Parentheses.");
     }
 }

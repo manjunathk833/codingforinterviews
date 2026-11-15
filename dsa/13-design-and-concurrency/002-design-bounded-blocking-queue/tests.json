@@ -1,0 +1,226 @@
+{
+  "id": 123,
+  "slug": "002-design-bounded-blocking-queue",
+  "problemSlug": "design-bounded-blocking-queue",
+  "title": "123. Design Bounded Blocking Queue",
+  "chapter": "Ch 13: Design And Concurrency",
+  "difficulty": "Medium",
+  "methodName": "size",
+  "className": "BoundedBlockingQueue",
+  "execMode": "class_ops",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int size()",
+  "timeComplexity": "O(1)",
+  "spaceComplexity": "O(capacity)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Design a thread-safe `BoundedBlockingQueue(capacity)` with blocking `enqueue(element)`, blocking `dequeue()`, and `size()`.",
+  "invariant": "threading.Condition() with not_full and not_empty condition waits around deque",
+  "firstLine": "Store `self.cap = capacity`, `self.q = deque()`, and `self.cond = threading.Condition()`.",
+  "steps": [
+    "Initialize `self.q = deque()`, `self.cap = capacity`, `self.cond = threading.Condition()`",
+    "In `enqueue(x)`: `with self.cond: while len(self.q) == self.cap: self.cond.wait(); self.q.append(x); self.cond.notify_all()`",
+    "In `dequeue()`: wait `while not self.q`, pop left, `notify_all()`, return value; `size()` returns `len(self.q)` under lock"
+  ],
+  "pythonOutlineComments": "# Step 1: Initialize `self.q = deque()`, `self.cap = capacity`, `self.cond = threading.Condition()`\n# Step 2: In `enqueue(x)`: `with self.cond: while len(self.q) == self.cap: self.cond.wait(); self.q.append(x); self.cond.notify_all()`\n# Step 3: In `dequeue()`: wait `while not self.q`, pop left, `notify_all()`, return value; `size()` returns `len(self.q)` under lock",
+  "javaOutlineComments": "// Step 1: Initialize `self.q = deque()`, `self.cap = capacity`, `self.cond = threading.Condition()`\n// Step 2: In `enqueue(x)`: `with self.cond: while len(self.q) == self.cap: self.cond.wait(); self.q.append(x); self.cond.notify_all()`\n// Step 3: In `dequeue()`: wait `while not self.q`, pop left, `notify_all()`, return value; `size()` returns `len(self.q)` under lock",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Store `self.cap = capacity`, `self.q = deque()`, and `self.cond = threading.Condition()`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `threading.Condition() with not_full and not_empty condition waits around deque`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Initialize `self.q = deque()`, `self.cap = capacity`, `self.cond = threading.Condition()` -> Step 2: In `enqueue(x)`: `with self.cond: while len(self.q) == self.cap: self.cond.wait(); self.q.append(x); self.cond.notify_all()` -> Step 3: In `dequeue()`: wait `while not self.q`, pop left, `notify_all()`, return value; `size()` returns `len(self.q)` under lock"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(1) time and O(capacity) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "ops": [
+          "BoundedBlockingQueue",
+          "enqueue",
+          "enqueue",
+          "size",
+          "dequeue",
+          "enqueue",
+          "dequeue",
+          "dequeue",
+          "size"
+        ],
+        "args": [
+          [
+            2
+          ],
+          [
+            1
+          ],
+          [
+            2
+          ],
+          [],
+          [],
+          [
+            3
+          ],
+          [],
+          [],
+          []
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        null,
+        2,
+        1,
+        null,
+        2,
+        3,
+        0
+      ],
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "ops": [
+          "BoundedBlockingQueue",
+          "size"
+        ],
+        "args": [
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "expected": [
+        null,
+        0
+      ],
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "ops": [
+          "BoundedBlockingQueue",
+          "enqueue",
+          "enqueue",
+          "size",
+          "dequeue",
+          "dequeue",
+          "size"
+        ],
+        "args": [
+          [
+            2
+          ],
+          [
+            10
+          ],
+          [
+            20
+          ],
+          [],
+          [],
+          [],
+          []
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        null,
+        2,
+        10,
+        20,
+        0
+      ],
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "ops": [
+          "BoundedBlockingQueue",
+          "enqueue",
+          "dequeue",
+          "enqueue",
+          "dequeue"
+        ],
+        "args": [
+          [
+            1
+          ],
+          [
+            7
+          ],
+          [],
+          [
+            9
+          ],
+          []
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        7,
+        null,
+        9
+      ],
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "ops": [
+          "BoundedBlockingQueue",
+          "enqueue",
+          "enqueue",
+          "enqueue",
+          "size"
+        ],
+        "args": [
+          [
+            3
+          ],
+          [
+            1
+          ],
+          [
+            2
+          ],
+          [
+            3
+          ],
+          []
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        null,
+        null,
+        3
+      ],
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

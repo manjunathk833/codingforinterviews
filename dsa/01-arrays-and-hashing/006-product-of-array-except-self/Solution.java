@@ -1,21 +1,19 @@
-import java.util.Arrays;
+import java.util.*;
+import utils.ListNode;
+import utils.TreeNode;
+import utils.RandomNode;
+import utils.GraphNode;
 
+/**
+ * Problem #6: Product Of Array Except Self (Medium)
+ */
 public class Solution {
 
     public int[] productExceptSelf(int[] nums) {
-        // TODO: Implement your solution here
-        return new int[] {};
+        throw new UnsupportedOperationException("Write your solution here");
     }
 
     public static void main(String[] args) {
-        Solution sol = new Solution();
-
-        int[] res1 = sol.productExceptSelf(new int[] { 1, 2, 3, 4 });
-        assert Arrays.equals(res1, new int[] { 24, 12, 8, 6 }) : "Test 1 Failed";
-
-        int[] res2 = sol.productExceptSelf(new int[] { -1, 1, 0, -3, 3 });
-        assert Arrays.equals(res2, new int[] { 0, 0, 9, 0, 0 }) : "Test 2 Failed";
-
-        System.out.println("All 2 Java test cases passed!");
+        System.out.println("Java starter compiled cleanly for Product Of Array Except Self.");
     }
 }

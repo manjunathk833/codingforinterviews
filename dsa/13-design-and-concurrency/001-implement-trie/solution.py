@@ -1,47 +1,22 @@
-class TrieNode:
+"""Problem #119: Implement Trie Prefix Tree (Medium)"""
+from typing import List, Optional, Dict
+from collections import Counter, defaultdict, deque, OrderedDict
+from bisect import bisect_left
+import heapq
+import threading
+from utils.dsa_helpers import ListNode, TreeNode, RandomNode, GraphNode
+
+
+class Trie:
     def __init__(self):
-        self.children = {}
-        self.is_end_of_word = False
-
-
-class Solution:
-    class Trie:
-        def __init__(self):
-            self.root = TrieNode()
-
-        def insert(self, word: str) -> None:
-            curr = self.root
-            for c in word:
-                if c not in curr.children:
-                    curr.children[c] = TrieNode()
-                curr = curr.children[c]
-            curr.is_end_of_word = True
-
-        def search(self, word: str) -> bool:
-            node = self._find_node(word)
-            return node is not None and node.is_end_of_word
-
-        def startsWith(self, prefix: str) -> bool:
-            return self._find_node(prefix) is not None
-
-        def _find_node(self, prefix: str):
-            curr = self.root
-            for c in prefix:
-                if c not in curr.children:
-                    return None
-                curr = curr.children[c]
-            return curr
+        raise NotImplementedError("Write your solution here")
+    def insert(self, word: str) -> None:
+        raise NotImplementedError("Write your solution here")
+    def search(self, word: str) -> bool:
+        return False
+    def startsWith(self, prefix: str) -> bool:
 
 
 if __name__ == "__main__":
-    trie = Solution.Trie()
-
-    trie.insert("apple")
-    assert trie.search("apple") is True, "Test 1 Failed"
-    assert trie.search("app") is False, "Test 2 Failed"
-    assert trie.startsWith("app") is True, "Test 3 Failed"
-
-    trie.insert("app")
-    assert trie.search("app") is True, "Test 4 Failed"
-
-    print("All 4 Python Trie test cases passed!")
+    # Run test cases & Code Coach via Coding Studio (`▶ Run & Coach`) or `./run.sh test implement-trie-prefix-tree`
+    print("Starter ready for #119 Implement Trie Prefix Tree.")

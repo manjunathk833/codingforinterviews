@@ -1,0 +1,122 @@
+{
+  "id": 28,
+  "slug": "001-binary-search",
+  "problemSlug": "binary-search",
+  "title": "028. Binary Search",
+  "chapter": "Ch 5: Binary Search",
+  "difficulty": "Medium",
+  "methodName": "search",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int search(int[] nums, int target)",
+  "timeComplexity": "O(log N)",
+  "spaceComplexity": "O(1)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given sorted array `nums` and `target`, return its index in `O(log N)` time, or `-1` if absent.",
+  "invariant": "Target (if present) stays inside closed interval [l, r]",
+  "firstLine": "Set `l, r = 0, len(nums) - 1` and loop `while l <= r:`.",
+  "steps": [
+    "Initialize `l = 0`, `r = len(nums) - 1`",
+    "Compute `mid = (l + r) // 2`; if `nums[mid] == target`, return `mid`",
+    "If `nums[mid] < target`, set `l = mid + 1`; else `r = mid - 1`; return `-1` if not found"
+  ],
+  "pythonOutlineComments": "# Step 1: Initialize `l = 0`, `r = len(nums) - 1`\n# Step 2: Compute `mid = (l + r) // 2`; if `nums[mid] == target`, return `mid`\n# Step 3: If `nums[mid] < target`, set `l = mid + 1`; else `r = mid - 1`; return `-1` if not found",
+  "javaOutlineComments": "// Step 1: Initialize `l = 0`, `r = len(nums) - 1`\n// Step 2: Compute `mid = (l + r) // 2`; if `nums[mid] == target`, return `mid`\n// Step 3: If `nums[mid] < target`, set `l = mid + 1`; else `r = mid - 1`; return `-1` if not found",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Set `l, r = 0, len(nums) - 1` and loop `while l <= r:`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `Target (if present) stays inside closed interval [l, r]`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Initialize `l = 0`, `r = len(nums) - 1` -> Step 2: Compute `mid = (l + r) // 2`; if `nums[mid] == target`, return `mid` -> Step 3: If `nums[mid] < target`, set `l = mid + 1`; else `r = mid - 1`; return `-1` if not found"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(log N) time and O(1) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "nums": [
+          -1,
+          0,
+          3,
+          5,
+          9,
+          12
+        ],
+        "target": 9
+      },
+      "expected": 4,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "nums": [
+          -1,
+          0,
+          3,
+          5,
+          9,
+          12
+        ],
+        "target": 2
+      },
+      "expected": -1,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "nums": [
+          5
+        ],
+        "target": 5
+      },
+      "expected": 0,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "nums": [
+          5
+        ],
+        "target": -5
+      },
+      "expected": -1,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "nums": [
+          -10,
+          -3,
+          0,
+          5,
+          9,
+          12
+        ],
+        "target": -10
+      },
+      "expected": 0,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

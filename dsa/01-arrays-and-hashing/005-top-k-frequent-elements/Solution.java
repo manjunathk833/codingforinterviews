@@ -1,22 +1,19 @@
 import java.util.*;
+import utils.ListNode;
+import utils.TreeNode;
+import utils.RandomNode;
+import utils.GraphNode;
 
+/**
+ * Problem #5: Top K Frequent Elements (Medium)
+ */
 public class Solution {
 
     public int[] topKFrequent(int[] nums, int k) {
-        // TODO: Implement your solution here
-        return new int[] {};
+        throw new UnsupportedOperationException("Write your solution here");
     }
 
     public static void main(String[] args) {
-        Solution sol = new Solution();
-
-        int[] res1 = sol.topKFrequent(new int[] { 1, 1, 1, 2, 2, 3 }, 2);
-        Arrays.sort(res1);
-        assert Arrays.equals(res1, new int[] { 1, 2 }) : "Test 1 Failed";
-
-        int[] res2 = sol.topKFrequent(new int[] { 1 }, 1);
-        assert Arrays.equals(res2, new int[] { 1 }) : "Test 2 Failed";
-
-        System.out.println("All 2 Java test cases passed!");
+        System.out.println("Java starter compiled cleanly for Top K Frequent Elements.");
     }
 }

@@ -24,11 +24,39 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from hub import code_coach, dsa_catalog, state_manager, storage, visualizer_engine
+from hub import code_coach, dsa_catalog, state_manager, storage, visualizer_engine, workbench_grader
 
 DEFAULT_PORT = int(os.environ.get("HUB_PORT", 8090))
-STATIC_INDEX = Path(__file__).resolve().parent / "static" / "index.html"
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+STATIC_INDEX = STATIC_DIR / "index.html"
 PROTOTYPE_HTML = REPO_ROOT / "docs" / "prototypes" / "home-and-dsa-prototype.html"
+
+
+def render_assembled_index_html() -> bytes:
+    """Assemble modular CSS/JS partials into `index.html` in memory for single-roundtrip GET `/`."""
+    html = STATIC_INDEX.read_text(encoding="utf-8")
+
+    def _inline_css(match: re.Match) -> str:
+        rel = match.group(1).lstrip("/")
+        if rel.startswith("static/"):
+            rel = rel[len("static/"):]
+        target = (STATIC_DIR / rel).resolve()
+        if str(target).startswith(str(STATIC_DIR.resolve())) and target.is_file():
+            return "<style>\n" + target.read_text(encoding="utf-8") + "\n</style>"
+        return match.group(0)
+
+    def _inline_js(match: re.Match) -> str:
+        rel = match.group(1).lstrip("/")
+        if rel.startswith("static/"):
+            rel = rel[len("static/"):]
+        target = (STATIC_DIR / rel).resolve()
+        if str(target).startswith(str(STATIC_DIR.resolve())) and target.is_file():
+            return "<script>\n" + target.read_text(encoding="utf-8") + "\n</script>"
+        return match.group(0)
+
+    html = re.sub(r'<link\s+rel="stylesheet"\s+href="(/static/[^"]+)"\s*/?>', _inline_css, html)
+    html = re.sub(r'<script\s+src="(/static/[^"]+)"\s*></script>', _inline_js, html)
+    return html.encode("utf-8")
 
 ALLOWED_TOP_DIRS = {
     "dsa",
@@ -281,6 +309,7 @@ def get_dsa_problem_bundle(slug: str) -> Tuple[int, Dict[str, Any]]:
         meta.setdefault("firstLine", spec["firstLine"])
         meta.setdefault("steps", spec["steps"])
         meta["outlinePy"] = dsa_catalog.build_python_outline(spec)
+        meta["outlineJava"] = dsa_catalog.build_java_outline(spec)
         meta.setdefault("execMode", spec.get("execMode", "solution_method"))
         meta.setdefault("className", spec.get("className", "Solution"))
 
@@ -365,32 +394,17 @@ def execute_problem_cases(slug: str, lang: str = "python") -> Dict[str, Any]:
     meta = json.loads(tests_path.read_text(encoding="utf-8")) if tests_path.exists() else {}
 
     if lang == "java":
-        cli_res = execute_test_target(prob_dir.name, "java")
-        java_file = prob_dir / "Solution.java"
-        java_text = java_file.read_text(encoding="utf-8") if java_file.exists() else ""
-        coach = code_coach.analyze_java_code_coach(
-            java_text, cli_res, target_time=meta.get("timeComplexity", "O(N)")
-        )
+        run_res = code_coach.run_java_cases_sandboxed(prob_dir, meta, spec=spec, timeout_s=6.0)
         res_payload = {
-            "status": cli_res["status"],
+            "status": run_res["status"],
             "slug": prob_dir.name,
             "lang": "java",
-            "durationMs": cli_res["durationMs"],
-            "output": cli_res["output"],
-            "cases": [
-                {
-                    "id": "case-java-cli",
-                    "label": "Java 17 Compile & Assertions",
-                    "passed": cli_res["status"] == "PASSED",
-                    "input": {"target": prob_dir.name, "lang": "java"},
-                    "expected": "javac + java -ea assertions pass (exit 0)",
-                    "actual": cli_res["output"],
-                    "durationMs": cli_res["durationMs"],
-                }
-            ],
-            "codeCoach": coach,
+            "durationMs": run_res["durationMs"],
+            "output": run_res.get("output", ""),
+            "cases": run_res["cases"],
+            "codeCoach": run_res["codeCoach"],
         }
-        if cli_res["status"] == "PASSED" and spec is not None:
+        if run_res["status"] == "PASSED" and spec is not None:
             res_payload["referenceSolution"] = dsa_catalog.get_reference_solution(str(spec["id"]))
         return res_payload
 
@@ -521,7 +535,7 @@ class LearningHubHandler(BaseHTTPRequestHandler):
 
         if path in ("/", "/index.html"):
             if STATIC_INDEX.exists():
-                html_bytes = STATIC_INDEX.read_bytes()
+                html_bytes = render_assembled_index_html()
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
@@ -530,6 +544,28 @@ class LearningHubHandler(BaseHTTPRequestHandler):
                 self.wfile.write(html_bytes)
             else:
                 self._send_json(404, {"error": "Static UI index.html not found"})
+            return
+
+        if path.startswith("/static/"):
+            rel_static = path[len("/static/"):]
+            target_static = (STATIC_DIR / rel_static).resolve()
+            if ".." not in Path(rel_static).parts and str(target_static).startswith(str(STATIC_DIR.resolve())) and target_static.is_file():
+                mime = {
+                    ".css": "text/css; charset=utf-8",
+                    ".js": "application/javascript; charset=utf-8",
+                    ".html": "text/html; charset=utf-8",
+                    ".json": "application/json; charset=utf-8",
+                    ".svg": "image/svg+xml",
+                }.get(target_static.suffix.lower(), "application/octet-stream")
+                raw_s = target_static.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", mime)
+                self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+                self.send_header("Content-Length", str(len(raw_s)))
+                self.end_headers()
+                self.wfile.write(raw_s)
+            else:
+                self._send_json(404, {"error": "Static asset not found"})
             return
 
         if path == "/prototype":
@@ -688,6 +724,10 @@ class LearningHubHandler(BaseHTTPRequestHandler):
 
         if path in ("/api/workbench/catalog", "/api/workbench/frameworks"):
             self._send_json(200, storage.get_workbench_catalog())
+            return
+
+        if path == "/api/workbench/challenges":
+            self._send_json(200, {"challenges": workbench_grader.list_challenges()})
             return
 
         if path in ("/api/interviews", "/api/interviews/catalog"):
@@ -869,6 +909,26 @@ class LearningHubHandler(BaseHTTPRequestHandler):
             item_id = payload.get("itemId") or payload.get("id") or ""
             code, data = storage.run_workbench_verification(item_id)
             self._send_json(code, data)
+            return
+
+        if path == "/api/workbench/challenge/run":
+            cid = str(payload.get("challengeId") or payload.get("id") or "")
+            code_override = payload.get("code")
+            persist = bool(payload.get("persist", False))
+            res = workbench_grader.run_challenge(cid, code_override=code_override, persist_to_disk=persist)
+            if res is None:
+                self._send_json(404, {"error": f"Unknown Workbench challenge '{cid}'"})
+            else:
+                self._send_json(200, res)
+            return
+
+        if path == "/api/workbench/challenge/reset":
+            cid = str(payload.get("challengeId") or payload.get("id") or "")
+            res = workbench_grader.reset_challenge_workspace(cid)
+            if res is None:
+                self._send_json(404, {"error": f"Unknown Workbench challenge '{cid}'"})
+            else:
+                self._send_json(200, res)
             return
 
         if path == "/api/interviews/save":

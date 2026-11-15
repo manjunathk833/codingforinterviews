@@ -1,0 +1,92 @@
+{
+  "id": 88,
+  "slug": "001-climbing-stairs",
+  "problemSlug": "climbing-stairs",
+  "title": "088. Climbing Stairs",
+  "chapter": "Ch 11: Dynamic Programming",
+  "difficulty": "Medium",
+  "methodName": "climbStairs",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int climbStairs(int n)",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(1)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "You can climb `1` or `2` steps at a time; return how many distinct ways reach step `n`.",
+  "invariant": "ways(i) = ways(i - 1) + ways(i - 2) rolling Fibonacci pair",
+  "firstLine": "Set `one, two = 1, 1` and roll forward `n - 1` times.",
+  "steps": [
+    "Initialize `a, b = 1, 1`",
+    "Loop `n - 1` times updating `a, b = b, a + b`",
+    "Return `b` (handling `n == 1` cleanly)"
+  ],
+  "pythonOutlineComments": "# Step 1: Initialize `a, b = 1, 1`\n# Step 2: Loop `n - 1` times updating `a, b = b, a + b`\n# Step 3: Return `b` (handling `n == 1` cleanly)",
+  "javaOutlineComments": "// Step 1: Initialize `a, b = 1, 1`\n// Step 2: Loop `n - 1` times updating `a, b = b, a + b`\n// Step 3: Return `b` (handling `n == 1` cleanly)",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Set `one, two = 1, 1` and roll forward `n - 1` times."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `ways(i) = ways(i - 1) + ways(i - 2) rolling Fibonacci pair`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Initialize `a, b = 1, 1` -> Step 2: Loop `n - 1` times updating `a, b = b, a + b` -> Step 3: Return `b` (handling `n == 1` cleanly)"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N) time and O(1) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "n": 2
+      },
+      "expected": 2,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "n": 3
+      },
+      "expected": 3,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "n": 5
+      },
+      "expected": 8,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "n": 1
+      },
+      "expected": 1,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "n": 4
+      },
+      "expected": 5,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

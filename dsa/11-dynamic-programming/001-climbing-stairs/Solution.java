@@ -1,17 +1,19 @@
+import java.util.*;
+import utils.ListNode;
+import utils.TreeNode;
+import utils.RandomNode;
+import utils.GraphNode;
+
+/**
+ * Problem #88: Climbing Stairs (Medium)
+ */
 public class Solution {
 
     public int climbStairs(int n) {
-        // TODO: Implement your solution here
-        return 0;
+        throw new UnsupportedOperationException("Write your solution here");
     }
 
     public static void main(String[] args) {
-        Solution sol = new Solution();
-
-        assert sol.climbStairs(2) == 2 : "Test 1 Failed";
-        assert sol.climbStairs(3) == 3 : "Test 2 Failed";
-        assert sol.climbStairs(5) == 8 : "Test 3 Failed";
-
-        System.out.println("All 3 Java test cases passed!");
+        System.out.println("Java starter compiled cleanly for Climbing Stairs.");
     }
 }

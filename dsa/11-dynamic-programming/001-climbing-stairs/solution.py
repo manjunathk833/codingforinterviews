@@ -1,14 +1,17 @@
+"""Problem #88: Climbing Stairs (Medium)"""
+from typing import List, Optional, Dict
+from collections import Counter, defaultdict, deque, OrderedDict
+from bisect import bisect_left
+import heapq
+import threading
+from utils.dsa_helpers import ListNode, TreeNode, RandomNode, GraphNode
+
+
 class Solution:
     def climbStairs(self, n: int) -> int:
-        # TODO: Implement your solution here
-        return 0
+        raise NotImplementedError("Write your solution here")
 
 
 if __name__ == "__main__":
-    sol = Solution()
-
-    assert sol.climbStairs(2) == 2, "Test 1 Failed"
-    assert sol.climbStairs(3) == 3, "Test 2 Failed"
-    assert sol.climbStairs(5) == 8, "Test 3 Failed"
-
-    print("All 3 Python test cases passed!")
+    # Run test cases & Code Coach via Coding Studio (`▶ Run & Coach`) or `./run.sh test climbing-stairs`
+    print("Starter ready for #88 Climbing Stairs.")

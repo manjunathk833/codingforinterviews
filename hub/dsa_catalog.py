@@ -2,22 +2,22 @@
 """
 Complete Source-of-Truth Catalog for all 128 DSA Problems + 12 5-Minute Muscle-Memory Warmup Drills.
 
-Eliminates placeholder/hardcoded scaffolding by providing every problem with:
+Backed by `hub/data/dsa_specs.json` (token-lean static JSON data outside Python module scan paths):
 - Authentic prompt, invariant, complexity targets, and 4-tier Socratic hints
-- Anti-Blank-Page "Help Me Start" 1-line nudge + 3-step plain-English outline comments
-- Clean empty Python 3 & Java 17 starter signatures (never pre-solved)
-- Real structured test cases (including ListNode, TreeNode, RandomNode, GraphNode, Codec, OOP classes)
-- Staff Reference Solution (`refPy`) unlocked only after passing all tests
+- Anti-Blank-Page "Help Me Start" 1-line nudge + 3-step plain-English outline comments (Python & Java)
+- Clean, spoiler-free Python 3 & Java 17 starter signatures (`NotImplementedError` / `UnsupportedOperationException`)
+- >= 5 verified structured test cases per problem & warmup drill
+- Staff Reference Solution (`refPy` + `refJava`) unlocked only after passing all tests
 """
 import json
-from typing import Dict, Any, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from hub.dsa_specs_g1 import SPECS_G1
-from hub.dsa_specs_g2 import SPECS_G2
-from hub.dsa_specs_g3 import SPECS_G3
-from hub.dsa_specs_g4 import SPECS_G4, WARMUP_DRILLS
+DATA_PATH = Path(__file__).resolve().parent / "data" / "dsa_specs.json"
 
-ALL_SPECS: List[Dict[str, Any]] = SPECS_G1 + SPECS_G2 + SPECS_G3 + SPECS_G4
+_RAW_CACHE: Dict[str, Any] = json.loads(DATA_PATH.read_text(encoding="utf-8"))
+ALL_SPECS: List[Dict[str, Any]] = _RAW_CACHE["problems"]
+WARMUP_DRILLS: List[Dict[str, Any]] = _RAW_CACHE["warmups"]
 assert len(ALL_SPECS) == 128, f"Expected 128 DSA problem specs, found {len(ALL_SPECS)}"
 
 BY_ID: Dict[int, Dict[str, Any]] = {int(s["id"]): s for s in ALL_SPECS}
@@ -35,7 +35,7 @@ COMMON_PY_HEADER = (
 
 
 def get_spec(slug_or_id: str) -> Optional[Dict[str, Any]]:
-    """Lookup problem spec by numeric ID ('8'), exact slug ('longest-consecutive-sequence'), or folder slug ('008-longest-consecutive-sequence')."""
+    """Lookup problem spec by numeric ID ('8'), exact slug ('longest-consecutive-sequence'), or folder slug."""
     if slug_or_id is None:
         return None
     raw = str(slug_or_id).strip().lower()
@@ -57,19 +57,22 @@ def get_spec(slug_or_id: str) -> Optional[Dict[str, Any]]:
 
 
 def get_warmup_drills() -> List[Dict[str, Any]]:
-    return [
-        {
+    out = []
+    for d in WARMUP_DRILLS:
+        starter = d["starterPy"]
+        if starter.rstrip().endswith("pass"):
+            starter = starter.rstrip()[:-4] + 'raise NotImplementedError("Write your warmup drill here")\n'
+        out.append({
             "id": d["id"],
             "title": d["title"],
             "minutes": d["minutes"],
             "goal": d["goal"],
             "firstLine": d["firstLine"],
-            "starterPy": d["starterPy"],
+            "starterPy": starter,
             "fnName": d["fnName"],
             "cases": d["cases"],
-        }
-        for d in WARMUP_DRILLS
-    ]
+        })
+    return out
 
 
 def get_warmup_drill(drill_id: str) -> Optional[Dict[str, Any]]:
@@ -77,73 +80,72 @@ def get_warmup_drill(drill_id: str) -> Optional[Dict[str, Any]]:
 
 
 def build_python_starter(spec: Dict[str, Any], meta_row: Optional[Dict[str, Any]] = None) -> str:
-    """Generate a clean, un-spoiled Python 3 starter file with authentic signature and outline comments."""
+    """Generate a clean, spoiler-free Python 3 starter file with authentic signature."""
     title = (meta_row or {}).get("title") or spec["slug"].replace("-", " ").title()
-    pattern = (meta_row or {}).get("pattern") or "DSA Pattern"
     diff = (meta_row or {}).get("difficulty") or "Medium"
 
     py_sig = spec["pySig"].strip()
     if spec.get("execMode") == "class_ops" or py_sig.startswith("class "):
-        body_block = py_sig
-        if not body_block.rstrip().endswith("pass"):
-            body_block += "\n        pass"
+        lines = []
+        for ln in py_sig.splitlines():
+            if ln.strip() == "pass":
+                indent = ln[: len(ln) - len(ln.lstrip())]
+                lines.append(f'{indent}raise NotImplementedError("Write your solution here")')
+            else:
+                lines.append(ln)
+        body_block = "\n".join(lines)
+        if "NotImplementedError" not in body_block:
+            body_block += '\n        raise NotImplementedError("Write your solution here")'
     else:
         body_block = (
             "class Solution:\n"
             f"    {py_sig}\n"
-            f"        # First-line idea: {spec['firstLine']}\n"
-            "        pass"
+            '        raise NotImplementedError("Write your solution here")'
         )
 
     return (
-        f'"""Problem #{spec["id"]}: {title}\n'
-        f"Pattern: {pattern} | Difficulty: {diff}\n"
-        f"Target: {spec['time']} Time · {spec['space']} Space\n"
-        f'"""\n'
+        f'"""Problem #{spec["id"]}: {title} ({diff})"""\n'
         f"{COMMON_PY_HEADER}\n\n"
         f"{body_block}\n\n\n"
         f'if __name__ == "__main__":\n'
-        f"    # Run full test cases & Code Coach via the Hub (`▶ Run & Coach`) or `./run.sh test {spec['slug']}`\n"
-        f'    print("Starter ready for #{spec["id"]} {title}. Implement your solution above!")\n'
+        f"    # Run test cases & Code Coach via Coding Studio (`▶ Run & Coach`) or `./run.sh test {spec['slug']}`\n"
+        f'    print("Starter ready for #{spec["id"]} {title}.")\n'
     )
 
 
 def build_java_starter(spec: Dict[str, Any], meta_row: Optional[Dict[str, Any]] = None) -> str:
-    """Generate a clean, compilable Java 17 starter file with matching signature and zero spoilers."""
+    """Generate a clean, compilable, spoiler-free Java 17 starter file that fails until implemented."""
     title = (meta_row or {}).get("title") or spec["slug"].replace("-", " ").title()
-    pattern = (meta_row or {}).get("pattern") or "DSA Pattern"
     diff = (meta_row or {}).get("difficulty") or "Medium"
-    java_sig = spec["javaSig"].strip()
-    ret_stmt = spec.get("javaRet", "").strip()
-    steps = spec.get("steps", [])
-    step_comments = "\n        ".join(f"// Step {i + 1}: {st}" for i, st in enumerate(steps))
-    body_lines = step_comments
-    if ret_stmt:
-        body_lines += f"\n        {ret_stmt}"
 
-    cls_name = spec.get("className") or "Solution"
-    if cls_name != "Solution":
-        inner = (
-            f"    public static class {cls_name} {{\n"
-            f"        {java_sig} {{\n"
-            f"        {body_lines}\n"
-            f"        }}\n"
-            f"    }}\n"
-        )
+    if spec.get("javaClassStub"):
+        inner = spec["javaClassStub"].rstrip() + "\n"
     else:
-        inner = (
-            f"    {java_sig} {{\n"
-            f"        {body_lines}\n"
-            f"    }}\n"
-        )
+        java_sig = spec["javaSig"].strip()
+        cls_name = spec.get("className") or "Solution"
+        if cls_name != "Solution":
+            inner = (
+                f"    public static class {cls_name} {{\n"
+                f"        {java_sig} {{\n"
+                '            throw new UnsupportedOperationException("Write your solution here");\n'
+                "        }\n"
+                "    }\n"
+            )
+        else:
+            inner = (
+                f"    {java_sig} {{\n"
+                '        throw new UnsupportedOperationException("Write your solution here");\n'
+                "    }\n"
+            )
 
     return (
         "import java.util.*;\n"
         "import utils.ListNode;\n"
-        "import utils.TreeNode;\n\n"
+        "import utils.TreeNode;\n"
+        "import utils.RandomNode;\n"
+        "import utils.GraphNode;\n\n"
         "/**\n"
-        f" * Problem #{spec['id']}: {title}\n"
-        f" * Pattern: {pattern} | Difficulty: {diff}\n"
+        f" * Problem #{spec['id']}: {title} ({diff})\n"
         " */\n"
         "public class Solution {\n\n"
         f"{inner}\n"
@@ -155,19 +157,15 @@ def build_java_starter(spec: Dict[str, Any], meta_row: Optional[Dict[str, Any]] 
 
 
 def build_python_outline(spec: Dict[str, Any]) -> str:
-    """Return the exact 3-step plain-English outline body (`Help Me Start` Click 2)."""
+    """Return 3-step plain-English comment lines for non-destructive injection in Python."""
     steps = spec.get("steps", [])
-    comments = "\n        ".join(f"# Step {i + 1}: {s}" for i, s in enumerate(steps))
-    py_sig = spec["pySig"].strip()
-    if py_sig.startswith("class "):
-        return f"{COMMON_PY_HEADER}\n\n# 3-Step Blueprint:\n" + "\n".join(f"# Step {i + 1}: {s}" for i, s in enumerate(steps)) + f"\n\n{py_sig}\n        pass\n"
-    return (
-        f"{COMMON_PY_HEADER}\n\n"
-        "class Solution:\n"
-        f"    {py_sig}\n"
-        f"        {comments}\n"
-        "        pass\n"
-    )
+    return "\n".join(f"# Step {i + 1}: {s}" for i, s in enumerate(steps))
+
+
+def build_java_outline(spec: Dict[str, Any]) -> str:
+    """Return 3-step plain-English comment lines for non-destructive injection in Java."""
+    steps = spec.get("steps", [])
+    return "\n".join(f"// Step {i + 1}: {s}" for i, s in enumerate(steps))
 
 
 def build_tests_meta(spec: Dict[str, Any], folder_slug: str, meta_row: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -192,6 +190,7 @@ def build_tests_meta(spec: Dict[str, Any], folder_slug: str, meta_row: Optional[
         "compareMode": spec.get("compareMode", "exact"),
         "argTypes": spec.get("argTypes", {}),
         "returnType": spec.get("returnType"),
+        "javaSig": spec.get("javaSig", ""),
         "timeComplexity": spec["time"],
         "spaceComplexity": spec["space"],
         "visualizerId": row.get("visualizerId", "dsa-group-anagrams"),
@@ -199,6 +198,8 @@ def build_tests_meta(spec: Dict[str, Any], folder_slug: str, meta_row: Optional[
         "invariant": spec["invariant"],
         "firstLine": spec["firstLine"],
         "steps": steps,
+        "pythonOutlineComments": build_python_outline(spec),
+        "javaOutlineComments": build_java_outline(spec),
         "hints": [
             {"tier": 1, "title": "First-Line Nudge", "content": spec["firstLine"]},
             {"tier": 2, "title": "Pattern & Invariant", "content": f"Core invariant: `{spec['invariant']}`"},
@@ -210,13 +211,16 @@ def build_tests_meta(spec: Dict[str, Any], folder_slug: str, meta_row: Optional[
 
 
 def get_reference_solution(slug_or_id: str) -> Optional[Dict[str, str]]:
-    """Return full import-ready Staff reference Python snippet for side-by-side review."""
+    """Return Staff reference solution (`python` + optional `java`) unlocked after passing."""
     spec = get_spec(slug_or_id)
     if not spec:
         return None
-    return {
+    res: Dict[str, str] = {
         "python": f"{COMMON_PY_HEADER}\n\n{spec['refPy']}",
         "time": spec["time"],
         "space": spec["space"],
         "invariant": spec["invariant"],
     }
+    if spec.get("refJava"):
+        res["java"] = spec["refJava"]
+    return res

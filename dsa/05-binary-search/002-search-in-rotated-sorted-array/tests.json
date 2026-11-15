@@ -1,0 +1,126 @@
+{
+  "id": 32,
+  "slug": "002-search-in-rotated-sorted-array",
+  "problemSlug": "search-in-rotated-sorted-array",
+  "title": "032. Search In Rotated Sorted Array",
+  "chapter": "Ch 5: Binary Search",
+  "difficulty": "Medium",
+  "methodName": "search",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int search(int[] nums, int target)",
+  "timeComplexity": "O(log N)",
+  "spaceComplexity": "O(1)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given rotated sorted array `nums` of unique integers and `target`, return the index of `target` in `O(log N)` time or `-1`.",
+  "invariant": "At least one half [l..mid] or [mid..r] is strictly sorted",
+  "firstLine": "Set `l, r = 0, len(nums) - 1` and check whether `[l..mid]` is the sorted half (`nums[l] <= nums[mid]`).",
+  "steps": [
+    "Loop `while l <= r:` with `mid = (l + r) // 2`; return `mid` if `nums[mid] == target`",
+    "If `nums[l] <= nums[mid]` (left half sorted): check `nums[l] <= target < nums[mid]` to pick left vs right",
+    "Else (right half sorted): check `nums[mid] < target <= nums[r]` to pick right vs left"
+  ],
+  "pythonOutlineComments": "# Step 1: Loop `while l <= r:` with `mid = (l + r) // 2`; return `mid` if `nums[mid] == target`\n# Step 2: If `nums[l] <= nums[mid]` (left half sorted): check `nums[l] <= target < nums[mid]` to pick left vs right\n# Step 3: Else (right half sorted): check `nums[mid] < target <= nums[r]` to pick right vs left",
+  "javaOutlineComments": "// Step 1: Loop `while l <= r:` with `mid = (l + r) // 2`; return `mid` if `nums[mid] == target`\n// Step 2: If `nums[l] <= nums[mid]` (left half sorted): check `nums[l] <= target < nums[mid]` to pick left vs right\n// Step 3: Else (right half sorted): check `nums[mid] < target <= nums[r]` to pick right vs left",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Set `l, r = 0, len(nums) - 1` and check whether `[l..mid]` is the sorted half (`nums[l] <= nums[mid]`)."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `At least one half [l..mid] or [mid..r] is strictly sorted`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Loop `while l <= r:` with `mid = (l + r) // 2`; return `mid` if `nums[mid] == target` -> Step 2: If `nums[l] <= nums[mid]` (left half sorted): check `nums[l] <= target < nums[mid]` to pick left vs right -> Step 3: Else (right half sorted): check `nums[mid] < target <= nums[r]` to pick right vs left"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(log N) time and O(1) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "nums": [
+          4,
+          5,
+          6,
+          7,
+          0,
+          1,
+          2
+        ],
+        "target": 0
+      },
+      "expected": 4,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "nums": [
+          4,
+          5,
+          6,
+          7,
+          0,
+          1,
+          2
+        ],
+        "target": 3
+      },
+      "expected": -1,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "nums": [
+          1
+        ],
+        "target": 1
+      },
+      "expected": 0,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "nums": [
+          3,
+          1
+        ],
+        "target": 1
+      },
+      "expected": 1,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "nums": [
+          5,
+          6,
+          7,
+          0,
+          1,
+          2,
+          4
+        ],
+        "target": 6
+      },
+      "expected": 1,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

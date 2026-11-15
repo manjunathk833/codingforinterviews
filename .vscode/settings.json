@@ -3,7 +3,8 @@
     "${workspaceFolder}/dsa",
     "${workspaceFolder}/dsa/utils",
     "${workspaceFolder}/frameworks/api-automation/pytest-requests-python",
-    "${workspaceFolder}/frameworks/ui-automation/playwright-python"
+    "${workspaceFolder}/frameworks/ui-automation/playwright-python",
+    "${workspaceFolder}/frameworks/aerocart-quality-suite"
   ],
   "java.project.sourcePaths": [
     "dsa",
@@ -24,6 +25,13 @@
     "**/__pycache__": true,
     "**/.pytest_cache": true,
     "**/target": true
+  },
+  "search.exclude": {
+    "hub/data/**": true,
+    "hub/hub.db*": true,
+    "**/.build/**": true,
+    "**/target/**": true,
+    "**/__pycache__/**": true
   },
   "editor.tabSize": 4,
   "files.autoSave": "off"

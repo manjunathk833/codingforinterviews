@@ -1,17 +1,17 @@
-from typing import List
+"""Problem #28: Binary Search (Medium)"""
+from typing import List, Optional, Dict
+from collections import Counter, defaultdict, deque, OrderedDict
+from bisect import bisect_left
+import heapq
+import threading
+from utils.dsa_helpers import ListNode, TreeNode, RandomNode, GraphNode
 
 
 class Solution:
     def search(self, nums: List[int], target: int) -> int:
-        # TODO: Implement your solution here
-        return -1
+        raise NotImplementedError("Write your solution here")
 
 
 if __name__ == "__main__":
-    sol = Solution()
-
-    assert sol.search([-1, 0, 3, 5, 9, 12], 9) == 4, "Test 1 Failed"
-    assert sol.search([-1, 0, 3, 5, 9, 12], 2) == -1, "Test 2 Failed"
-    assert sol.search([5], 5) == 0, "Test 3 Failed"
-
-    print("All 3 Python test cases passed!")
+    # Run test cases & Code Coach via Coding Studio (`▶ Run & Coach`) or `./run.sh test binary-search`
+    print("Starter ready for #28 Binary Search.")

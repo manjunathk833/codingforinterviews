@@ -1219,7 +1219,7 @@ class TestHubAndArchitectureCI(unittest.TestCase):
                 "POST", "/api/dsa/problem/lfu-cache/reset", body={"lang": "python"}
             )
             self.assertEqual(rst_res["status_code"], 200)
-            self.assertIn("pass", rst_res["data"]["files"]["python"]["content"])
+            self.assertIn("NotImplementedError", rst_res["data"]["files"]["python"]["content"])
         finally:
             if not existed and lfu_dir.exists():
                 shutil.rmtree(lfu_dir)
@@ -1236,8 +1236,11 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             "ws-coach-ref-pre",
             "triggerHelpMeStart",
             "resetActiveProblemToBlank",
+            "Coding Studio",
+            "ws-invariant-toggle-btn",
         ):
             self.assertIn(tok, root_html, f"Missing Wave 1 UI token: {tok}")
+        self.assertNotIn("--accent-terracotta", root_html)
 
         ws_sec = _re.search(r'<main id="view-workspace"[\s\S]*?</main>', root_html)
         self.assertIsNotNone(ws_sec)
@@ -1247,6 +1250,96 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             flags=_re.IGNORECASE,
         )
         self.assertEqual(ws_glare, [], f"Found hardcoded light-mode colors in #view-workspace: {ws_glare}")
+
+    def test_24_wave2_multi_file_workbench_java_runner_and_token_modularization(self):
+        """Verify Carbon Review Remediation, Java 17 JSON runner, >=5 DSA cases, Token Modularization, and Wave 2 Multi-File Workbench."""
+        import json
+        import re as _re
+        from hub import code_coach, dsa_catalog, workbench_grader
+
+        # 1. Token optimization & Carbon-Hydrogen config integrity
+        self.assertLess((REPO_ROOT / "GEMINI.md").stat().st_size, 1500)
+        self.assertLess((REPO_ROOT / "hub/static/index.html").stat().st_size, 95000)
+        hooks_cfg = json.loads((REPO_ROOT / ".agents/hooks.json").read_text(encoding="utf-8"))
+        self.assertIn("stop-verification-reminder", hooks_cfg)
+        self.assertIn("Stop", hooks_cfg["stop-verification-reminder"])
+        self.assertNotIn("hooks", hooks_cfg)
+        for agent_md in ("dry_run_agent.md", "socratic_bar_raiser.md", "knowledgebase_architect.md"):
+            head = (REPO_ROOT / ".agents/agents" / agent_md).read_text(encoding="utf-8")[:200]
+            self.assertIn("name:", head, f"Missing name: frontmatter in {agent_md}")
+
+        for asset in ("/static/css/theme.css", "/static/js/core.js", "/static/js/coding-studio.js", "/static/js/workbench.js"):
+            st_res = hub_server.dispatch_request("GET", asset)
+            self.assertEqual(st_res["status_code"], 200, f"Static asset failed: {asset}")
+
+        # 2. All 128 DSA specs & 12 Warmups >= 5 cases, spoiler-free starters, 0-pass == 0/100, generalized scaling probes
+        for spec in dsa_catalog.ALL_SPECS:
+            self.assertGreaterEqual(len(spec["cases"]), 5, f"#{spec['id']} {spec['slug']} has <5 cases")
+            py_st = dsa_catalog.build_python_starter(spec)
+            jv_st = dsa_catalog.build_java_starter(spec)
+            for forbidden in ("Pattern:", "Target:", "First-line idea:", "// Step 1"):
+                self.assertNotIn(forbidden, py_st)
+                self.assertNotIn(forbidden, jv_st)
+        for wu in dsa_catalog.WARMUP_DRILLS:
+            self.assertGreaterEqual(len(wu["cases"]), 5, f"Warmup {wu['id']} has <5 cases")
+
+        probes = [s["slug"] for s in dsa_catalog.ALL_SPECS if code_coach._detect_scaling_probe(s)]
+        self.assertGreaterEqual(len(probes), 40)
+
+        # 3. Java 17 JSON case runner: blank -> 0/100, real OOP & Tree & Array -> PASSED >= 95/100
+        for slug in ("min-stack", "invert-binary-tree"):
+            sp = dsa_catalog.get_spec(slug)
+            mt = dsa_catalog.build_tests_meta(sp, slug)
+            blank_j = code_coach.run_java_cases_sandboxed(None, mt, spec=sp, code_text=dsa_catalog.build_java_starter(sp))
+            self.assertEqual(blank_j["status"], "FAILED")
+            self.assertEqual(blank_j["codeCoach"]["score"], 0)
+
+            real_j = code_coach.run_java_cases_sandboxed(None, mt, spec=sp, code_text=sp["refJava"])
+            self.assertEqual(real_j["status"], "PASSED", f"Java ref failed on {slug}: {real_j}")
+            self.assertGreaterEqual(len(real_j["cases"]), 5)
+            self.assertGreaterEqual(real_j["codeCoach"]["score"], 95)
+
+        ga_java_api = hub_server.dispatch_request("POST", "/api/run-cases", body={"slug": "003-group-anagrams", "lang": "java"})
+        self.assertEqual(ga_java_api["status_code"], 200)
+        self.assertEqual(ga_java_api["data"]["status"], "PASSED")
+        self.assertEqual(len(ga_java_api["data"]["cases"]), 3)
+        self.assertGreaterEqual(ga_java_api["data"]["codeCoach"]["score"], 95)
+
+        # 4. Wave 2 Multi-File & Blank-Canvas Workbench (17 builds: 4 Capstone + 13 Labs)
+        wb_list = hub_server.dispatch_request("GET", "/api/workbench/challenges")
+        self.assertEqual(wb_list["status_code"], 200)
+        challenges = wb_list["data"]["challenges"]
+        self.assertEqual(len(challenges), 17)
+
+        for ch_spec in workbench_grader._load_challenges():
+            cid = ch_spec["id"]
+            blank_r = hub_server.dispatch_request("POST", "/api/workbench/challenge/run", body={"challengeId": cid, "persist": False})
+            self.assertEqual(blank_r["status_code"], 200)
+            self.assertEqual(blank_r["data"]["status"], "FAILED", f"Blank contract unexpectedly passed for {cid}")
+            self.assertEqual(blank_r["data"]["passedCount"], 0)
+            self.assertEqual(blank_r["data"]["architectureReview"]["score"], 0)
+
+            ref_r = hub_server.dispatch_request(
+                "POST",
+                "/api/workbench/challenge/run",
+                body={"challengeId": cid, "code": ch_spec["referencePy"], "persist": False},
+            )
+            self.assertEqual(ref_r["status_code"], 200)
+            self.assertEqual(ref_r["data"]["status"], "PASSED", f"Ref architecture failed for {cid}: {ref_r['data']}")
+            self.assertEqual(ref_r["data"]["passedCount"], 4)
+            self.assertGreaterEqual(ref_r["data"]["architectureReview"]["score"], 95)
+            self.assertIn("referenceSolution", ref_r["data"])
+
+        # 5. Verify #view-workbench has zero glaring light-mode hexes
+        root_html = hub_server.dispatch_request("GET", "/")["data"]["html"]
+        wb_sec = _re.search(r'<main id="view-workbench"[\s\S]*?</main>', root_html)
+        self.assertIsNotNone(wb_sec)
+        wb_glare = _re.findall(
+            r"(?:bg-white|#(?!18181B|121215)(?:F4F9FF|BFDBFE|1E3A8A|EBF8FF|FAF7F2|E6DEC8|E6F4F0))",
+            wb_sec.group(0),
+            flags=_re.IGNORECASE,
+        )
+        self.assertEqual(wb_glare, [], f"Found hardcoded light-mode colors in #view-workbench: {wb_glare}")
 
 
 if __name__ == "__main__":

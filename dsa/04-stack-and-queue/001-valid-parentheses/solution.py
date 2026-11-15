@@ -1,16 +1,17 @@
+"""Problem #22: Valid Parentheses (Medium)"""
+from typing import List, Optional, Dict
+from collections import Counter, defaultdict, deque, OrderedDict
+from bisect import bisect_left
+import heapq
+import threading
+from utils.dsa_helpers import ListNode, TreeNode, RandomNode, GraphNode
+
+
 class Solution:
     def isValid(self, s: str) -> bool:
-        # TODO: Implement your solution here
-        return False
+        raise NotImplementedError("Write your solution here")
 
 
 if __name__ == "__main__":
-    sol = Solution()
-
-    assert sol.isValid("()") is True, "Test 1 Failed"
-    assert sol.isValid("()[]{}") is True, "Test 2 Failed"
-    assert sol.isValid("(]") is False, "Test 3 Failed"
-    assert sol.isValid("([)]") is False, "Test 4 Failed"
-    assert sol.isValid("{[]}") is True, "Test 5 Failed"
-
-    print("All 5 Python test cases passed!")
+    # Run test cases & Code Coach via Coding Studio (`▶ Run & Coach`) or `./run.sh test valid-parentheses`
+    print("Starter ready for #22 Valid Parentheses.")

@@ -1,0 +1,124 @@
+{
+  "id": 35,
+  "slug": "001-reverse-linked-list",
+  "problemSlug": "reverse-linked-list",
+  "title": "035. Reverse Linked List",
+  "chapter": "Ch 6: Linked List",
+  "difficulty": "Medium",
+  "methodName": "reverseList",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {
+    "head": "ListNode"
+  },
+  "returnType": "ListNode",
+  "javaSig": "public ListNode reverseList(ListNode head)",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(1)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given the `head` of a singly linked list, reverse the list in-place and return the new head.",
+  "invariant": "nxt = curr.next; curr.next = prev; prev, curr = curr, nxt",
+  "firstLine": "Set `prev, curr = None, head` and loop `while curr:`.",
+  "steps": [
+    "Initialize `prev = None` and `curr = head`",
+    "Save `nxt = curr.next`, flip `curr.next = prev`",
+    "Advance `prev = curr` and `curr = nxt`; return `prev`"
+  ],
+  "pythonOutlineComments": "# Step 1: Initialize `prev = None` and `curr = head`\n# Step 2: Save `nxt = curr.next`, flip `curr.next = prev`\n# Step 3: Advance `prev = curr` and `curr = nxt`; return `prev`",
+  "javaOutlineComments": "// Step 1: Initialize `prev = None` and `curr = head`\n// Step 2: Save `nxt = curr.next`, flip `curr.next = prev`\n// Step 3: Advance `prev = curr` and `curr = nxt`; return `prev`",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Set `prev, curr = None, head` and loop `while curr:`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `nxt = curr.next; curr.next = prev; prev, curr = curr, nxt`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Initialize `prev = None` and `curr = head` -> Step 2: Save `nxt = curr.next`, flip `curr.next = prev` -> Step 3: Advance `prev = curr` and `curr = nxt`; return `prev`"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N) time and O(1) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "head": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "expected": [
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "head": [
+          1,
+          2
+        ]
+      },
+      "expected": [
+        2,
+        1
+      ],
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "head": []
+      },
+      "expected": [],
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "head": [
+          1
+        ]
+      },
+      "expected": [
+        1
+      ],
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "head": [
+          -1,
+          0,
+          1
+        ]
+      },
+      "expected": [
+        1,
+        0,
+        -1
+      ],
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

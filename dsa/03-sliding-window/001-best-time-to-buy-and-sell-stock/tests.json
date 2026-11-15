@@ -1,0 +1,117 @@
+{
+  "id": 16,
+  "slug": "001-best-time-to-buy-and-sell-stock",
+  "problemSlug": "best-time-to-buy-and-sell-stock",
+  "title": "016. Best Time To Buy And Sell Stock",
+  "chapter": "Ch 3: Sliding Window",
+  "difficulty": "Medium",
+  "methodName": "maxProfit",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int maxProfit(int[] prices)",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(1)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given `prices[i]` of a stock on day `i`, return the maximum profit from buying on one day and selling on a later day (`0` if none).",
+  "invariant": "min_price = min(min_price, p); best = max(best, p - min_price)",
+  "firstLine": "Set `min_price = float('inf')` and `best = 0`.",
+  "steps": [
+    "Track `min_price = float('inf')` and `best = 0`",
+    "Loop over `p` in `prices`: update `min_price = min(min_price, p)`",
+    "Update `best = max(best, p - min_price)` and return `best`"
+  ],
+  "pythonOutlineComments": "# Step 1: Track `min_price = float('inf')` and `best = 0`\n# Step 2: Loop over `p` in `prices`: update `min_price = min(min_price, p)`\n# Step 3: Update `best = max(best, p - min_price)` and return `best`",
+  "javaOutlineComments": "// Step 1: Track `min_price = float('inf')` and `best = 0`\n// Step 2: Loop over `p` in `prices`: update `min_price = min(min_price, p)`\n// Step 3: Update `best = max(best, p - min_price)` and return `best`",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Set `min_price = float('inf')` and `best = 0`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `min_price = min(min_price, p); best = max(best, p - min_price)`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Track `min_price = float('inf')` and `best = 0` -> Step 2: Loop over `p` in `prices`: update `min_price = min(min_price, p)` -> Step 3: Update `best = max(best, p - min_price)` and return `best`"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N) time and O(1) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "prices": [
+          7,
+          1,
+          5,
+          3,
+          6,
+          4
+        ]
+      },
+      "expected": 5,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "prices": [
+          7,
+          6,
+          4,
+          3,
+          1
+        ]
+      },
+      "expected": 0,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "prices": [
+          5
+        ]
+      },
+      "expected": 0,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "prices": [
+          2,
+          4,
+          1
+        ]
+      },
+      "expected": 2,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "prices": [
+          9,
+          7,
+          4,
+          3,
+          1
+        ]
+      },
+      "expected": 0,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

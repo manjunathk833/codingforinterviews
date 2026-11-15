@@ -1,21 +1,19 @@
 import java.util.*;
+import utils.ListNode;
+import utils.TreeNode;
+import utils.RandomNode;
+import utils.GraphNode;
 
+/**
+ * Problem #13: 3Sum (Medium)
+ */
 public class Solution {
 
     public List<List<Integer>> threeSum(int[] nums) {
-        // TODO: Implement your solution here
-        return new ArrayList<>();
+        throw new UnsupportedOperationException("Write your solution here");
     }
 
     public static void main(String[] args) {
-        Solution sol = new Solution();
-
-        List<List<Integer>> res1 = sol.threeSum(new int[] { -1, 0, 1, 2, -1, -4 });
-        assert res1.size() == 2 : "Test 1 Failed: Expected 2 triplets, got " + res1.size();
-
-        List<List<Integer>> res2 = sol.threeSum(new int[] { 0, 1, 1 });
-        assert res2.isEmpty() : "Test 2 Failed";
-
-        System.out.println("All 2 Java test cases passed!");
+        System.out.println("Java starter compiled cleanly for 3Sum.");
     }
 }

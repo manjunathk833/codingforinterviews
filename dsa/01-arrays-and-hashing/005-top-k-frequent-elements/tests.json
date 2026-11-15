@@ -1,56 +1,144 @@
 {
+  "id": 5,
   "slug": "005-top-k-frequent-elements",
+  "problemSlug": "top-k-frequent-elements",
   "title": "005. Top K Frequent Elements",
-  "chapter": "Ch 01: Arrays & Hashing",
+  "chapter": "Ch 1: Arrays And Hashing",
   "difficulty": "Medium",
   "methodName": "topKFrequent",
-  "compareMode": "sorted_int_array",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "unordered",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int[] topKFrequent(int[] nums, int k)",
   "timeComplexity": "O(N)",
   "spaceComplexity": "O(N)",
   "visualizerId": "dsa-group-anagrams",
-  "prompt": "Given an integer array `nums` and an integer `k`, return the `k` most frequent elements. You may return the answer in any order. Achieve `O(N)` time using Bucket Sort by frequency.",
-  "invariant": "freq_buckets[count].append(num)  →  scan buckets from N down to 1",
+  "prompt": "Given an integer array `nums` and an integer `k`, return the `k` most frequent elements in any order.",
+  "invariant": "freq_buckets[count].append(num) -> scan from N down to 1",
+  "firstLine": "Count frequencies with `freq = Counter(nums)` and create `buckets = [[] for _ in range(len(nums) + 1)]`.",
+  "steps": [
+    "Count each number's frequency in `freq = {}`",
+    "Place each `num` into `buckets[count]` where index = frequency (`0..len(nums)`)",
+    "Walk `buckets` backward from highest frequency and collect until `len(res) == k`"
+  ],
+  "pythonOutlineComments": "# Step 1: Count each number's frequency in `freq = {}`\n# Step 2: Place each `num` into `buckets[count]` where index = frequency (`0..len(nums)`)\n# Step 3: Walk `buckets` backward from highest frequency and collect until `len(res) == k`",
+  "javaOutlineComments": "// Step 1: Count each number's frequency in `freq = {}`\n// Step 2: Place each `num` into `buckets[count]` where index = frequency (`0..len(nums)`)\n// Step 3: Walk `buckets` backward from highest frequency and collect until `len(res) == k`",
   "hints": [
     {
       "tier": 1,
-      "title": "Mental Model & Intuition",
-      "content": "A heap takes `O(N log K)`. Notice that no element's frequency can exceed `N = len(nums)`. Create `N + 1` buckets where index `f` stores all numbers that appeared exactly `f` times!"
+      "title": "First-Line Nudge",
+      "content": "Count frequencies with `freq = Counter(nums)` and create `buckets = [[] for _ in range(len(nums) + 1)]`."
     },
     {
       "tier": 2,
-      "title": "Pattern Identification",
-      "content": "Hash Map frequency count + Bounded Bucket Sort (`buckets = [[] for _ in range(len(nums) + 1)]`)."
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `freq_buckets[count].append(num) -> scan from N down to 1`"
     },
     {
       "tier": 3,
-      "title": "Algorithmic Invariant",
-      "content": "After populating `buckets[freq].append(num)`, iterate `freq` backwards from `len(nums)` down to `1`, collecting numbers until `len(res) == k`."
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Count each number's frequency in `freq = {}` -> Step 2: Place each `num` into `buckets[count]` where index = frequency (`0..len(nums)`) -> Step 3: Walk `buckets` backward from highest frequency and collect until `len(res) == k`"
     },
     {
       "tier": 4,
-      "title": "Edge Cases & Scaffolding",
-      "content": "When `len(nums) == 1` and `k == 1`, `freq` is `1`, so `buckets` must have length `len(nums) + 1` (indices `0..N`)."
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N) time and O(N) space. Watch empty inputs, single elements, and duplicates."
     }
   ],
   "cases": [
     {
-      "id": "case-1",
-      "label": "Case 1",
       "input": {
-        "nums": [1, 1, 1, 2, 2, 3],
+        "nums": [
+          1,
+          1,
+          1,
+          2,
+          2,
+          3
+        ],
         "k": 2
       },
-      "expected": [1, 2]
+      "expected": [
+        1,
+        2
+      ],
+      "id": "case-1",
+      "label": "Case 1"
     },
     {
-      "id": "case-2",
-      "label": "Case 2",
       "input": {
-        "nums": [1],
+        "nums": [
+          1
+        ],
         "k": 1
       },
-      "expected": [1]
+      "expected": [
+        1
+      ],
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "nums": [
+          4,
+          4,
+          1,
+          2,
+          2,
+          2,
+          3
+        ],
+        "k": 2
+      },
+      "expected": [
+        2,
+        4
+      ],
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "nums": [
+          4,
+          1,
+          -1,
+          2,
+          -1,
+          2,
+          3
+        ],
+        "k": 2
+      },
+      "expected": [
+        -1,
+        2
+      ],
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "nums": [
+          5,
+          5,
+          5,
+          6,
+          6,
+          7
+        ],
+        "k": 3
+      },
+      "expected": [
+        5,
+        6,
+        7
+      ],
+      "id": "case-5",
+      "label": "Case 5"
     }
   ]
 }
-

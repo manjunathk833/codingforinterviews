@@ -1,54 +1,138 @@
 {
+  "id": 6,
   "slug": "006-product-of-array-except-self",
-  "title": "006. Product of Array Except Self",
-  "chapter": "Ch 01: Arrays & Hashing",
+  "problemSlug": "product-of-array-except-self",
+  "title": "006. Product Of Array Except Self",
+  "chapter": "Ch 1: Arrays And Hashing",
   "difficulty": "Medium",
   "methodName": "productExceptSelf",
+  "className": "Solution",
+  "execMode": "solution_method",
   "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int[] productExceptSelf(int[] nums)",
   "timeComplexity": "O(N)",
-  "spaceComplexity": "O(1) auxiliary",
-  "visualizerId": "dsa-two-sum",
-  "prompt": "Given an integer array `nums`, return an array `answer` such that `answer[i]` is equal to the product of all the elements of `nums` except `nums[i]`. You must write an algorithm that runs in `O(N)` time and without using the division operation.",
-  "invariant": "answer[i] = prefix_product[0..i-1] * suffix_product[i+1..N-1]",
+  "spaceComplexity": "O(1)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given `nums`, return an array `res` where `res[i]` equals the product of all elements of `nums` except `nums[i]`, without using division.",
+  "invariant": "res[i] = prefix_prod_left[i] * suffix_prod_right[i]",
+  "firstLine": "Allocate `res = [1] * len(nums)` and `prefix = 1`.",
+  "steps": [
+    "Create `res = [1] * len(nums)` and pass left-to-right storing running `prefix` product",
+    "Initialize `suffix = 1` and pass right-to-left multiplying `res[i] *= suffix`",
+    "Update `suffix *= nums[i]` each step and return `res`"
+  ],
+  "pythonOutlineComments": "# Step 1: Create `res = [1] * len(nums)` and pass left-to-right storing running `prefix` product\n# Step 2: Initialize `suffix = 1` and pass right-to-left multiplying `res[i] *= suffix`\n# Step 3: Update `suffix *= nums[i]` each step and return `res`",
+  "javaOutlineComments": "// Step 1: Create `res = [1] * len(nums)` and pass left-to-right storing running `prefix` product\n// Step 2: Initialize `suffix = 1` and pass right-to-left multiplying `res[i] *= suffix`\n// Step 3: Update `suffix *= nums[i]` each step and return `res`",
   "hints": [
     {
       "tier": 1,
-      "title": "Mental Model & Intuition",
-      "content": "Every index `i` needs the product of everything to its left multiplied by the product of everything to its right."
+      "title": "First-Line Nudge",
+      "content": "Allocate `res = [1] * len(nums)` and `prefix = 1`."
     },
     {
       "tier": 2,
-      "title": "Pattern Identification",
-      "content": "Two-pass Prefix & Suffix running products stored directly inside the output array `res` for `O(1)` extra space."
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `res[i] = prefix_prod_left[i] * suffix_prod_right[i]`"
     },
     {
       "tier": 3,
-      "title": "Algorithmic Invariant",
-      "content": "Pass 1 (Left → Right): store running `prefix` in `res[i]`, then `prefix *= nums[i]`. Pass 2 (Right → Left): multiply `res[i] *= suffix`, then `suffix *= nums[i]`."
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Create `res = [1] * len(nums)` and pass left-to-right storing running `prefix` product -> Step 2: Initialize `suffix = 1` and pass right-to-left multiplying `res[i] *= suffix` -> Step 3: Update `suffix *= nums[i]` each step and return `res`"
     },
     {
       "tier": 4,
-      "title": "Edge Cases & Scaffolding",
-      "content": "Test arrays containing a single `0` (only the zero's position is non-zero) and arrays with two `0`s (all outputs become `0`)."
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N) time and O(1) space. Watch empty inputs, single elements, and duplicates."
     }
   ],
   "cases": [
     {
-      "id": "case-1",
-      "label": "Case 1",
       "input": {
-        "nums": [1, 2, 3, 4]
+        "nums": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
-      "expected": [24, 12, 8, 6]
+      "expected": [
+        24,
+        12,
+        8,
+        6
+      ],
+      "id": "case-1",
+      "label": "Case 1"
     },
     {
-      "id": "case-2",
-      "label": "Case 2",
       "input": {
-        "nums": [-1, 1, 0, -3, 3]
+        "nums": [
+          -1,
+          1,
+          0,
+          -3,
+          3
+        ]
       },
-      "expected": [0, 0, 9, 0, 0]
+      "expected": [
+        0,
+        0,
+        9,
+        0,
+        0
+      ],
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "nums": [
+          2,
+          3
+        ]
+      },
+      "expected": [
+        3,
+        2
+      ],
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "nums": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "expected": [
+        120,
+        60,
+        40,
+        30,
+        24
+      ],
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "nums": [
+          0,
+          0
+        ]
+      },
+      "expected": [
+        0,
+        0
+      ],
+      "id": "case-5",
+      "label": "Case 5"
     }
   ]
 }
-
