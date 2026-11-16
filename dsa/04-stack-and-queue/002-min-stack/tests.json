@@ -1,0 +1,232 @@
+{
+  "id": 23,
+  "slug": "002-min-stack",
+  "problemSlug": "min-stack",
+  "title": "023. Min Stack",
+  "chapter": "Ch 4: Stack And Queue",
+  "difficulty": "Medium",
+  "methodName": "getMin",
+  "className": "MinStack",
+  "execMode": "class_ops",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int getMin()",
+  "timeComplexity": "O(1)",
+  "spaceComplexity": "O(N)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Design a `MinStack` supporting `push`, `pop`, `top`, and retrieving `getMin` in constant `O(1)` time.",
+  "invariant": "stack stores (val, current_min_so_far) pairs",
+  "firstLine": "In `__init__`, set `self.stack = []`, and on `push(val)` push `(val, min(val, self.stack[-1][1]))`.",
+  "steps": [
+    "Store `self.stack = []` of `(val, min_so_far)` tuples",
+    "On `push(val)`, compute `cur_min = val if not self.stack else min(val, self.stack[-1][1])`",
+    "Return `self.stack[-1][0]` for `top()` and `self.stack[-1][1]` for `getMin()`"
+  ],
+  "pythonOutlineComments": "# Step 1: Store `self.stack = []` of `(val, min_so_far)` tuples\n# Step 2: On `push(val)`, compute `cur_min = val if not self.stack else min(val, self.stack[-1][1])`\n# Step 3: Return `self.stack[-1][0]` for `top()` and `self.stack[-1][1]` for `getMin()`",
+  "javaOutlineComments": "// Step 1: Store `self.stack = []` of `(val, min_so_far)` tuples\n// Step 2: On `push(val)`, compute `cur_min = val if not self.stack else min(val, self.stack[-1][1])`\n// Step 3: Return `self.stack[-1][0]` for `top()` and `self.stack[-1][1]` for `getMin()`",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "In `__init__`, set `self.stack = []`, and on `push(val)` push `(val, min(val, self.stack[-1][1]))`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `stack stores (val, current_min_so_far) pairs`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Store `self.stack = []` of `(val, min_so_far)` tuples -> Step 2: On `push(val)`, compute `cur_min = val if not self.stack else min(val, self.stack[-1][1])` -> Step 3: Return `self.stack[-1][0]` for `top()` and `self.stack[-1][1]` for `getMin()`"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(1) time and O(N) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "ops": [
+          "MinStack",
+          "push",
+          "push",
+          "push",
+          "getMin",
+          "pop",
+          "top",
+          "getMin"
+        ],
+        "args": [
+          [],
+          [
+            -2
+          ],
+          [
+            0
+          ],
+          [
+            -3
+          ],
+          [],
+          [],
+          [],
+          []
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        null,
+        null,
+        -3,
+        null,
+        0,
+        -2
+      ],
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "ops": [
+          "MinStack",
+          "push",
+          "push",
+          "getMin",
+          "pop",
+          "getMin"
+        ],
+        "args": [
+          [],
+          [
+            2
+          ],
+          [
+            2
+          ],
+          [],
+          [],
+          []
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        null,
+        2,
+        null,
+        2
+      ],
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "ops": [
+          "MinStack",
+          "push",
+          "top",
+          "getMin"
+        ],
+        "args": [
+          [],
+          [
+            -10
+          ],
+          [],
+          []
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        -10,
+        -10
+      ],
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "ops": [
+          "MinStack",
+          "push",
+          "push",
+          "push",
+          "getMin",
+          "pop",
+          "top",
+          "getMin"
+        ],
+        "args": [
+          [],
+          [
+            5
+          ],
+          [
+            1
+          ],
+          [
+            3
+          ],
+          [],
+          [],
+          [],
+          []
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        null,
+        null,
+        1,
+        null,
+        1,
+        1
+      ],
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "ops": [
+          "MinStack",
+          "push",
+          "push",
+          "pop",
+          "push",
+          "getMin"
+        ],
+        "args": [
+          [],
+          [
+            0
+          ],
+          [
+            -5
+          ],
+          [],
+          [
+            -2
+          ],
+          []
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        -2
+      ],
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

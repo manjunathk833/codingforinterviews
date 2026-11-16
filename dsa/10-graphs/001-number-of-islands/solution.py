@@ -1,29 +1,17 @@
-from typing import List
+"""Problem #76: Number Of Islands (Medium)"""
+from typing import List, Optional, Dict
+from collections import Counter, defaultdict, deque, OrderedDict
+from bisect import bisect_left
+import heapq
+import threading
+from utils.dsa_helpers import ListNode, TreeNode, RandomNode, GraphNode
 
 
 class Solution:
     def numIslands(self, grid: List[List[str]]) -> int:
-        # TODO: Implement your solution here
-        return 0
+        raise NotImplementedError("Write your solution here")
 
 
 if __name__ == "__main__":
-    sol = Solution()
-
-    grid1 = [
-        ["1", "1", "1", "1", "0"],
-        ["1", "1", "0", "1", "0"],
-        ["1", "1", "0", "0", "0"],
-        ["0", "0", "0", "0", "0"],
-    ]
-    assert sol.numIslands(grid1) == 1, "Test 1 Failed"
-
-    grid2 = [
-        ["1", "1", "0", "0", "0"],
-        ["1", "1", "0", "0", "0"],
-        ["0", "0", "1", "0", "0"],
-        ["0", "0", "0", "1", "1"],
-    ]
-    assert sol.numIslands(grid2) == 3, "Test 2 Failed"
-
-    print("All 2 Python test cases passed!")
+    # Run test cases & Code Coach via Coding Studio (`▶ Run & Coach`) or `./run.sh test number-of-islands`
+    print("Starter ready for #76 Number Of Islands.")

@@ -1,0 +1,149 @@
+{
+  "id": 51,
+  "slug": "003-lowest-common-ancestor-of-bst",
+  "problemSlug": "lowest-common-ancestor-of-a-binary-search-tree",
+  "title": "051. Lowest Common Ancestor Of A Binary Search Tree",
+  "chapter": "Ch 7: Trees And Bst",
+  "difficulty": "Medium",
+  "methodName": "lowestCommonAncestor",
+  "className": "Solution",
+  "execMode": "bst_lca",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q)",
+  "timeComplexity": "O(H)",
+  "spaceComplexity": "O(1)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given a Binary Search Tree `root` and nodes `p` and `q`, return their Lowest Common Ancestor node.",
+  "invariant": "Split point where min(p,q) <= curr.val <= max(p,q) is the LCA",
+  "firstLine": "Set `curr = root` and walk down while both `p.val` and `q.val` lie on the same side of `curr.val`.",
+  "steps": [
+    "Start `curr = root`",
+    "If `p.val < curr.val and q.val < curr.val`, move `curr = curr.left`; elif both `> curr.val`, move `curr = curr.right`",
+    "Otherwise `curr` splits `p` and `q` (or equals one of them) — return `curr`"
+  ],
+  "pythonOutlineComments": "# Step 1: Start `curr = root`\n# Step 2: If `p.val < curr.val and q.val < curr.val`, move `curr = curr.left`; elif both `> curr.val`, move `curr = curr.right`\n# Step 3: Otherwise `curr` splits `p` and `q` (or equals one of them) — return `curr`",
+  "javaOutlineComments": "// Step 1: Start `curr = root`\n// Step 2: If `p.val < curr.val and q.val < curr.val`, move `curr = curr.left`; elif both `> curr.val`, move `curr = curr.right`\n// Step 3: Otherwise `curr` splits `p` and `q` (or equals one of them) — return `curr`",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Set `curr = root` and walk down while both `p.val` and `q.val` lie on the same side of `curr.val`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `Split point where min(p,q) <= curr.val <= max(p,q) is the LCA`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Start `curr = root` -> Step 2: If `p.val < curr.val and q.val < curr.val`, move `curr = curr.left`; elif both `> curr.val`, move `curr = curr.right` -> Step 3: Otherwise `curr` splits `p` and `q` (or equals one of them) — return `curr`"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(H) time and O(1) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "root": [
+          6,
+          2,
+          8,
+          0,
+          4,
+          7,
+          9,
+          null,
+          null,
+          3,
+          5
+        ],
+        "p": 2,
+        "q": 8
+      },
+      "expected": 6,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "root": [
+          6,
+          2,
+          8,
+          0,
+          4,
+          7,
+          9,
+          null,
+          null,
+          3,
+          5
+        ],
+        "p": 2,
+        "q": 4
+      },
+      "expected": 2,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "root": [
+          2,
+          1
+        ],
+        "p": 2,
+        "q": 1
+      },
+      "expected": 2,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "root": [
+          6,
+          2,
+          8,
+          0,
+          4,
+          7,
+          9,
+          null,
+          null,
+          3,
+          5
+        ],
+        "p": 3,
+        "q": 5
+      },
+      "expected": 4,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "root": [
+          6,
+          2,
+          8,
+          0,
+          4,
+          7,
+          9
+        ],
+        "p": 7,
+        "q": 9
+      },
+      "expected": 8,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

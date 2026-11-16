@@ -1,0 +1,115 @@
+{
+  "id": 95,
+  "slug": "002-coin-change",
+  "problemSlug": "coin-change",
+  "title": "095. Coin Change",
+  "chapter": "Ch 11: Dynamic Programming",
+  "difficulty": "Medium",
+  "methodName": "coinChange",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int coinChange(int[] coins, int amount)",
+  "timeComplexity": "O(amount * len(coins))",
+  "spaceComplexity": "O(amount)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given `coins` denominations and `amount`, return the fewest coins needed to make `amount` (`-1` if impossible).",
+  "invariant": "dp[a] = min(dp[a], 1 + dp[a - c]) with sentinel amount + 1",
+  "firstLine": "Create `dp = [amount + 1] * (amount + 1)` with base case `dp[0] = 0`.",
+  "steps": [
+    "Allocate `dp = [amount + 1] * (amount + 1)` and set `dp[0] = 0`",
+    "For `a` from `1` to `amount` and each `c` in `coins`: if `a >= c`, set `dp[a] = min(dp[a], 1 + dp[a - c])`",
+    "Return `dp[amount]` if `<= amount` else `-1`"
+  ],
+  "pythonOutlineComments": "# Step 1: Allocate `dp = [amount + 1] * (amount + 1)` and set `dp[0] = 0`\n# Step 2: For `a` from `1` to `amount` and each `c` in `coins`: if `a >= c`, set `dp[a] = min(dp[a], 1 + dp[a - c])`\n# Step 3: Return `dp[amount]` if `<= amount` else `-1`",
+  "javaOutlineComments": "// Step 1: Allocate `dp = [amount + 1] * (amount + 1)` and set `dp[0] = 0`\n// Step 2: For `a` from `1` to `amount` and each `c` in `coins`: if `a >= c`, set `dp[a] = min(dp[a], 1 + dp[a - c])`\n// Step 3: Return `dp[amount]` if `<= amount` else `-1`",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Create `dp = [amount + 1] * (amount + 1)` with base case `dp[0] = 0`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `dp[a] = min(dp[a], 1 + dp[a - c]) with sentinel amount + 1`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Allocate `dp = [amount + 1] * (amount + 1)` and set `dp[0] = 0` -> Step 2: For `a` from `1` to `amount` and each `c` in `coins`: if `a >= c`, set `dp[a] = min(dp[a], 1 + dp[a - c])` -> Step 3: Return `dp[amount]` if `<= amount` else `-1`"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(amount * len(coins)) time and O(amount) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "coins": [
+          1,
+          2,
+          5
+        ],
+        "amount": 11
+      },
+      "expected": 3,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "coins": [
+          2
+        ],
+        "amount": 3
+      },
+      "expected": -1,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "coins": [
+          1
+        ],
+        "amount": 0
+      },
+      "expected": 0,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "coins": [
+          2,
+          5,
+          10,
+          1
+        ],
+        "amount": 27
+      },
+      "expected": 4,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "coins": [
+          186,
+          419,
+          83,
+          408
+        ],
+        "amount": 0
+      },
+      "expected": 0,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

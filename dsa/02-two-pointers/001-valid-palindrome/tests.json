@@ -1,0 +1,92 @@
+{
+  "id": 11,
+  "slug": "001-valid-palindrome",
+  "problemSlug": "valid-palindrome",
+  "title": "011. Valid Palindrome",
+  "chapter": "Ch 2: Two Pointers",
+  "difficulty": "Medium",
+  "methodName": "isPalindrome",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public boolean isPalindrome(String s)",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(1)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given a string `s`, return `True` if it reads the same forward and backward after converting to lowercase and ignoring non-alphanumeric characters.",
+  "invariant": "left < right skipping non-alnum; s[left].lower() == s[right].lower()",
+  "firstLine": "Set `left, right = 0, len(s) - 1` and loop `while left < right:`.",
+  "steps": [
+    "Initialize `left = 0` and `right = len(s) - 1`",
+    "Skip non-alphanumeric chars using `.isalnum()` on both sides while `left < right`",
+    "Compare `s[left].lower() == s[right].lower()`; return `False` on mismatch, else move inward"
+  ],
+  "pythonOutlineComments": "# Step 1: Initialize `left = 0` and `right = len(s) - 1`\n# Step 2: Skip non-alphanumeric chars using `.isalnum()` on both sides while `left < right`\n# Step 3: Compare `s[left].lower() == s[right].lower()`; return `False` on mismatch, else move inward",
+  "javaOutlineComments": "// Step 1: Initialize `left = 0` and `right = len(s) - 1`\n// Step 2: Skip non-alphanumeric chars using `.isalnum()` on both sides while `left < right`\n// Step 3: Compare `s[left].lower() == s[right].lower()`; return `False` on mismatch, else move inward",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Set `left, right = 0, len(s) - 1` and loop `while left < right:`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `left < right skipping non-alnum; s[left].lower() == s[right].lower()`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Initialize `left = 0` and `right = len(s) - 1` -> Step 2: Skip non-alphanumeric chars using `.isalnum()` on both sides while `left < right` -> Step 3: Compare `s[left].lower() == s[right].lower()`; return `False` on mismatch, else move inward"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N) time and O(1) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "s": "A man, a plan, a canal: Panama"
+      },
+      "expected": true,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "s": "race a car"
+      },
+      "expected": false,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "s": " "
+      },
+      "expected": true,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "s": "0P"
+      },
+      "expected": false,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "s": ".,"
+      },
+      "expected": true,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

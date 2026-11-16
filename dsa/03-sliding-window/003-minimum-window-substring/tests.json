@@ -1,0 +1,97 @@
+{
+  "id": 20,
+  "slug": "003-minimum-window-substring",
+  "problemSlug": "minimum-window-substring",
+  "title": "020. Minimum Window Substring",
+  "chapter": "Ch 3: Sliding Window",
+  "difficulty": "Medium",
+  "methodName": "minWindow",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public String minWindow(String s, String t)",
+  "timeComplexity": "O(N + M)",
+  "spaceComplexity": "O(1)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given strings `s` and `t`, return the shortest substring of `s` that contains every character of `t` (including duplicates), or `\"\"` if none exists.",
+  "invariant": "have == need_unique -> record min span and shrink left",
+  "firstLine": "Count `need = Counter(t)`, track `win = {}`, `have = 0`, `left = 0`, and `best = (-1, -1, float('inf'))`.",
+  "steps": [
+    "Build `need = Counter(t)` and `required = len(need)`",
+    "Expand `right`: increment `win[ch]` and increment `have` when `win[ch] == need[ch]`",
+    "While `have == required`, update best window, shrink `left`, and decrement `have` if `win[s[left]] < need[s[left]]`"
+  ],
+  "pythonOutlineComments": "# Step 1: Build `need = Counter(t)` and `required = len(need)`\n# Step 2: Expand `right`: increment `win[ch]` and increment `have` when `win[ch] == need[ch]`\n# Step 3: While `have == required`, update best window, shrink `left`, and decrement `have` if `win[s[left]] < need[s[left]]`",
+  "javaOutlineComments": "// Step 1: Build `need = Counter(t)` and `required = len(need)`\n// Step 2: Expand `right`: increment `win[ch]` and increment `have` when `win[ch] == need[ch]`\n// Step 3: While `have == required`, update best window, shrink `left`, and decrement `have` if `win[s[left]] < need[s[left]]`",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Count `need = Counter(t)`, track `win = {}`, `have = 0`, `left = 0`, and `best = (-1, -1, float('inf'))`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `have == need_unique -> record min span and shrink left`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Build `need = Counter(t)` and `required = len(need)` -> Step 2: Expand `right`: increment `win[ch]` and increment `have` when `win[ch] == need[ch]` -> Step 3: While `have == required`, update best window, shrink `left`, and decrement `have` if `win[s[left]] < need[s[left]]`"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N + M) time and O(1) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "s": "ADOBECODEBANC",
+        "t": "ABC"
+      },
+      "expected": "BANC",
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "s": "a",
+        "t": "a"
+      },
+      "expected": "a",
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "s": "a",
+        "t": "aa"
+      },
+      "expected": "",
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "s": "a",
+        "t": "b"
+      },
+      "expected": "",
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "s": "ab",
+        "t": "b"
+      },
+      "expected": "b",
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

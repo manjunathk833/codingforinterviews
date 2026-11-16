@@ -1,0 +1,126 @@
+{
+  "id": 63,
+  "slug": "001-kth-largest-element-in-an-array",
+  "problemSlug": "kth-largest-element-in-an-array",
+  "title": "063. Kth Largest Element In An Array",
+  "chapter": "Ch 8: Heaps Priority Queue",
+  "difficulty": "Medium",
+  "methodName": "findKthLargest",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int findKthLargest(int[] nums, int k)",
+  "timeComplexity": "O(N log K)",
+  "spaceComplexity": "O(K)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given integer array `nums` and `k`, return the `k`-th largest element without sorting the entire array.",
+  "invariant": "Min-heap of top K elements -> heap[0] is K-th largest",
+  "firstLine": "Maintain a min-heap `heap = []` of size `k`.",
+  "steps": [
+    "Initialize `heap = []`",
+    "For `x` in `nums`: `heappush(heap, x)` and if `len(heap) > k`, `heappop(heap)`",
+    "Return `heap[0]`"
+  ],
+  "pythonOutlineComments": "# Step 1: Initialize `heap = []`\n# Step 2: For `x` in `nums`: `heappush(heap, x)` and if `len(heap) > k`, `heappop(heap)`\n# Step 3: Return `heap[0]`",
+  "javaOutlineComments": "// Step 1: Initialize `heap = []`\n// Step 2: For `x` in `nums`: `heappush(heap, x)` and if `len(heap) > k`, `heappop(heap)`\n// Step 3: Return `heap[0]`",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Maintain a min-heap `heap = []` of size `k`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `Min-heap of top K elements -> heap[0] is K-th largest`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Initialize `heap = []` -> Step 2: For `x` in `nums`: `heappush(heap, x)` and if `len(heap) > k`, `heappop(heap)` -> Step 3: Return `heap[0]`"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N log K) time and O(K) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "nums": [
+          3,
+          2,
+          1,
+          5,
+          6,
+          4
+        ],
+        "k": 2
+      },
+      "expected": 5,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "nums": [
+          3,
+          2,
+          3,
+          1,
+          2,
+          4,
+          5,
+          5,
+          6
+        ],
+        "k": 4
+      },
+      "expected": 4,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "nums": [
+          1
+        ],
+        "k": 1
+      },
+      "expected": 1,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "nums": [
+          -1,
+          -2,
+          -3,
+          -4
+        ],
+        "k": 2
+      },
+      "expected": -2,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "nums": [
+          5,
+          5,
+          5,
+          5
+        ],
+        "k": 3
+      },
+      "expected": 5,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

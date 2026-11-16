@@ -1,3 +1,8 @@
+---
+trigger: glob
+globs: "knowledgebase/**, tools/safety/pedagogy_lint.py, tools/safety/snippet_verify.py"
+description: "Source-grounded 5-step pedagogy, COURSE_MANIFEST.json DAG, and snippet verification rules for Textbook Courses 01-12."
+---
 # Mandatory Source-Grounded Curriculum, 5-Step Hiring Mastery, Udemy Continuity & New-Course SOP
 
 Whenever authoring, editing, reviewing, or adding any **Textbook Course** (`knowledgebase/**/*.md`), you MUST strictly follow these 5 laws so a **complete newcomer (Absolute Zero)** gains 100% practitioner completeness and a **Senior/Staff Engineer** gains Big Tech production fluency and crisp interview command across **Guided Mode**, **Full Scroll**, and **Single-Page Master Compendium Mode**.

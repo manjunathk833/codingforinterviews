@@ -1,7 +1,6 @@
 ---
-description: Two-phase Sandbox Prototyping & Live Verification Agent. Executes Pre-Plan Sandbox Dry Runs in scratch/ (including Gemini UI mockups & HTML prototypes) to optimize plans before user approval, and executes Post-Implementation 5-Checkpoint Live Browser, SQLite DB, Service API, and Smart CI audits after user approval.
-subagent: true
-model: inherit
+name: dry_run_agent
+description: Isolated Verification & Audit Subagent. Runs 3-Layer Post-Implementation Verification (HTTP API contracts, SQLite/disk integrity, Headless Playwright DOM checks on 127.0.0.1:8090) and Smart CI in a separate context window, returning a concise pass/fail summary.
 ---
 
 # Dry Run & Live Verification Agent (`dry_run_agent`)

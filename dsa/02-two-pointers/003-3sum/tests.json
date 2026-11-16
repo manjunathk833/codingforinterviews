@@ -1,0 +1,152 @@
+{
+  "id": 13,
+  "slug": "003-3sum",
+  "problemSlug": "3sum",
+  "title": "013. 3Sum",
+  "chapter": "Ch 2: Two Pointers",
+  "difficulty": "Medium",
+  "methodName": "threeSum",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "unordered",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public List<List<Integer>> threeSum(int[] nums)",
+  "timeComplexity": "O(N^2)",
+  "spaceComplexity": "O(1)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given an integer array `nums`, return all unique triplets `[nums[i], nums[j], nums[k]]` whose sum is `0`.",
+  "invariant": "Sort nums; fix nums[i] (skipping dups) + two-pointer l, r",
+  "firstLine": "Call `nums.sort()`, create `res = []`, and loop `i` over `range(len(nums))` skipping duplicate anchors.",
+  "steps": [
+    "Sort `nums` ascending and initialize `res = []`",
+    "Loop `i`: skip if `i > 0 and nums[i] == nums[i - 1]`, then set `l, r = i + 1, len(nums) - 1`",
+    "Converge `l` and `r` toward `-nums[i]`, recording triplets and skipping duplicate `nums[l]`"
+  ],
+  "pythonOutlineComments": "# Step 1: Sort `nums` ascending and initialize `res = []`\n# Step 2: Loop `i`: skip if `i > 0 and nums[i] == nums[i - 1]`, then set `l, r = i + 1, len(nums) - 1`\n# Step 3: Converge `l` and `r` toward `-nums[i]`, recording triplets and skipping duplicate `nums[l]`",
+  "javaOutlineComments": "// Step 1: Sort `nums` ascending and initialize `res = []`\n// Step 2: Loop `i`: skip if `i > 0 and nums[i] == nums[i - 1]`, then set `l, r = i + 1, len(nums) - 1`\n// Step 3: Converge `l` and `r` toward `-nums[i]`, recording triplets and skipping duplicate `nums[l]`",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Call `nums.sort()`, create `res = []`, and loop `i` over `range(len(nums))` skipping duplicate anchors."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `Sort nums; fix nums[i] (skipping dups) + two-pointer l, r`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Sort `nums` ascending and initialize `res = []` -> Step 2: Loop `i`: skip if `i > 0 and nums[i] == nums[i - 1]`, then set `l, r = i + 1, len(nums) - 1` -> Step 3: Converge `l` and `r` toward `-nums[i]`, recording triplets and skipping duplicate `nums[l]`"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N^2) time and O(1) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "nums": [
+          -1,
+          0,
+          1,
+          2,
+          -1,
+          -4
+        ]
+      },
+      "expected": [
+        [
+          -1,
+          -1,
+          2
+        ],
+        [
+          -1,
+          0,
+          1
+        ]
+      ],
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "nums": [
+          0,
+          1,
+          1
+        ]
+      },
+      "expected": [],
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "nums": [
+          0,
+          0,
+          0
+        ]
+      },
+      "expected": [
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "nums": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "expected": [
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "nums": [
+          -2,
+          0,
+          1,
+          1,
+          2
+        ]
+      },
+      "expected": [
+        [
+          -2,
+          0,
+          2
+        ],
+        [
+          -2,
+          1,
+          1
+        ]
+      ],
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

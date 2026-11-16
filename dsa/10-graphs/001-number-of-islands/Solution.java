@@ -1,29 +1,19 @@
+import java.util.*;
+import utils.ListNode;
+import utils.TreeNode;
+import utils.RandomNode;
+import utils.GraphNode;
+
+/**
+ * Problem #76: Number Of Islands (Medium)
+ */
 public class Solution {
 
     public int numIslands(char[][] grid) {
-        // TODO: Implement your solution here
-        return 0;
+        throw new UnsupportedOperationException("Write your solution here");
     }
 
     public static void main(String[] args) {
-        Solution sol = new Solution();
-
-        char[][] grid1 = {
-            { '1', '1', '1', '1', '0' },
-            { '1', '1', '0', '1', '0' },
-            { '1', '1', '0', '0', '0' },
-            { '0', '0', '0', '0', '0' }
-        };
-        assert sol.numIslands(grid1) == 1 : "Test 1 Failed";
-
-        char[][] grid2 = {
-            { '1', '1', '0', '0', '0' },
-            { '1', '1', '0', '0', '0' },
-            { '0', '0', '1', '0', '0' },
-            { '0', '0', '0', '1', '1' }
-        };
-        assert sol.numIslands(grid2) == 3 : "Test 2 Failed";
-
-        System.out.println("All 2 Java test cases passed!");
+        System.out.println("Java starter compiled cleanly for Number Of Islands.");
     }
 }

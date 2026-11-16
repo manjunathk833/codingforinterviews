@@ -1,0 +1,92 @@
+{
+  "id": 22,
+  "slug": "001-valid-parentheses",
+  "problemSlug": "valid-parentheses",
+  "title": "022. Valid Parentheses",
+  "chapter": "Ch 4: Stack And Queue",
+  "difficulty": "Medium",
+  "methodName": "isValid",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public boolean isValid(String s)",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(N)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given a string `s` containing `'()[]{}'`, return `True` if every bracket is closed in the right order.",
+  "invariant": "Every closing bracket matches stack.pop(); stack empty at end",
+  "firstLine": "Create `stack = []` and `pairs = {')': '(', ']': '[', '}': '{'}`.",
+  "steps": [
+    "Define `pairs = {')': '(', ']': '[', '}': '{'}` and `stack = []`",
+    "For `ch` in `s`: if `ch in pairs`, verify `stack` is non-empty and `stack.pop() == pairs[ch]`",
+    "Otherwise push `ch` onto `stack`; return `len(stack) == 0` at the end"
+  ],
+  "pythonOutlineComments": "# Step 1: Define `pairs = {')': '(', ']': '[', '}': '{'}` and `stack = []`\n# Step 2: For `ch` in `s`: if `ch in pairs`, verify `stack` is non-empty and `stack.pop() == pairs[ch]`\n# Step 3: Otherwise push `ch` onto `stack`; return `len(stack) == 0` at the end",
+  "javaOutlineComments": "// Step 1: Define `pairs = {')': '(', ']': '[', '}': '{'}` and `stack = []`\n// Step 2: For `ch` in `s`: if `ch in pairs`, verify `stack` is non-empty and `stack.pop() == pairs[ch]`\n// Step 3: Otherwise push `ch` onto `stack`; return `len(stack) == 0` at the end",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Create `stack = []` and `pairs = {')': '(', ']': '[', '}': '{'}`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `Every closing bracket matches stack.pop(); stack empty at end`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Define `pairs = {')': '(', ']': '[', '}': '{'}` and `stack = []` -> Step 2: For `ch` in `s`: if `ch in pairs`, verify `stack` is non-empty and `stack.pop() == pairs[ch]` -> Step 3: Otherwise push `ch` onto `stack`; return `len(stack) == 0` at the end"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N) time and O(N) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "s": "()[]{}"
+      },
+      "expected": true,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "s": "(]"
+      },
+      "expected": false,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "s": "([{}])"
+      },
+      "expected": true,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "s": "([)]"
+      },
+      "expected": false,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "s": "{[]}"
+      },
+      "expected": true,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

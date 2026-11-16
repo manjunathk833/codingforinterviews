@@ -1,0 +1,123 @@
+{
+  "id": 14,
+  "slug": "004-container-with-most-water",
+  "problemSlug": "container-with-most-water",
+  "title": "014. Container With Most Water",
+  "chapter": "Ch 2: Two Pointers",
+  "difficulty": "Medium",
+  "methodName": "maxArea",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int maxArea(int[] height)",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(1)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given `height` of vertical lines, find two lines that form a container holding the maximum amount of water.",
+  "invariant": "area = (r - l) * min(h[l], h[r]); always move the shorter wall",
+  "firstLine": "Set `l, r = 0, len(height) - 1` and `best = 0`.",
+  "steps": [
+    "Initialize `l = 0`, `r = len(height) - 1`, and `best = 0`",
+    "While `l < r`, update `best = max(best, (r - l) * min(height[l], height[r]))`",
+    "Move the pointer with the smaller height inward (`l += 1` if `height[l] < height[r]` else `r -= 1`)"
+  ],
+  "pythonOutlineComments": "# Step 1: Initialize `l = 0`, `r = len(height) - 1`, and `best = 0`\n# Step 2: While `l < r`, update `best = max(best, (r - l) * min(height[l], height[r]))`\n# Step 3: Move the pointer with the smaller height inward (`l += 1` if `height[l] < height[r]` else `r -= 1`)",
+  "javaOutlineComments": "// Step 1: Initialize `l = 0`, `r = len(height) - 1`, and `best = 0`\n// Step 2: While `l < r`, update `best = max(best, (r - l) * min(height[l], height[r]))`\n// Step 3: Move the pointer with the smaller height inward (`l += 1` if `height[l] < height[r]` else `r -= 1`)",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Set `l, r = 0, len(height) - 1` and `best = 0`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `area = (r - l) * min(h[l], h[r]); always move the shorter wall`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Initialize `l = 0`, `r = len(height) - 1`, and `best = 0` -> Step 2: While `l < r`, update `best = max(best, (r - l) * min(height[l], height[r]))` -> Step 3: Move the pointer with the smaller height inward (`l += 1` if `height[l] < height[r]` else `r -= 1`)"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N) time and O(1) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "height": [
+          1,
+          8,
+          6,
+          2,
+          5,
+          4,
+          8,
+          3,
+          7
+        ]
+      },
+      "expected": 49,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "height": [
+          1,
+          1
+        ]
+      },
+      "expected": 1,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "height": [
+          4,
+          3,
+          2,
+          1,
+          4
+        ]
+      },
+      "expected": 16,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "height": [
+          1,
+          2,
+          1
+        ]
+      },
+      "expected": 2,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "height": [
+          2,
+          3,
+          10,
+          5,
+          7,
+          8,
+          9
+        ]
+      },
+      "expected": 36,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

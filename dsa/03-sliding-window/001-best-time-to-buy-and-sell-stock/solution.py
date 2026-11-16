@@ -1,29 +1,17 @@
-"""Problem: Best Time to Buy and Sell Stock (LeetCode #121)
-Pattern: Sliding Window / Two Pointers
-Difficulty: Easy
-"""
-from typing import List
+"""Problem #16: Best Time To Buy And Sell Stock (Medium)"""
+from typing import List, Optional, Dict
+from collections import Counter, defaultdict, deque, OrderedDict
+from bisect import bisect_left
+import heapq
+import threading
+from utils.dsa_helpers import ListNode, TreeNode, RandomNode, GraphNode
 
 
 class Solution:
     def maxProfit(self, prices: List[int]) -> int:
-        # TODO: Implement your solution here
-        return 0
+        raise NotImplementedError("Write your solution here")
 
 
 if __name__ == "__main__":
-    sol = Solution()
-
-    # Test 1
-    assert sol.maxProfit([7, 1, 5, 3, 6, 4]) == 5, "Test 1 Failed"
-
-    # Test 2
-    assert sol.maxProfit([7, 6, 4, 3, 1]) == 0, "Test 2 Failed"
-
-    # Test 3
-    assert sol.maxProfit([2, 2, 2, 2]) == 0, "Test 3 Failed"
-
-    # Test 4
-    assert sol.maxProfit([5]) == 0, "Test 4 Failed"
-
-    print("All 4 Python test cases passed!")
+    # Run test cases & Code Coach via Coding Studio (`▶ Run & Coach`) or `./run.sh test best-time-to-buy-and-sell-stock`
+    print("Starter ready for #16 Best Time To Buy And Sell Stock.")

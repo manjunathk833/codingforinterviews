@@ -1,0 +1,92 @@
+{
+  "id": 17,
+  "slug": "002-longest-substring-without-repeating-characters",
+  "problemSlug": "longest-substring-without-repeating-characters",
+  "title": "017. Longest Substring Without Repeating Characters",
+  "chapter": "Ch 3: Sliding Window",
+  "difficulty": "Medium",
+  "methodName": "lengthOfLongestSubstring",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int lengthOfLongestSubstring(String s)",
+  "timeComplexity": "O(N)",
+  "spaceComplexity": "O(min(N, M))",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given a string `s`, find the length of the longest substring without repeating characters.",
+  "invariant": "Window [left..right] contains zero duplicate characters",
+  "firstLine": "Create `seen = set()`, `left = 0`, and `best = 0`.",
+  "steps": [
+    "Initialize `seen = set()`, `left = 0`, `best = 0`",
+    "For `right, ch in enumerate(s)`: while `ch in seen`, remove `s[left]` and increment `left`",
+    "Add `ch` to `seen` and update `best = max(best, right - left + 1)`"
+  ],
+  "pythonOutlineComments": "# Step 1: Initialize `seen = set()`, `left = 0`, `best = 0`\n# Step 2: For `right, ch in enumerate(s)`: while `ch in seen`, remove `s[left]` and increment `left`\n# Step 3: Add `ch` to `seen` and update `best = max(best, right - left + 1)`",
+  "javaOutlineComments": "// Step 1: Initialize `seen = set()`, `left = 0`, `best = 0`\n// Step 2: For `right, ch in enumerate(s)`: while `ch in seen`, remove `s[left]` and increment `left`\n// Step 3: Add `ch` to `seen` and update `best = max(best, right - left + 1)`",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Create `seen = set()`, `left = 0`, and `best = 0`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `Window [left..right] contains zero duplicate characters`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Initialize `seen = set()`, `left = 0`, `best = 0` -> Step 2: For `right, ch in enumerate(s)`: while `ch in seen`, remove `s[left]` and increment `left` -> Step 3: Add `ch` to `seen` and update `best = max(best, right - left + 1)`"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(N) time and O(min(N, M)) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "s": "abcabcbb"
+      },
+      "expected": 3,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "s": "bbbbb"
+      },
+      "expected": 1,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "s": "pwwkew"
+      },
+      "expected": 3,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "s": ""
+      },
+      "expected": 0,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "s": "dvdf"
+      },
+      "expected": 3,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

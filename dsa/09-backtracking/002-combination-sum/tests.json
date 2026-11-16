@@ -1,0 +1,155 @@
+{
+  "id": 68,
+  "slug": "002-combination-sum",
+  "problemSlug": "combination-sum",
+  "title": "068. Combination Sum",
+  "chapter": "Ch 9: Backtracking",
+  "difficulty": "Medium",
+  "methodName": "combinationSum",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "unordered",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public List<List<Integer>> combinationSum(int[] candidates, int target)",
+  "timeComplexity": "O(2^(T/M))",
+  "spaceComplexity": "O(T/M)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Return all unique combinations of `candidates` where chosen numbers sum to `target` (unlimited reuse allowed).",
+  "invariant": "Reuse allowed -> recurse at same index i; advance i + 1 to skip",
+  "firstLine": "Create `res = []`, `path = []`, and write `dfs(i, rem)` starting at `(0, target)`.",
+  "steps": [
+    "If `rem == 0`, append `path[:]` to `res`; if `i == len(candidates) or rem < 0`, return",
+    "Include `candidates[i]` and call `dfs(i, rem - candidates[i])` (same `i` allows reuse)",
+    "Pop from `path` and call `dfs(i + 1, rem)` to move to the next candidate"
+  ],
+  "pythonOutlineComments": "# Step 1: If `rem == 0`, append `path[:]` to `res`; if `i == len(candidates) or rem < 0`, return\n# Step 2: Include `candidates[i]` and call `dfs(i, rem - candidates[i])` (same `i` allows reuse)\n# Step 3: Pop from `path` and call `dfs(i + 1, rem)` to move to the next candidate",
+  "javaOutlineComments": "// Step 1: If `rem == 0`, append `path[:]` to `res`; if `i == len(candidates) or rem < 0`, return\n// Step 2: Include `candidates[i]` and call `dfs(i, rem - candidates[i])` (same `i` allows reuse)\n// Step 3: Pop from `path` and call `dfs(i + 1, rem)` to move to the next candidate",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Create `res = []`, `path = []`, and write `dfs(i, rem)` starting at `(0, target)`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `Reuse allowed -> recurse at same index i; advance i + 1 to skip`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: If `rem == 0`, append `path[:]` to `res`; if `i == len(candidates) or rem < 0`, return -> Step 2: Include `candidates[i]` and call `dfs(i, rem - candidates[i])` (same `i` allows reuse) -> Step 3: Pop from `path` and call `dfs(i + 1, rem)` to move to the next candidate"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(2^(T/M)) time and O(T/M) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "candidates": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "target": 7
+      },
+      "expected": [
+        [
+          2,
+          2,
+          3
+        ],
+        [
+          7
+        ]
+      ],
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "candidates": [
+          2
+        ],
+        "target": 1
+      },
+      "expected": [],
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "candidates": [
+          2,
+          3,
+          5
+        ],
+        "target": 8
+      },
+      "expected": [
+        [
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          5
+        ]
+      ],
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "candidates": [
+          3,
+          5,
+          8
+        ],
+        "target": 11
+      },
+      "expected": [
+        [
+          3,
+          3,
+          5
+        ],
+        [
+          3,
+          8
+        ]
+      ],
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "candidates": [
+          3,
+          5
+        ],
+        "target": 8
+      },
+      "expected": [
+        [
+          3,
+          5
+        ]
+      ],
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

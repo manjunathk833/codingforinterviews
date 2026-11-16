@@ -1,0 +1,212 @@
+{
+  "id": 119,
+  "slug": "001-implement-trie",
+  "problemSlug": "implement-trie-prefix-tree",
+  "title": "119. Implement Trie Prefix Tree",
+  "chapter": "Ch 13: Design And Concurrency",
+  "difficulty": "Medium",
+  "methodName": "search",
+  "className": "Trie",
+  "execMode": "class_ops",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public boolean search(String word)",
+  "timeComplexity": "O(L)",
+  "spaceComplexity": "O(Total Chars)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Implement a `Trie` supporting `insert(word)`, `search(word)`, and `startsWith(prefix)`.",
+  "invariant": "Nested dict/node trie with explicit end-of-word marker '#'",
+  "firstLine": "Initialize `self.root = {}` and mark completed words with key `'#'`.",
+  "steps": [
+    "Set `self.root = {}` in `__init__`",
+    "In `insert(word)`: walk character by character with `cur = cur.setdefault(ch, {})`, then set `cur['#'] = True`",
+    "In `search`/`startsWith`: walk `word`/`prefix`; check `'#' in cur` for exact match"
+  ],
+  "pythonOutlineComments": "# Step 1: Set `self.root = {}` in `__init__`\n# Step 2: In `insert(word)`: walk character by character with `cur = cur.setdefault(ch, {})`, then set `cur['#'] = True`\n# Step 3: In `search`/`startsWith`: walk `word`/`prefix`; check `'#' in cur` for exact match",
+  "javaOutlineComments": "// Step 1: Set `self.root = {}` in `__init__`\n// Step 2: In `insert(word)`: walk character by character with `cur = cur.setdefault(ch, {})`, then set `cur['#'] = True`\n// Step 3: In `search`/`startsWith`: walk `word`/`prefix`; check `'#' in cur` for exact match",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Initialize `self.root = {}` and mark completed words with key `'#'`."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `Nested dict/node trie with explicit end-of-word marker '#'`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Set `self.root = {}` in `__init__` -> Step 2: In `insert(word)`: walk character by character with `cur = cur.setdefault(ch, {})`, then set `cur['#'] = True` -> Step 3: In `search`/`startsWith`: walk `word`/`prefix`; check `'#' in cur` for exact match"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(L) time and O(Total Chars) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "ops": [
+          "Trie",
+          "insert",
+          "search",
+          "search",
+          "startsWith",
+          "insert",
+          "search"
+        ],
+        "args": [
+          [],
+          [
+            "apple"
+          ],
+          [
+            "apple"
+          ],
+          [
+            "app"
+          ],
+          [
+            "app"
+          ],
+          [
+            "app"
+          ],
+          [
+            "app"
+          ]
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        true,
+        false,
+        true,
+        null,
+        true
+      ],
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "ops": [
+          "Trie",
+          "search",
+          "startsWith"
+        ],
+        "args": [
+          [],
+          [
+            "ghost"
+          ],
+          [
+            "gh"
+          ]
+        ]
+      },
+      "expected": [
+        null,
+        false,
+        false
+      ],
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "ops": [
+          "Trie",
+          "insert",
+          "search",
+          "search",
+          "startsWith"
+        ],
+        "args": [
+          [],
+          [
+            "car"
+          ],
+          [
+            "car"
+          ],
+          [
+            "card"
+          ],
+          [
+            "ca"
+          ]
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        true,
+        false,
+        true
+      ],
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "ops": [
+          "Trie",
+          "insert",
+          "insert",
+          "search"
+        ],
+        "args": [
+          [],
+          [
+            "a"
+          ],
+          [
+            "ab"
+          ],
+          [
+            "a"
+          ]
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        null,
+        true
+      ],
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "ops": [
+          "Trie",
+          "insert",
+          "startsWith"
+        ],
+        "args": [
+          [],
+          [
+            "testing"
+          ],
+          [
+            "test"
+          ]
+        ]
+      },
+      "expected": [
+        null,
+        null,
+        true
+      ],
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

@@ -1,19 +1,17 @@
-from typing import List
+"""Problem #13: 3Sum (Medium)"""
+from typing import List, Optional, Dict
+from collections import Counter, defaultdict, deque, OrderedDict
+from bisect import bisect_left
+import heapq
+import threading
+from utils.dsa_helpers import ListNode, TreeNode, RandomNode, GraphNode
 
 
 class Solution:
     def threeSum(self, nums: List[int]) -> List[List[int]]:
-        # TODO: Implement your solution here
-        return []
+        raise NotImplementedError("Write your solution here")
 
 
 if __name__ == "__main__":
-    sol = Solution()
-
-    res1 = sol.threeSum([-1, 0, 1, 2, -1, -4])
-    assert len(res1) == 2, f"Test 1 Failed: {res1}"
-
-    res2 = sol.threeSum([0, 1, 1])
-    assert res2 == [], f"Test 2 Failed: {res2}"
-
-    print("All 2 Python test cases passed!")
+    # Run test cases & Code Coach via Coding Studio (`▶ Run & Coach`) or `./run.sh test 3sum`
+    print("Starter ready for #13 3Sum.")

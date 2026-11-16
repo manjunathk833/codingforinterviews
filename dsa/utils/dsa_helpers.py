@@ -70,3 +70,68 @@ class TreeNode:
         while res and res[-1] is None:
             res.pop()
         return res
+
+
+class RandomNode:
+    """Node for Copy List with Random Pointer (#40): [[val, random_index_or_None], ...]."""
+
+    def __init__(self, x: int, next: Optional['RandomNode'] = None, random: Optional['RandomNode'] = None):
+        self.val = int(x)
+        self.next = next
+        self.random = random
+
+    @classmethod
+    def from_pairs(cls, pairs: list) -> Optional['RandomNode']:
+        if not pairs:
+            return None
+        nodes = [cls(p[0]) for p in pairs]
+        for idx, node in enumerate(nodes):
+            if idx + 1 < len(nodes):
+                node.next = nodes[idx + 1]
+            r_idx = pairs[idx][1]
+            if r_idx is not None and 0 <= r_idx < len(nodes):
+                node.random = nodes[r_idx]
+        return nodes[0]
+
+    def to_pairs(self) -> list:
+        nodes = []
+        idx_map = {}
+        curr = self
+        while curr:
+            idx_map[id(curr)] = len(nodes)
+            nodes.append(curr)
+            curr = curr.next
+        return [[n.val, idx_map.get(id(n.random)) if n.random is not None else None] for n in nodes]
+
+
+class GraphNode:
+    """Node for Clone Graph (#77): 1-indexed adjacency list [[2,4],[1,3],...]."""
+
+    def __init__(self, val: int = 0, neighbors: Optional[List['GraphNode']] = None):
+        self.val = val
+        self.neighbors = neighbors if neighbors is not None else []
+
+    @classmethod
+    def from_adj_list(cls, adj: list) -> Optional['GraphNode']:
+        if not adj:
+            return None
+        nodes = [cls(i + 1) for i in range(len(adj))]
+        for i, nbrs in enumerate(adj):
+            nodes[i].neighbors = [nodes[j - 1] for j in nbrs]
+        return nodes[0]
+
+    def to_adj_list(self) -> list:
+        visited = {}
+        queue = deque([self])
+        visited[self.val] = self
+        while queue:
+            curr = queue.popleft()
+            for nb in curr.neighbors:
+                if nb.val not in visited:
+                    visited[nb.val] = nb
+                    queue.append(nb)
+        if not visited:
+            return []
+        max_v = max(visited.keys())
+        return [[nb.val for nb in visited[i].neighbors] if i in visited else [] for i in range(1, max_v + 1)]
+

@@ -1,19 +1,17 @@
-from typing import List
+"""Problem #113: Merge Intervals (Medium)"""
+from typing import List, Optional, Dict
+from collections import Counter, defaultdict, deque, OrderedDict
+from bisect import bisect_left
+import heapq
+import threading
+from utils.dsa_helpers import ListNode, TreeNode, RandomNode, GraphNode
 
 
 class Solution:
     def merge(self, intervals: List[List[int]]) -> List[List[int]]:
-        # TODO: Implement your solution here
-        return []
+        raise NotImplementedError("Write your solution here")
 
 
 if __name__ == "__main__":
-    sol = Solution()
-
-    res1 = sol.merge([[1, 3], [2, 6], [8, 10], [15, 18]])
-    assert res1 == [[1, 6], [8, 10], [15, 18]], f"Test 1 Failed: {res1}"
-
-    res2 = sol.merge([[1, 4], [4, 5]])
-    assert res2 == [[1, 5]], f"Test 2 Failed: {res2}"
-
-    print("All 2 Python test cases passed!")
+    # Run test cases & Code Coach via Coding Studio (`▶ Run & Coach`) or `./run.sh test merge-intervals`
+    print("Starter ready for #113 Merge Intervals.")

@@ -1,19 +1,17 @@
-from typing import List
+"""Problem #6: Product Of Array Except Self (Medium)"""
+from typing import List, Optional, Dict
+from collections import Counter, defaultdict, deque, OrderedDict
+from bisect import bisect_left
+import heapq
+import threading
+from utils.dsa_helpers import ListNode, TreeNode, RandomNode, GraphNode
 
 
 class Solution:
     def productExceptSelf(self, nums: List[int]) -> List[int]:
-        # TODO: Implement your solution here
-        return []
+        raise NotImplementedError("Write your solution here")
 
 
 if __name__ == "__main__":
-    sol = Solution()
-
-    res1 = sol.productExceptSelf([1, 2, 3, 4])
-    assert res1 == [24, 12, 8, 6], f"Test 1 Failed: {res1}"
-
-    res2 = sol.productExceptSelf([-1, 1, 0, -3, 3])
-    assert res2 == [0, 0, 9, 0, 0], f"Test 2 Failed: {res2}"
-
-    print("All 2 Python test cases passed!")
+    # Run test cases & Code Coach via Coding Studio (`▶ Run & Coach`) or `./run.sh test product-of-array-except-self`
+    print("Starter ready for #6 Product Of Array Except Self.")

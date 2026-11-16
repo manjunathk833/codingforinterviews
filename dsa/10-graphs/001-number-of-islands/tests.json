@@ -1,0 +1,166 @@
+{
+  "id": 76,
+  "slug": "001-number-of-islands",
+  "problemSlug": "number-of-islands",
+  "title": "076. Number Of Islands",
+  "chapter": "Ch 10: Graphs",
+  "difficulty": "Medium",
+  "methodName": "numIslands",
+  "className": "Solution",
+  "execMode": "solution_method",
+  "compareMode": "exact",
+  "argTypes": {},
+  "returnType": null,
+  "javaSig": "public int numIslands(char[][] grid)",
+  "timeComplexity": "O(R * C)",
+  "spaceComplexity": "O(R * C)",
+  "visualizerId": "dsa-group-anagrams",
+  "prompt": "Given a 2D `grid` of `'1'`s (land) and `'0'`s (water), count the number of islands.",
+  "invariant": "Flood-fill sink connected '1' cells to '0' and increment island count",
+  "firstLine": "Set `islands = 0` and write `sink(r, c)` that flips `'1'` to `'0'` across 4 neighbors.",
+  "steps": [
+    "Write `sink(r, c)`: return if out-of-bounds or `grid[r][c] != '1'`; set `grid[r][c] = '0'` and recurse 4 ways",
+    "Loop over every `(r, c)` in `grid`: if `grid[r][c] == '1'`, increment `islands += 1` and call `sink(r, c)`",
+    "Return `islands`"
+  ],
+  "pythonOutlineComments": "# Step 1: Write `sink(r, c)`: return if out-of-bounds or `grid[r][c] != '1'`; set `grid[r][c] = '0'` and recurse 4 ways\n# Step 2: Loop over every `(r, c)` in `grid`: if `grid[r][c] == '1'`, increment `islands += 1` and call `sink(r, c)`\n# Step 3: Return `islands`",
+  "javaOutlineComments": "// Step 1: Write `sink(r, c)`: return if out-of-bounds or `grid[r][c] != '1'`; set `grid[r][c] = '0'` and recurse 4 ways\n// Step 2: Loop over every `(r, c)` in `grid`: if `grid[r][c] == '1'`, increment `islands += 1` and call `sink(r, c)`\n// Step 3: Return `islands`",
+  "hints": [
+    {
+      "tier": 1,
+      "title": "First-Line Nudge",
+      "content": "Set `islands = 0` and write `sink(r, c)` that flips `'1'` to `'0'` across 4 neighbors."
+    },
+    {
+      "tier": 2,
+      "title": "Pattern & Invariant",
+      "content": "Core invariant: `Flood-fill sink connected '1' cells to '0' and increment island count`"
+    },
+    {
+      "tier": 3,
+      "title": "Step-by-Step Plan",
+      "content": "Step 1: Write `sink(r, c)`: return if out-of-bounds or `grid[r][c] != '1'`; set `grid[r][c] = '0'` and recurse 4 ways -> Step 2: Loop over every `(r, c)` in `grid`: if `grid[r][c] == '1'`, increment `islands += 1` and call `sink(r, c)` -> Step 3: Return `islands`"
+    },
+    {
+      "tier": 4,
+      "title": "Complexity & Edge Cases",
+      "content": "Aim for O(R * C) time and O(R * C) space. Watch empty inputs, single elements, and duplicates."
+    }
+  ],
+  "cases": [
+    {
+      "input": {
+        "grid": [
+          [
+            "1",
+            "1",
+            "0",
+            "0",
+            "0"
+          ],
+          [
+            "1",
+            "1",
+            "0",
+            "0",
+            "0"
+          ],
+          [
+            "0",
+            "0",
+            "1",
+            "0",
+            "0"
+          ],
+          [
+            "0",
+            "0",
+            "0",
+            "1",
+            "1"
+          ]
+        ]
+      },
+      "expected": 3,
+      "id": "case-1",
+      "label": "Case 1"
+    },
+    {
+      "input": {
+        "grid": [
+          [
+            "1",
+            "1",
+            "1"
+          ],
+          [
+            "0",
+            "1",
+            "0"
+          ],
+          [
+            "1",
+            "1",
+            "1"
+          ]
+        ]
+      },
+      "expected": 1,
+      "id": "case-2",
+      "label": "Case 2"
+    },
+    {
+      "input": {
+        "grid": [
+          [
+            "0",
+            "0"
+          ],
+          [
+            "0",
+            "0"
+          ]
+        ]
+      },
+      "expected": 0,
+      "id": "case-3",
+      "label": "Case 3"
+    },
+    {
+      "input": {
+        "grid": [
+          [
+            "1"
+          ]
+        ]
+      },
+      "expected": 1,
+      "id": "case-4",
+      "label": "Case 4"
+    },
+    {
+      "input": {
+        "grid": [
+          [
+            "1",
+            "0",
+            "1"
+          ],
+          [
+            "0",
+            "1",
+            "0"
+          ],
+          [
+            "1",
+            "0",
+            "1"
+          ]
+        ]
+      },
+      "expected": 5,
+      "id": "case-5",
+      "label": "Case 5"
+    }
+  ]
+}

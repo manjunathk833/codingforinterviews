@@ -1,20 +1,17 @@
-from collections import Counter
-from typing import List
+"""Problem #5: Top K Frequent Elements (Medium)"""
+from typing import List, Optional, Dict
+from collections import Counter, defaultdict, deque, OrderedDict
+from bisect import bisect_left
+import heapq
+import threading
+from utils.dsa_helpers import ListNode, TreeNode, RandomNode, GraphNode
 
 
 class Solution:
     def topKFrequent(self, nums: List[int], k: int) -> List[int]:
-        # TODO: Implement your solution here
-        return []
+        raise NotImplementedError("Write your solution here")
 
 
 if __name__ == "__main__":
-    sol = Solution()
-
-    res1 = sorted(sol.topKFrequent([1, 1, 1, 2, 2, 3], 2))
-    assert res1 == [1, 2], f"Test 1 Failed: {res1}"
-
-    res2 = sol.topKFrequent([1], 1)
-    assert res2 == [1], f"Test 2 Failed: {res2}"
-
-    print("All 2 Python test cases passed!")
+    # Run test cases & Code Coach via Coding Studio (`▶ Run & Coach`) or `./run.sh test top-k-frequent-elements`
+    print("Starter ready for #5 Top K Frequent Elements.")

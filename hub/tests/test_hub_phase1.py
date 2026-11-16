@@ -485,7 +485,19 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             self.assertTrue((scaf_dir / "solution.py").exists())
             self.assertTrue((scaf_dir / "Solution.java").exists())
             self.assertTrue((scaf_dir / "tests.json").exists())
-            # Verify scaffolded starter passes per-case runner
+            # Newly scaffolded starter must be genuinely un-spoiled (not pre-solved!)
+            run_blank = hub_server.dispatch_request(
+                "POST",
+                "/api/run-cases",
+                body={"slug": "002-contains-duplicate", "lang": "python"}
+            )
+            self.assertEqual(run_blank["status_code"], 200)
+            self.assertEqual(run_blank["data"]["status"], "FAILED")
+            self.assertIn("codeCoach", run_blank["data"])
+            # Now write the real solution and verify Code Coach awards Staff grade
+            from hub import dsa_catalog
+            ref_py = dsa_catalog.get_reference_solution("contains-duplicate")["python"]
+            (scaf_dir / "solution.py").write_text(ref_py, encoding="utf-8")
             run_scaf = hub_server.dispatch_request(
                 "POST",
                 "/api/run-cases",
@@ -493,6 +505,7 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             )
             self.assertEqual(run_scaf["status_code"], 200)
             self.assertEqual(run_scaf["data"]["status"], "PASSED")
+            self.assertGreaterEqual(run_scaf["data"]["codeCoach"]["score"], 95)
         finally:
             if not existed_before and scaf_dir.exists():
                 shutil.rmtree(scaf_dir)
@@ -940,21 +953,21 @@ class TestHubAndArchitectureCI(unittest.TestCase):
         self.assertEqual(status_res["status_code"], 200)
         st = status_res["data"]
         self.assertIn("roadmapEnabled", st)
-        self.assertEqual(st["macro"]["totalItems"], 256)
+        self.assertEqual(st["macro"]["totalItems"], 265)
         self.assertEqual(st["pages"]["courses"]["total"], 114)
         self.assertEqual(st["pages"]["dsa"]["total"], 128)
-        self.assertEqual(st["pages"]["workbench"]["total"], 13)
-        self.assertEqual(st["pages"]["interviews"]["total"], 1)
+        self.assertEqual(st["pages"]["workbench"]["total"], 17)
+        self.assertEqual(st["pages"]["interviews"]["total"], 6)
         self.assertEqual(len(st["phases"]), 5)
 
         journey_res = hub_server.dispatch_request("GET", "/api/roadmap/journey")
         self.assertEqual(journey_res["status_code"], 200)
-        self.assertEqual(journey_res["data"]["macro"]["totalItems"], 256)
+        self.assertEqual(journey_res["data"]["macro"]["totalItems"], 265)
 
-        # Verify global ordering is strictly 1..256 across the 5 phases AND interleaved daily across 60 sessions
+        # Verify global ordering is strictly 1..265 across the 5 phases AND interleaved daily across 60 sessions
         all_items = [it for p in st["phases"] for it in p["items"]]
-        self.assertEqual(len(all_items), 256)
-        self.assertEqual([it["globalOrder"] for it in all_items], list(range(1, 257)))
+        self.assertEqual(len(all_items), 265)
+        self.assertEqual([it["globalOrder"] for it in all_items], list(range(1, 266)))
         self.assertEqual(all_items[0]["itemId"], "sdet-01-determinism-and-flakiness-math")
         self.assertEqual(all_items[1]["itemId"], "dsa-001")
         self.assertEqual(all_items[-1]["itemId"], "interview-1")
@@ -1121,6 +1134,332 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             flags=_re.IGNORECASE,
         )
         self.assertEqual(glare_hex, [], f"Found hardcoded light-mode hex in roadmap section/JS: {glare_hex}")
+
+    def test_23_wave1_coding_dojo_catalog_coach_warmups_and_dark_ui(self):
+        """Verify Wave 1 (Option A): 128/128 DSA specs, 12 Warmups, 4s timeout guard, O(N^2) vs O(N) Code Coach, reset, and Dark UI."""
+        import shutil
+        import re as _re
+        from hub import code_coach, dsa_catalog
+
+        # 1. Verify all 128/128 problems exist with unique slugs, outlines, and passing reference tests
+        self.assertEqual(len(dsa_catalog.ALL_SPECS), 128)
+        for spec in dsa_catalog.ALL_SPECS:
+            self.assertTrue(spec.get("firstLine"))
+            self.assertEqual(len(spec.get("steps", [])), 3, f"Problem #{spec['id']} must have 3-step outline")
+            ref = dsa_catalog.get_reference_solution(str(spec["id"]))["python"]
+            meta = dsa_catalog.build_tests_meta(spec, f"{spec['id']:03d}-{spec['slug']}")
+            res = code_coach.run_python_cases_sandboxed(None, meta, spec=spec, code_text=ref, mode="dsa")
+            self.assertEqual(res["status"], "PASSED", f"Reference failed for #{spec['id']} {spec['slug']}: {res}")
+            self.assertGreaterEqual(res["codeCoach"]["score"], 90, f"Low score for ref #{spec['id']}: {res['codeCoach']}")
+
+        # 2. Verify GET /api/dsa/warmups + POST /api/dsa/warmup/run on all 12 templates
+        wu_res = hub_server.dispatch_request("GET", "/api/dsa/warmups")
+        self.assertEqual(wu_res["status_code"], 200)
+        warmups = wu_res["data"]["warmups"]
+        self.assertEqual(len(warmups), 12)
+        for d in dsa_catalog.WARMUP_DRILLS:
+            run_d = hub_server.dispatch_request(
+                "POST",
+                "/api/dsa/warmup/run",
+                body={"drillId": d["id"], "code": d["refPy"]},
+            )
+            self.assertEqual(run_d["status_code"], 200)
+            self.assertEqual(run_d["data"]["status"], "PASSED", f"Warmup {d['id']} failed: {run_d['data']}")
+            self.assertIn("referenceSolution", run_d["data"])
+
+        # 3. Verify infinite-loop protection times out safely without crashing server
+        two_sum_spec = dsa_catalog.get_spec("two-sum")
+        two_sum_meta = dsa_catalog.build_tests_meta(two_sum_spec, "001-two-sum")
+        inf_code = "class Solution:\n    def twoSum(self, nums, target):\n        while True:\n            pass\n"
+        t_res = code_coach.run_python_cases_sandboxed(
+            None, two_sum_meta, spec=two_sum_spec, code_text=inf_code, mode="dsa", timeout_s=1.0
+        )
+        self.assertEqual(t_res["status"], "TIMEOUT")
+        self.assertEqual(t_res["codeCoach"]["score"], 0)
+        self.assertIn("4 seconds", t_res["codeCoach"]["tips"][0])
+
+        # 4. Verify Code Coach catches O(N^2) quadratic nesting vs O(N) hash solution
+        slow_code = (
+            "class Solution:\n"
+            "    def twoSum(self, nums, target):\n"
+            "        if nums:\n"
+            "            if len(nums) > 1:\n"
+            "                for i in range(len(nums)):\n"
+            "                    for j in range(i + 1, len(nums)):\n"
+            "                        if nums[i] + nums[j] == target:\n"
+            "                            return [i, j]\n"
+            "        return []\n"
+        )
+        s_res = code_coach.run_python_cases_sandboxed(
+            None, two_sum_meta, spec=two_sum_spec, code_text=slow_code, mode="dsa"
+        )
+        self.assertEqual(s_res["status"], "PASSED")
+        self.assertLess(s_res["codeCoach"]["score"], 85)
+        self.assertEqual(s_res["codeCoach"]["speedPts"], 10)
+
+        # 5. Verify scaffold -> Help Me Start metadata -> reset cycle for a complex OOP problem (LFU Cache #122)
+        lfu_dir = REPO_ROOT / "dsa" / "13-design-and-concurrency" / "122-lfu-cache"
+        existed = lfu_dir.exists()
+        try:
+            bun = hub_server.dispatch_request("GET", "/api/dsa/problem?slug=lfu-cache")
+            self.assertEqual(bun["status_code"], 200)
+            self.assertEqual(bun["data"]["problem"]["className"], "LFUCache")
+            self.assertEqual(len(bun["data"]["problem"]["steps"]), 3)
+            actual_dir = REPO_ROOT / bun["data"]["folderPath"]
+            # Overwrite with ref, test pass, then reset back to blank starter
+            (actual_dir / "solution.py").write_text(
+                dsa_catalog.get_reference_solution("lfu-cache")["python"], encoding="utf-8"
+            )
+            pass_res = hub_server.dispatch_request("POST", "/api/dsa/problem/lfu-cache/run", body={"lang": "python"})
+            self.assertEqual(pass_res["status_code"], 200)
+            self.assertEqual(pass_res["data"]["status"], "PASSED")
+            self.assertIn("referenceSolution", pass_res["data"])
+
+            rst_res = hub_server.dispatch_request(
+                "POST", "/api/dsa/problem/lfu-cache/reset", body={"lang": "python"}
+            )
+            self.assertEqual(rst_res["status_code"], 200)
+            self.assertIn("NotImplementedError", rst_res["data"]["files"]["python"]["content"])
+        finally:
+            if not existed and lfu_dir.exists():
+                shutil.rmtree(lfu_dir)
+
+        # 6. Verify #view-workspace has zero glaring light-mode hexes and renders Wave 1 Studio tokens
+        root_html = hub_server.dispatch_request("GET", "/")["data"]["html"]
+        for tok in (
+            "ws-warmup-select",
+            "ws-help-start-btn",
+            "ws-reset-blank-btn",
+            "ws-first-line-banner",
+            "ws-code-coach-card",
+            "ws-coach-score-title",
+            "ws-coach-ref-pre",
+            "triggerHelpMeStart",
+            "resetActiveProblemToBlank",
+            "Coding Studio",
+            "ws-invariant-toggle-btn",
+        ):
+            self.assertIn(tok, root_html, f"Missing Wave 1 UI token: {tok}")
+        self.assertNotIn("--accent-terracotta", root_html)
+
+        ws_sec = _re.search(r'<main id="view-workspace"[\s\S]*?</main>', root_html)
+        self.assertIsNotNone(ws_sec)
+        ws_glare = _re.findall(
+            r"(?:bg-white|#(?!18181B|121215)(?:FFFDF9|FAF7F2|E6DEC8|F6FBF9|FEF3C7))",
+            ws_sec.group(0),
+            flags=_re.IGNORECASE,
+        )
+        self.assertEqual(ws_glare, [], f"Found hardcoded light-mode colors in #view-workspace: {ws_glare}")
+
+    def test_24_wave2_multi_file_workbench_java_runner_and_token_modularization(self):
+        """Verify Carbon Review Remediation, Java 17 JSON runner, >=5 DSA cases, Token Modularization, and Wave 2 Multi-File Workbench."""
+        import json
+        import re as _re
+        from hub import code_coach, dsa_catalog, workbench_grader
+
+        # 1. Token optimization & Carbon-Hydrogen config integrity
+        self.assertLess((REPO_ROOT / "GEMINI.md").stat().st_size, 1500)
+        self.assertLess((REPO_ROOT / "hub/static/index.html").stat().st_size, 95000)
+        hooks_cfg = json.loads((REPO_ROOT / ".agents/hooks.json").read_text(encoding="utf-8"))
+        self.assertIn("stop-verification-reminder", hooks_cfg)
+        self.assertIn("Stop", hooks_cfg["stop-verification-reminder"])
+        self.assertNotIn("hooks", hooks_cfg)
+        for agent_md in ("dry_run_agent.md", "socratic_bar_raiser.md", "knowledgebase_architect.md"):
+            head = (REPO_ROOT / ".agents/agents" / agent_md).read_text(encoding="utf-8")[:200]
+            self.assertIn("name:", head, f"Missing name: frontmatter in {agent_md}")
+
+        for asset in ("/static/css/theme.css", "/static/js/core.js", "/static/js/coding-studio.js", "/static/js/workbench.js"):
+            st_res = hub_server.dispatch_request("GET", asset)
+            self.assertEqual(st_res["status_code"], 200, f"Static asset failed: {asset}")
+
+        # 2. All 128 DSA specs & 12 Warmups >= 5 cases, spoiler-free starters, 0-pass == 0/100, generalized scaling probes
+        for spec in dsa_catalog.ALL_SPECS:
+            self.assertGreaterEqual(len(spec["cases"]), 5, f"#{spec['id']} {spec['slug']} has <5 cases")
+            py_st = dsa_catalog.build_python_starter(spec)
+            jv_st = dsa_catalog.build_java_starter(spec)
+            for forbidden in ("Pattern:", "Target:", "First-line idea:", "// Step 1"):
+                self.assertNotIn(forbidden, py_st)
+                self.assertNotIn(forbidden, jv_st)
+        for wu in dsa_catalog.WARMUP_DRILLS:
+            self.assertGreaterEqual(len(wu["cases"]), 5, f"Warmup {wu['id']} has <5 cases")
+
+        probes = [s["slug"] for s in dsa_catalog.ALL_SPECS if code_coach._detect_scaling_probe(s)]
+        self.assertGreaterEqual(len(probes), 40)
+
+        # 3. Java 17 JSON case runner: blank -> 0/100, real OOP & Tree & Array -> PASSED >= 95/100
+        for slug in ("min-stack", "invert-binary-tree"):
+            sp = dsa_catalog.get_spec(slug)
+            mt = dsa_catalog.build_tests_meta(sp, slug)
+            blank_j = code_coach.run_java_cases_sandboxed(None, mt, spec=sp, code_text=dsa_catalog.build_java_starter(sp))
+            self.assertEqual(blank_j["status"], "FAILED")
+            self.assertEqual(blank_j["codeCoach"]["score"], 0)
+
+            real_j = code_coach.run_java_cases_sandboxed(None, mt, spec=sp, code_text=sp["refJava"])
+            self.assertEqual(real_j["status"], "PASSED", f"Java ref failed on {slug}: {real_j}")
+            self.assertGreaterEqual(len(real_j["cases"]), 5)
+            self.assertGreaterEqual(real_j["codeCoach"]["score"], 95)
+
+        ga_java_api = hub_server.dispatch_request("POST", "/api/run-cases", body={"slug": "003-group-anagrams", "lang": "java"})
+        self.assertEqual(ga_java_api["status_code"], 200)
+        self.assertEqual(ga_java_api["data"]["status"], "PASSED")
+        self.assertEqual(len(ga_java_api["data"]["cases"]), 3)
+        self.assertGreaterEqual(ga_java_api["data"]["codeCoach"]["score"], 95)
+
+        # 4. Wave 2 + Wave 4 Multi-File & Blank-Canvas Workbench (21 builds: 4 Capstone + 4 AI Arch + 13 Labs)
+        wb_list = hub_server.dispatch_request("GET", "/api/workbench/challenges")
+        self.assertEqual(wb_list["status_code"], 200)
+        challenges = wb_list["data"]["challenges"]
+        self.assertEqual(len(challenges), 21)
+
+        for ch_spec in workbench_grader._load_challenges():
+            cid = ch_spec["id"]
+            blank_r = hub_server.dispatch_request("POST", "/api/workbench/challenge/run", body={"challengeId": cid, "persist": False})
+            self.assertEqual(blank_r["status_code"], 200)
+            self.assertEqual(blank_r["data"]["status"], "FAILED", f"Blank contract unexpectedly passed for {cid}")
+            self.assertEqual(blank_r["data"]["passedCount"], 0)
+            self.assertEqual(blank_r["data"]["architectureReview"]["score"], 0)
+
+            ref_r = hub_server.dispatch_request(
+                "POST",
+                "/api/workbench/challenge/run",
+                body={"challengeId": cid, "code": ch_spec["referencePy"], "persist": False},
+            )
+            self.assertEqual(ref_r["status_code"], 200)
+            self.assertEqual(ref_r["data"]["status"], "PASSED", f"Ref architecture failed for {cid}: {ref_r['data']}")
+            self.assertEqual(ref_r["data"]["passedCount"], 4)
+            self.assertGreaterEqual(ref_r["data"]["architectureReview"]["score"], 95)
+            self.assertIn("referenceSolution", ref_r["data"])
+
+        # 5. Verify #view-workbench has zero glaring light-mode hexes
+        root_html = hub_server.dispatch_request("GET", "/")["data"]["html"]
+        wb_sec = _re.search(r'<main id="view-workbench"[\s\S]*?</main>', root_html)
+        self.assertIsNotNone(wb_sec)
+        wb_glare = _re.findall(
+            r"(?:bg-white|#(?!18181B|121215)(?:F4F9FF|BFDBFE|1E3A8A|EBF8FF|FAF7F2|E6DEC8|E6F4F0))",
+            wb_sec.group(0),
+            flags=_re.IGNORECASE,
+        )
+        self.assertEqual(wb_glare, [], f"Found hardcoded light-mode colors in #view-workbench: {wb_glare}")
+
+    def test_25_waves3_and_4_blind_triage_mock_sim_and_ai_architecture(self):
+        """Verify Wave 3 (90s Blind Pattern-Triage + 6-Scenario Staff Mock Sim) and Wave 4 (4-Layer AI Architecture Workbench)."""
+        from hub import mock_evaluator
+
+        # 1. Wave 3A: 90s Blind Pattern-Triage (spoiler-free round + 0-pt blank guard + 100-pt Python & Java grading)
+        for diff in ("Easy", "Medium", "Hard"):
+            tr_res = hub_server.dispatch_request("GET", f"/api/dsa/triage/next?difficulty={diff}")
+            self.assertEqual(tr_res["status_code"], 200)
+            tr = tr_res["data"]
+            self.assertEqual(tr["difficulty"], diff)
+            self.assertEqual(len(set(tr["patternOptions"])), 4)
+            self.assertEqual(len(set(tr["timeOptions"])), 4)
+            self.assertEqual(len(set(tr["stateOptions"])), 4)
+            self.assertNotIn("invariant", tr)
+
+        ga_tr = hub_server.dispatch_request("GET", "/api/dsa/triage/next?slug=group-anagrams")["data"]
+        self.assertNotIn("O(N", ga_tr["blindPrompt"])
+
+        blank_tr = hub_server.dispatch_request(
+            "POST",
+            "/api/dsa/triage/grade",
+            body={
+                "slug": "two-sum",
+                "lang": "python",
+                "pattern": "Arrays & Hashing",
+                "time": "O(N)",
+                "state": "HashMap / Frequency Counter",
+                "code": ga_tr["pythonStarter"],
+                "persist": False,
+            },
+        )
+        self.assertEqual(blank_tr["status_code"], 200)
+        self.assertEqual(blank_tr["data"]["breakdown"]["codePts"], 0)
+
+        py_tr = hub_server.dispatch_request(
+            "POST",
+            "/api/dsa/triage/grade",
+            body={
+                "slug": "two-sum",
+                "lang": "python",
+                "pattern": "Arrays & Hashing",
+                "time": "O(N)",
+                "state": "HashMap / Frequency Counter",
+                "code": "class Solution:\n    def twoSum(self, nums, target):\n        if not nums:\n            return []\n        seen = {}\n",
+                "elapsedSeconds": 38.5,
+                "persist": False,
+            },
+        )
+        self.assertEqual(py_tr["status_code"], 200)
+        self.assertEqual(py_tr["data"]["score"], 100)
+
+        java_tr = hub_server.dispatch_request(
+            "POST",
+            "/api/dsa/triage/grade",
+            body={
+                "slug": "two-sum",
+                "lang": "java",
+                "pattern": "Arrays & Hashing",
+                "time": "O(N)",
+                "state": "HashMap / Frequency Counter",
+                "code": "import java.util.*;\npublic class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> seen = new HashMap<>();\n        return new int[0];\n    }\n}\n",
+                "elapsedSeconds": 41.0,
+                "persist": False,
+            },
+        )
+        self.assertEqual(java_tr["status_code"], 200)
+        self.assertEqual(java_tr["data"]["score"], 100)
+
+        # 2. Wave 3B: 6-Scenario Staff Mock Interview Simulator (30 questions + 0/100 stub gate + >=85/100 Staff benchmark)
+        mi_cat = hub_server.dispatch_request("GET", "/api/interviews")
+        self.assertEqual(mi_cat["status_code"], 200)
+        sessions = mi_cat["data"]["sessions"]
+        self.assertEqual([s["sessionId"] for s in sessions], [f"interview-{i}" for i in range(1, 7)])
+
+        rubrics = mock_evaluator.load_rubrics()
+        for sid in [f"interview-{i}" for i in range(1, 7)]:
+            sess_res = hub_server.dispatch_request("GET", f"/api/interviews/session?id={sid}")
+            self.assertEqual(sess_res["status_code"], 200)
+            self.assertEqual(len(sess_res["data"]["questions"]), 5)
+            self.assertTrue(sess_res["data"]["masteryGuideMarkdown"])
+
+            stub_eval = hub_server.dispatch_request(
+                "POST",
+                "/api/interviews/evaluate",
+                body={"sessionId": sid, "responses": {"q1": "not sure", "q2": ""}, "persist": False},
+            )
+            self.assertEqual(stub_eval["status_code"], 200)
+            self.assertEqual(stub_eval["data"]["numericScore"], 0, f"Stub should score 0 on {sid}")
+
+            bench_answers = {q["id"]: q["benchmarkAnswer"] for q in rubrics[sid]["questions"]}
+            bench_eval = hub_server.dispatch_request(
+                "POST",
+                "/api/interviews/evaluate",
+                body={"sessionId": sid, "responses": bench_answers, "persist": False},
+            )
+            self.assertEqual(bench_eval["status_code"], 200)
+            self.assertGreaterEqual(bench_eval["data"]["numericScore"], 85, f"Low benchmark score on {sid}: {bench_eval['data']}")
+
+        # 3. Wave 4: Verify all 4 AI Architecture Workbench Catalog Suites pass `/api/workbench/verify`
+        from hub import storage
+
+        ai_ids = (
+            "wb-ai-hybrid-rrf-rag",
+            "wb-ai-rag-triad-calibration",
+            "wb-ai-self-healing-agent",
+            "wb-ai-guardrailed-tool-agent",
+        )
+        try:
+            for ai_item_id in ai_ids:
+                v_res = hub_server.dispatch_request("POST", "/api/workbench/verify", body={"itemId": ai_item_id})
+                self.assertEqual(v_res["status_code"], 200)
+                self.assertEqual(v_res["data"]["status"], "PASS", f"AI Workbench suite failed: {ai_item_id}: {v_res['data']}")
+        finally:
+            conn = storage._get_connection()
+            try:
+                conn.executemany("DELETE FROM workbench_runs WHERE item_id = ?", [(i,) for i in ai_ids])
+                conn.commit()
+            finally:
+                conn.close()
 
 
 if __name__ == "__main__":

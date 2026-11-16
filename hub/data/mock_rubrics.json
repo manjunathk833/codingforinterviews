@@ -1,0 +1,1832 @@
+{
+  "sessions": [
+    {
+      "sessionId": "interview-1",
+      "title": "Session #1: Full-Spectrum Staff SDET Synthesis \u2014 Distributed Systems, CDP, RAG & DORA (Final Boss)",
+      "shortTitle": "Session #1: Full-Spectrum Staff Synthesis",
+      "targetRole": "Staff / Principal SDET & Quality Architect",
+      "phaseGate": "Phase 5 Final Boss",
+      "preserveDiskFiles": true,
+      "baselineScore": "19 / 100 (Diagnostic Baseline)",
+      "relatedChapters": [
+        "sdet-05-parallel-tenant-isolation",
+        "pw-01-webdriver-http-vs-cdp-and-bidi-pipes",
+        "ai-01-rag-triad-and-claim-verification",
+        "sdet-10-opentelemetry-traceparent-triage",
+        "sdet-09-statistical-flake-quarantine-governance",
+        "sdet-12-staff-sdet-rfcs-and-dora-metrics"
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "title": "Q1: 50-Worker Distributed Test Data Isolation & Kafka Eventual Consistency",
+          "scenario": "30+ microservices with Kafka/Debezium suffer 50-worker staging collisions and async assertion races.",
+          "tasks": [],
+          "mechanismGroups": [
+            [
+              "tenant",
+              "uuid",
+              "namespace",
+              "partition"
+            ],
+            [
+              "kafka",
+              "correlation",
+              "awaitility",
+              "poll",
+              "backoff",
+              "outbox"
+            ],
+            [
+              "ttl",
+              "reaper",
+              "saga",
+              "compensat",
+              "idempoten"
+            ]
+          ],
+          "mathSignals": [
+            "50",
+            "200ms",
+            "5s",
+            "timeout",
+            "sla",
+            "ttl",
+            "2h"
+          ],
+          "tradeoffSignals": [
+            "reset",
+            "seed",
+            "synthetic",
+            "vs",
+            "trade-off",
+            "sigkill",
+            "crash",
+            "leak"
+          ],
+          "operabilitySignals": [
+            "header",
+            "correlation",
+            "ci",
+            "fixture",
+            "teardown"
+          ],
+          "antiPatterns": [
+            "thread.sleep",
+            "global variable",
+            "setting global vars to null"
+          ],
+          "benchmarkAnswer": "Use cryptographic X-Test-Tenant-ID / UUID entity partitioning + domain Test Data Builders; verify Kafka sagas via correlation-ID consumer harnesses or bounded exponential-backoff polling (never Thread.sleep); guarantee SIGKILL cleanup via TTL-tagged rows and an out-of-band Reaper cron + Saga compensation."
+        },
+        {
+          "id": "q2",
+          "title": "Q2: Playwright CDP WebSockets vs Selenium W3C HTTP & BrowserContext Memory",
+          "scenario": "Migrating 10,000 Java Selenium tests to Playwright across 32-thread Kubernetes pods.",
+          "tasks": [],
+          "mechanismGroups": [
+            [
+              "cdp",
+              "websocket",
+              "bidirectional",
+              "json-rpc",
+              "webdriver"
+            ],
+            [
+              "browsercontext",
+              "incognito",
+              "process",
+              "threadlocal"
+            ],
+            [
+              "actionability",
+              "hydration",
+              "getbyrole",
+              "accessibility",
+              "waitforresponse"
+            ]
+          ],
+          "mathSignals": [
+            "20ms",
+            "30mb",
+            "400mb",
+            "32",
+            "ram",
+            "ms",
+            "mb"
+          ],
+          "tradeoffSignals": [
+            "selenium",
+            "roundtrip",
+            "http",
+            "hydration",
+            "ssr",
+            "oom",
+            "memory"
+          ],
+          "operabilitySignals": [
+            "kubernetes",
+            "pod",
+            "locator",
+            "auto-wait",
+            "network"
+          ],
+          "antiPatterns": [
+            "thread.sleep",
+            "32 chrome processes"
+          ],
+          "benchmarkAnswer": "Selenium serializes each command over HTTP REST roundtrips and spawns heavy OS browsers per thread (~500MB RAM), whereas Playwright multiplexes JSON-RPC over a persistent CDP WebSocket and isolates 32 workers via lightweight BrowserContexts (~20MB, <20ms startup). Mitigate SSR hydration races with getByRole accessibility locators + API response waits."
+        },
+        {
+          "id": "q3",
+          "title": "Q3: Enterprise RAG Triad Evaluation Gate & AST Self-Healing Locator Agent",
+          "scenario": "Gating an airline policy RAG concierge against hallucinations and building a safe self-healing UI agent.",
+          "tasks": [],
+          "mechanismGroups": [
+            [
+              "faithfulness",
+              "grounded",
+              "claim",
+              "entailment"
+            ],
+            [
+              "relevance",
+              "recall",
+              "precision",
+              "golden"
+            ],
+            [
+              "accessibility",
+              "aom",
+              "ast",
+              "confidence",
+              "pull request"
+            ]
+          ],
+          "mathSignals": [
+            "0.90",
+            "0.85",
+            "cosine",
+            "threshold",
+            "200",
+            "%"
+          ],
+          "tradeoffSignals": [
+            "hallucinat",
+            "false positive",
+            "regression",
+            "mask",
+            "sandbox"
+          ],
+          "operabilitySignals": [
+            "ci",
+            "gate",
+            "pr",
+            "diff",
+            "ragas"
+          ],
+          "antiPatterns": [
+            "does this text look good",
+            "mutate main directly"
+          ],
+          "benchmarkAnswer": "Decompose RAG into Faithfulness (supported claims / total claims), Answer Relevance, and Context Recall/Precision over a stratified golden dataset with strict CI thresholds (>=0.90). For self-healing, snapshot DOM + Accessibility Tree, require high role+embedding confidence + state-transition verification, and emit an AST-patched PR rather than mutating main."
+        },
+        {
+          "id": "q4",
+          "title": "Q4: OpenTelemetry W3C TraceContext Propagation & Automated 504 RCA Triage",
+          "scenario": "Pinpointing staging 504/500 spikes across 30 K8s microservices, Kong gateway, Kafka, and Stripe.",
+          "tasks": [],
+          "mechanismGroups": [
+            [
+              "opentelemetry",
+              "otel",
+              "traceparent",
+              "tracestate",
+              "w3c"
+            ],
+            [
+              "span",
+              "jaeger",
+              "connection pool",
+              "hikari",
+              "cpu throttl"
+            ],
+            [
+              "elastic",
+              "kibana",
+              "rca",
+              "triage",
+              "correlat"
+            ]
+          ],
+          "mathSignals": [
+            "p95",
+            "p99",
+            "504",
+            "500",
+            "ms",
+            "timeout"
+          ],
+          "tradeoffSignals": [
+            "third-party",
+            "downstream",
+            "db lock",
+            "pool exhaustion",
+            "cfs",
+            "throttling"
+          ],
+          "operabilitySignals": [
+            "kafka header",
+            "slack",
+            "jira",
+            "ci",
+            "stack trace"
+          ],
+          "antiPatterns": [
+            "grep logs manually"
+          ],
+          "benchmarkAnswer": "Inject W3C `traceparent` headers in API test clients and assert propagation across HTTP -> Kafka headers -> worker spans. Distinguish external gateway latency (long leaf client span) vs DB pool starvation (wait-acquire span spike) vs K8s CFS throttling (`container_cpu_cfs_throttled_seconds_total`), and auto-query traces on test failure to post structured RCA."
+        },
+        {
+          "id": "q5",
+          "title": "Q5: Compressing 1,500 Machine-Hour Regression, Flake Quarantine & DORA",
+          "scenario": "Overhauling an 8,000-test, 14-hour, 16%-flaky E2E suite blocking daily releases.",
+          "tasks": [],
+          "mechanismGroups": [
+            [
+              "pyramid",
+              "pact",
+              "contract",
+              "component"
+            ],
+            [
+              "tia",
+              "test impact",
+              "lpt",
+              "shard",
+              "bin-pack"
+            ],
+            [
+              "quarantine",
+              "dora",
+              "lead time",
+              "change failure",
+              "deployment frequency"
+            ]
+          ],
+          "mathSignals": [
+            "1500",
+            "100",
+            "90%",
+            "14",
+            "16%",
+            "sla",
+            "48h",
+            "7d"
+          ],
+          "tradeoffSignals": [
+            "delete",
+            "bypass",
+            "non-blocking",
+            "ownership",
+            "false confidence"
+          ],
+          "operabilitySignals": [
+            "pr gate",
+            "nightly",
+            "codeowners",
+            "jira",
+            "dashboard"
+          ],
+          "antiPatterns": [
+            "automate everything",
+            "combine tests wherever possible"
+          ],
+          "benchmarkAnswer": "Shift 70% of E2E combinatorial checks down into Pact consumer-driven contracts + component tests, apply Git-diff Test Impact Analysis (TIA) + LPT duration bin-packing across K8s shards, auto-quarantine statistically flaky tests into non-blocking jobs with strict CODEOWNERS repair SLAs, and tie outcomes directly to the 4 DORA metrics."
+        }
+      ]
+    },
+    {
+      "sessionId": "interview-2",
+      "title": "Session #2: Frontend & Browser Architecture \u2014 CDP Pipes, Context Memory & Hydration (Phase 1 Exit Gate)",
+      "shortTitle": "Session #2: Frontend & Browser Architecture",
+      "targetRole": "Senior / Staff Frontend Quality Architect",
+      "phaseGate": "Phase 1 Exit Gate",
+      "preserveDiskFiles": false,
+      "relatedChapters": [
+        "sdet-01-determinism-and-flakiness-math",
+        "pw-01-webdriver-http-vs-cdp-and-bidi-pipes",
+        "pw-02-browser-processes-vs-browser-context-memory",
+        "pw-03-dom-shadow-dom-iframes-and-hydration-races",
+        "pw-06-zero-ui-auth-storage-state-and-personas",
+        "pw-07-network-interception-route-and-har-replay"
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "title": "Q1: Flakiness Combinatorics (p^N) & Hermetic UI Seam Economics",
+          "scenario": "A checkout SPA suite has 250 browser tests each passing 99.2% of runs independently, yet PR builds fail over 85% of the time.",
+          "tasks": [
+            "Prove mathematically why 99.2% per-test reliability collapses across 250 tests (`P = p^N`) and calculate the per-test reliability needed for 95% green CI runs.",
+            "Design a Hermetic UI Seam strategy deciding what runs against real backend pods vs deterministic network route mocks (`page.route` / HAR).",
+            "Explain why blind `@Retry(3)` hides concurrency bugs and inflates CI cost."
+          ],
+          "mechanismGroups": [
+            [
+              "p^n",
+              "0.992",
+              "combinator",
+              "exponential",
+              "independent"
+            ],
+            [
+              "hermetic",
+              "seam",
+              "route",
+              "har",
+              "contract"
+            ],
+            [
+              "retry",
+              "mask",
+              "quarantine",
+              "determinis"
+            ]
+          ],
+          "mathSignals": [
+            "0.992",
+            "250",
+            "13%",
+            "86%",
+            "99.98%",
+            "95%"
+          ],
+          "tradeoffSignals": [
+            "e2e",
+            "mock",
+            "drift",
+            "schema",
+            "latency",
+            "cost"
+          ],
+          "operabilitySignals": [
+            "ci",
+            "pr",
+            "smoke",
+            "trace"
+          ],
+          "antiPatterns": [
+            "thread.sleep",
+            "retry everything 5 times"
+          ],
+          "benchmarkAnswer": "`0.992^250 = 0.134` (86.6% build failure!). Reaching `0.95` across 250 tests requires `p = 0.95^(1/250) = 0.99979`. Keep 10\u201315 true E2E smoke journeys unmocked while shifting 235 UI state permutations onto OpenAPI/Pact-verified `page.route` seams rather than masking races with blind `@Retry`."
+        },
+        {
+          "id": "q2",
+          "title": "Q2: Browser Process vs BrowserContext Memory Sizing on K8s Runners",
+          "scenario": "Your Playwright runner pods (`4 vCPU, 8 GiB RAM`, `/dev/shm` default `64 MiB`) crash with `Target closed` and Exit Code `137` at 16 workers.",
+          "tasks": [
+            "Calculate memory footprint comparing 16 OS Chromium processes vs 1 Browser + 16 isolated `BrowserContext` instances.",
+            "Diagnose why Docker's `64 MiB` `/dev/shm` crashes Chromium compositors and specify exact container flags/mounts.",
+            "Design zero-UI authentication state reuse (`storageState`) across 16 parallel worker personas without session token collisions."
+          ],
+          "mechanismGroups": [
+            [
+              "browsercontext",
+              "incognito",
+              "browser",
+              "memory"
+            ],
+            [
+              "/dev/shm",
+              "disable-dev-shm-usage",
+              "oomkilled",
+              "137",
+              "cgroup"
+            ],
+            [
+              "storagestate",
+              "cookie",
+              "jwt",
+              "persona",
+              "worker"
+            ]
+          ],
+          "mathSignals": [
+            "64",
+            "8",
+            "16",
+            "30mb",
+            "400mb",
+            "137",
+            "gib",
+            "mib"
+          ],
+          "tradeoffSignals": [
+            "shared account",
+            "collision",
+            "cold start",
+            "login ui",
+            "isolation"
+          ],
+          "operabilitySignals": [
+            "docker",
+            "kubernetes",
+            "global setup",
+            "tmpfs"
+          ],
+          "antiPatterns": [
+            "login via ui before every test",
+            "share one mutable user across workers"
+          ],
+          "benchmarkAnswer": "1 Browser (~350MB) + 16 BrowserContexts (16 * 25MB = 400MB) fits comfortably under 1.5 GiB vs 8+ GiB for 16 full browsers. Mount tmpfs `/dev/shm` >= 1\u20132 GiB (or `--disable-dev-shm-usage`) to prevent Exit 137 SIGKILL, and mint per-worker API `storageState` JSONs in setup so workers skip UI login with zero cart collisions."
+        },
+        {
+          "id": "q3",
+          "title": "Q3: Next.js SSR Hydration Races, Shadow DOM & Five Actionability Gates",
+          "scenario": "Tests click a visible server-rendered `Book Seat` button in Next.js, Playwright reports `click()` succeeded, yet no `/api/orders` POST fires.",
+          "tasks": [
+            "List Playwright's 5 Actionability Gates and explain why SSR hydration still defeats them.",
+            "Architect a deterministic fix across app instrumentation (`data-hydrated` / readiness signals) and web-first assertions.",
+            "Explain how closed vs open Shadow DOM piercing and cross-origin payment `iframe` (`Stripe Elements`) locators work."
+          ],
+          "mechanismGroups": [
+            [
+              "attached",
+              "visible",
+              "stable",
+              "enabled",
+              "receives events",
+              "actionability"
+            ],
+            [
+              "hydration",
+              "ssr",
+              "react",
+              "event listener",
+              "bundle"
+            ],
+            [
+              "shadow",
+              "framelocator",
+              "iframe",
+              "getbyrole"
+            ]
+          ],
+          "mathSignals": [
+            "5",
+            "0ms",
+            "timeout",
+            "5000ms"
+          ],
+          "tradeoffSignals": [
+            "closed shadow",
+            "open shadow",
+            "xpath",
+            "css",
+            "cross-origin"
+          ],
+          "operabilitySignals": [
+            "data-hydrated",
+            "expect",
+            "tobeenabled",
+            "trace viewer"
+          ],
+          "antiPatterns": [
+            "page.wait_for_timeout",
+            "time.sleep",
+            "xpath //div[3]/button"
+          ],
+          "benchmarkAnswer": "Playwright verifies Attached, Visible, Stable, Receives Events, and Enabled\u2014but SSR paints enabled HTML before React attaches JS `onClick` handlers. Emit deterministic hydration readiness (`data-hydrated='true'`) or assert post-hydration interactive state, use CSS/getByRole auto-piercing on open Shadow roots, and isolate Stripe iframes via `page.frameLocator()`."
+        },
+        {
+          "id": "q4",
+          "title": "Q4: Deterministic Clock Virtualization, WebSocket Mocking & Network Faults",
+          "scenario": "AeroCart's seat-hold countdown expires after 10 minutes over a live WebSocket ticker and shows a degraded banner on HTTP 429/503.",
+          "tasks": [
+            "Design a sub-second test verifying the 10-minute countdown expiry without waiting 600 real seconds (`page.clock`).",
+            "Architect deterministic WebSocket frame interception (`page.routeWebSocket`) for concurrent seat-snatch events.",
+            "Test UI retry/degradation banners under injected `429 Retry-After` and `503` upstream faults."
+          ],
+          "mechanismGroups": [
+            [
+              "clock",
+              "fastforward",
+              "install",
+              "virtual"
+            ],
+            [
+              "routewebsocket",
+              "websocket",
+              "frame",
+              "push"
+            ],
+            [
+              "429",
+              "503",
+              "retry-after",
+              "route",
+              "fulfill"
+            ]
+          ],
+          "mathSignals": [
+            "10",
+            "600",
+            "100ms",
+            "429",
+            "503"
+          ],
+          "tradeoffSignals": [
+            "real timer",
+            "wall-clock",
+            "determinism",
+            "production parity"
+          ],
+          "operabilitySignals": [
+            "banner",
+            "aria-live",
+            "accessibility",
+            "ci"
+          ],
+          "antiPatterns": [
+            "sleep(600)",
+            "wait 10 minutes in ci"
+          ],
+          "benchmarkAnswer": "Install `page.clock.install()` before navigation and call `clock.fastForward('10:01')` to trigger expiry in <50ms. Use `page.routeWebSocket()` to inject synthetic `SEAT_LOCKED` frames deterministically, and `page.route('**/api/v1/orders')` returning `429` with `Retry-After: 2` to assert accessible `role='alert'` degradation banners."
+        },
+        {
+          "id": "q5",
+          "title": "Q5: Visual Pixel-Diffing vs Accessibility (`axe-core`) Gates & Blob Sharding",
+          "scenario": "Font anti-aliasing differences between macOS laptops and Linux CI runners break `toHaveScreenshot()` on every PR.",
+          "tasks": [
+            "Solve cross-OS font/GPU rendering drift so visual regression tests stay 100% reproducible.",
+            "Define WCAG 2.1 AA automated gates (`@axe-core/playwright`) and what human/screen-reader gaps remain.",
+            "Design sharded Playwright execution merging Blob reports (`--reporter=blob` -> `merge-reports`)."
+          ],
+          "mechanismGroups": [
+            [
+              "docker",
+              "linux",
+              "container",
+              "tohavescreenshot",
+              "mask"
+            ],
+            [
+              "axe",
+              "wcag",
+              "contrast",
+              "aria",
+              "keyboard"
+            ],
+            [
+              "blob",
+              "merge-reports",
+              "shard"
+            ]
+          ],
+          "mathSignals": [
+            "0.01",
+            "maxdiffpixelratio",
+            "2.1",
+            "4.5:1"
+          ],
+          "tradeoffSignals": [
+            "macos",
+            "linux",
+            "subpixel",
+            "false positive",
+            "dynamic content"
+          ],
+          "operabilitySignals": [
+            "ci",
+            "artifact",
+            "trace",
+            "masking"
+          ],
+          "antiPatterns": [
+            "disable visual tests completely",
+            "set threshold to 50%"
+          ],
+          "benchmarkAnswer": "Generate and verify visual baselines exclusively inside pinned Linux Playwright Docker images, masking dynamic timestamps/avatars and disabling CSS animations. Pair `@axe-core/playwright` WCAG 2.1 AA checks (4.5:1 contrast, labels, focus traps) with keyboard tab-order tests, and aggregate `--shard=i/N` runs via `playwright merge-reports`."
+        }
+      ]
+    },
+    {
+      "sessionId": "interview-3",
+      "title": "Session #3: Microservices, Async Kafka & Flake Governance \u2014 Pact, Outbox & Quarantine (Phase 2 Exit Gate)",
+      "shortTitle": "Session #3: Microservices, Pact & Async Kafka",
+      "targetRole": "Staff Microservices & Backend Quality Architect",
+      "phaseGate": "Phase 2 Exit Gate",
+      "preserveDiskFiles": false,
+      "relatedChapters": [
+        "api-02-rest-idempotency-caching-and-pagination",
+        "api-05-rate-limiting-token-buckets-and-timeouts",
+        "api-08-async-saga-and-webhook-verification",
+        "api-10-pact-consumer-driven-contract-testing",
+        "sd-03-kafka-outbox-and-eventual-consistency",
+        "sdet-09-statistical-flake-quarantine-governance"
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "title": "Q1: Consumer-Driven Pact Contracts vs OpenAPI Schema Validation",
+          "scenario": "35 teams deploy independently; OpenAPI linters pass, yet Checkout breaks when Pricing renames an optional nested enum.",
+          "tasks": [
+            "Contrast provider-side OpenAPI schema validation against Consumer-Driven Contracts (Pact Broker + `can-i-deploy`).",
+            "Handle Provider States (`given('Flight AC-101 has 2 seats left')`) deterministically without shared staging DBs.",
+            "Contract-test asynchronous Kafka / Avro / Protobuf event schemas (`BACKWARD` vs `FULL` compatibility)."
+          ],
+          "mechanismGroups": [
+            [
+              "pact",
+              "consumer-driven",
+              "broker",
+              "can-i-deploy"
+            ],
+            [
+              "provider state",
+              "stub",
+              "repository",
+              "fixture"
+            ],
+            [
+              "schema registry",
+              "avro",
+              "protobuf",
+              "backward",
+              "full"
+            ]
+          ],
+          "mathSignals": [
+            "35",
+            "o(n)",
+            "0",
+            "100%"
+          ],
+          "tradeoffSignals": [
+            "openapi",
+            "optional field",
+            "coupling",
+            "e2e",
+            "versioning"
+          ],
+          "operabilitySignals": [
+            "ci",
+            "webhook",
+            "matrix",
+            "deploy gate"
+          ],
+          "antiPatterns": [
+            "test all 35 services only in shared staging"
+          ],
+          "benchmarkAnswer": "OpenAPI proves syntactic validity on the provider, whereas Pact records exact consumer field/value expectations and gates releases via Pact Broker `can-i-deploy` verification matrices. Seed in-memory/transactional Provider State handlers per interaction and enforce Schema Registry `BACKWARD_TRANSITIVE`/`FULL` rules on Kafka topics."
+        },
+        {
+          "id": "q2",
+          "title": "Q2: Transactional Outbox, Debezium CDC & Idempotent Payment Sagas",
+          "scenario": "Network blips during `POST /orders` cause duplicate credit-card charges OR DB commits whose `OrderCreated` Kafka event is lost.",
+          "tasks": [
+            "Explain the Dual-Write bug (Postgres commit + Kafka publish) and verify the Transactional Outbox + Debezium CDC fix.",
+            "Design automated chaos tests proving `Idempotency-Key` safety under concurrent duplicate POST retries.",
+            "Test multi-step Saga compensation when Inventory reservation fails after Payment pre-auth succeeds."
+          ],
+          "mechanismGroups": [
+            [
+              "dual-write",
+              "outbox",
+              "debezium",
+              "cdc",
+              "wal"
+            ],
+            [
+              "idempotency-key",
+              "unique constraint",
+              "atomic",
+              "redis",
+              "postgres"
+            ],
+            [
+              "saga",
+              "compensat",
+              "refund",
+              "void",
+              "at-least-once"
+            ]
+          ],
+          "mathSignals": [
+            "1",
+            "200",
+            "201",
+            "409",
+            "ms"
+          ],
+          "tradeoffSignals": [
+            "2pc",
+            "xa",
+            "eventual consistency",
+            "at-least-once",
+            "dedup"
+          ],
+          "operabilitySignals": [
+            "dead-letter",
+            "dlq",
+            "correlation",
+            "audit"
+          ],
+          "antiPatterns": [
+            "ignore duplicate charges",
+            "distributed 2pc across 30 services"
+          ],
+          "benchmarkAnswer": "Eliminate dual-writes by inserting `orders` + `outbox_events` in one local ACID transaction streamed via Debezium WAL CDC, with consumer deduplication on `event_id`. Fire 16 concurrent barrier-synchronized `POST /orders` sharing one `Idempotency-Key` asserting exactly 1 ledger charge, and inject Inventory `503` to assert Payment void/compensation."
+        },
+        {
+          "id": "q3",
+          "title": "Q3: HTTP/2 Connection Pooling, Token-Bucket Rate Limiting & Full-Jitter Backoff",
+          "scenario": "During flash-sale tests, retry storms amplify a 2-second downstream hiccup into a 20-minute cascading outage.",
+          "tasks": [
+            "Explain retry amplification across 4 microservice hops and prove why Exponential Backoff + **Full Jitter** beats fixed intervals.",
+            "Verify Token-Bucket rate limiters (`capacity`, `refill_rate`, `429 Retry-After`) without wall-clock sleeps.",
+            "Prevent client-side retry budgets from exhausting HTTP connection pools."
+          ],
+          "mechanismGroups": [
+            [
+              "amplification",
+              "exponential",
+              "jitter",
+              "thundering herd"
+            ],
+            [
+              "token bucket",
+              "429",
+              "retry-after",
+              "monotonic",
+              "clock"
+            ],
+            [
+              "retry budget",
+              "circuit breaker",
+              "connection pool",
+              "deadline"
+            ]
+          ],
+          "mathSignals": [
+            "3^4",
+            "81",
+            "10%",
+            "429",
+            "timeout"
+          ],
+          "tradeoffSignals": [
+            "fixed delay",
+            "synchronized wave",
+            "fail-fast",
+            "tail latency"
+          ],
+          "operabilitySignals": [
+            "deadline propagation",
+            "grpc",
+            "metrics",
+            "shedding"
+          ],
+          "antiPatterns": [
+            "infinite retries",
+            "fixed 1s sleep retry across 4 hops"
+          ],
+          "benchmarkAnswer": "3 retries across 4 hops multiplies load `4^4 = 256x`! Randomize sleep `uniform(0, min(cap, base * 2^attempt))` (Full Jitter) to desynchronize waves, cap per-client retry budgets at <=10% of active requests + propagate deadlines, and test Token Bucket math deterministically via an injected monotonic clock."
+        },
+        {
+          "id": "q4",
+          "title": "Q4: GraphQL N+1 Query Traps & gRPC Protobuf Deadline / Status Contracts",
+          "scenario": "An API gateway exposes GraphQL to web/mobile and talks gRPC internally; nested `flights { crew {certs} }` queries spike DB load 100x.",
+          "tasks": [
+            "Detect and fail GraphQL `N+1` resolver regressions automatically inside integration CI.",
+            "Test GraphQL AST depth/cost limits and partial-data `errors[]` envelopes (`HTTP 200` trap!).",
+            "Verify gRPC deadline propagation (`DEADLINE_EXCEEDED`), wire-compatibility (field tags), and status codes."
+          ],
+          "mechanismGroups": [
+            [
+              "n+1",
+              "dataloader",
+              "batch",
+              "sql count",
+              "otel"
+            ],
+            [
+              "graphql",
+              "depth",
+              "complexity",
+              "errors",
+              "200"
+            ],
+            [
+              "grpc",
+              "protobuf",
+              "deadline_exceeded",
+              "tag",
+              "wire"
+            ]
+          ],
+          "mathSignals": [
+            "100",
+            "o(1)",
+            "2",
+            "3",
+            "queries",
+            "200"
+          ],
+          "tradeoffSignals": [
+            "http 200",
+            "rest",
+            "over-fetching",
+            "renumbering tags"
+          ],
+          "operabilitySignals": [
+            "query counter",
+            "buf",
+            "breaking-change",
+            "ci"
+          ],
+          "antiPatterns": [
+            "only assert status_code == 200 on graphql",
+            "reuse deleted protobuf tag numbers"
+          ],
+          "benchmarkAnswer": "Instrument SQL/OTel span counters in GraphQL tests asserting query count stays `O(1)` (`<= 3` batched DataLoader queries whether returning 2 or 50 flights), assert `response.errors` is empty (since GraphQL returns HTTP 200 on resolver errors) + AST query-depth caps, and lint Protobuf `reserved` field tags with `buf breaking`."
+        },
+        {
+          "id": "q5",
+          "title": "Q5: Statistical Flake Detection (Beta-Binomial / Rolling Pass Rate) & Quarantine Governance",
+          "scenario": "Engineers re-run red GitHub Actions jobs until green; 12% of tests are intermittent flakes with zero accountability.",
+          "tasks": [
+            "Define an objective statistical flake detector distinguishing true code regressions from non-deterministic tests.",
+            "Architect automated quarantine routing (blocking PR lane vs non-blocking quarantine lane) via JUnit/Allure telemetry.",
+            "Enforce CODEOWNERS SLAs and strict un-quarantine graduation gates (e.g., 100 consecutive parallel burn-in passes)."
+          ],
+          "mechanismGroups": [
+            [
+              "same commit",
+              "pass and fail",
+              "entropy",
+              "rolling",
+              "statistical"
+            ],
+            [
+              "quarantine",
+              "non-blocking",
+              "marker",
+              "junit",
+              "manifest"
+            ],
+            [
+              "codeowners",
+              "sla",
+              "burn-in",
+              "100",
+              "deflake"
+            ]
+          ],
+          "mathSignals": [
+            "100",
+            "0.99",
+            "48h",
+            "7d",
+            "14d",
+            "%"
+          ],
+          "tradeoffSignals": [
+            "delete test",
+            "coverage blindspot",
+            "alert fatigue",
+            "velocity"
+          ],
+          "operabilitySignals": [
+            "jira",
+            "slack",
+            "ci",
+            "burn-in job",
+            "ownership"
+          ],
+          "antiPatterns": [
+            "just click rerun failed jobs",
+            "comment out failing assertions"
+          ],
+          "benchmarkAnswer": "Flag any test exhibiting mixed pass+fail outcomes on the *exact same commit SHA* (or >1% retry rate over 200 runs), auto-move it via quarantine manifest out of blocking PR checks into a monitored quarantine pipeline, page CODEOWNERS with a 7-day fix-or-rewrite SLA, and require 100/100 parallel stress burn-in passes to re-enter the PR gate."
+        }
+      ]
+    },
+    {
+      "sessionId": "interview-4",
+      "title": "Session #4: SQL Data Integrity, Containers & CI Sharding \u2014 MVCC, Ryuk & LPT (Phase 3 Exit Gate)",
+      "shortTitle": "Session #4: SQL MVCC, Docker & LPT Sharding",
+      "targetRole": "Staff Data, Infrastructure & CI Systems Architect",
+      "phaseGate": "Phase 3 Exit Gate",
+      "preserveDiskFiles": false,
+      "relatedChapters": [
+        "sql-02-joins-set-operations-and-fanout-traps",
+        "sql-07-acid-mvcc-isolation-and-seat-double-booking",
+        "sql-10-event-to-warehouse-reconciliation-and-data-qa",
+        "infra-02-multistage-dockerfiles-layer-caching-and-buildkit",
+        "infra-04-testcontainers-ephemeral-deps-and-ryuk-reaper",
+        "infra-07-dynamic-ci-matrix-sharding-and-bin-packing"
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "title": "Q1: PostgreSQL MVCC Isolation Anomaly & 64-Thread Seat `12A` Double-Booking",
+          "scenario": "Under `READ COMMITTED`, `SELECT available FROM seats WHERE seat='12A'` followed by `UPDATE` double-books Seat `12A` under 64 concurrent requests.",
+          "tasks": [
+            "Explain why PostgreSQL `READ COMMITTED` permits Lost Updates / Read-Modify-Write races across concurrent transactions.",
+            "Compare Pessimistic Locking (`SELECT ... FOR UPDATE` vs `SKIP LOCKED`), Optimistic CAS (`version = version + 1`), and `SERIALIZABLE` SSI.",
+            "Write the concurrency test harness (cyclic barrier + 64 threads) proving exactly 1 winner and 63 clean `409 Conflict` responses."
+          ],
+          "mechanismGroups": [
+            [
+              "mvcc",
+              "read committed",
+              "snapshot",
+              "lost update",
+              "race"
+            ],
+            [
+              "for update",
+              "skip locked",
+              "optimistic",
+              "version",
+              "cas",
+              "serializable"
+            ],
+            [
+              "barrier",
+              "64",
+              "thread",
+              "409",
+              "exactly 1"
+            ]
+          ],
+          "mathSignals": [
+            "1",
+            "63",
+            "64",
+            "409",
+            "ms"
+          ],
+          "tradeoffSignals": [
+            "contention",
+            "lock wait",
+            "retry",
+            "queue",
+            "seat picker"
+          ],
+          "operabilitySignals": [
+            "deadlock",
+            "lock_timeout",
+            "index",
+            "postgres"
+          ],
+          "antiPatterns": [
+            "synchronize in python memory across multiple pods",
+            "ignore 409 conflicts"
+          ],
+          "benchmarkAnswer": "In `READ COMMITTED`, two transactions both read `available=true` from the committed snapshot before either commits. Use `UPDATE seats SET booked_by=:u, version=version+1 WHERE seat='12A' AND booked_by IS NULL` (atomic single-statement CAS) for named seats or `FOR UPDATE SKIP LOCKED` for next-available seat queues, verified via a 64-thread `threading.Barrier` test."
+        },
+        {
+          "id": "q2",
+          "title": "Q2: 1:N Join Fan-Out Financial Inflation & Double-Entry Ledger Reconciliation",
+          "scenario": "Joining `orders` (`1` row, `$500`) to `baggage_items` (`3` rows) and `tax_lines` (`2` rows) inflates `SUM(orders.total_cents)` to `$3,000` (`6x`!).",
+          "tasks": [
+            "Explain the Cartesian `1:M:N` join grain trap and rewrite the SQL using pre-aggregated CTEs.",
+            "Enforce double-entry ledger invariants (`SUM(debits) == SUM(credits)`, zero orphan journal postings, idempotent webhook replay).",
+            "Verify query scalability via `EXPLAIN (ANALYZE, BUFFERS)` SARGable composite B-Tree indexes."
+          ],
+          "mechanismGroups": [
+            [
+              "fan-out",
+              "grain",
+              "cartesian",
+              "cte",
+              "pre-aggregat"
+            ],
+            [
+              "double-entry",
+              "debit",
+              "credit",
+              "zero-sum",
+              "ledger"
+            ],
+            [
+              "explain",
+              "btree",
+              "sargable",
+              "covering",
+              "seq scan"
+            ]
+          ],
+          "mathSignals": [
+            "6x",
+            "3",
+            "2",
+            "0",
+            "sum",
+            "cents"
+          ],
+          "tradeoffSignals": [
+            "float",
+            "integer cents",
+            "decimal",
+            "index write overhead"
+          ],
+          "operabilitySignals": [
+            "reconciliation",
+            "warehouse",
+            "cdc",
+            "alert"
+          ],
+          "antiPatterns": [
+            "use float64 for currency",
+            "distinct sum(total) hack"
+          ],
+          "benchmarkAnswer": "Never sum parent metrics after joining `1:N` child tables (`3 * 2 = 6x` row multiplication); pre-aggregate each child table to `order_id` grain inside separate CTEs before joining, store money in integer cents/NUMERIC with `SUM(debit_cents) - SUM(credit_cents) = 0` checks, and assert `Index Only Scan` / zero `Seq Scan` via `EXPLAIN (ANALYZE, BUFFERS)`."
+        },
+        {
+          "id": "q3",
+          "title": "Q3: Multi-Stage Dockerfiles, BuildKit Layer Caching & Testcontainers Ryuk Reaper",
+          "scenario": "Your E2E runner Docker image is `2.9 GB`, rebuilds `pip/maven` from scratch on every 1-line test edit (`9 min`), and leaks zombie Postgres containers on CI.",
+          "tasks": [
+            "Redesign a Multi-Stage BuildKit Dockerfile cutting image size >65% and keeping dependency layers cached across code edits.",
+            "Harden container security (non-root `USER`, pinned digests, zero build-arg secrets in image history).",
+            "Explain how Testcontainers `Ryuk` sidecar reaps orphan containers/volumes even when CI runners receive `SIGKILL`."
+          ],
+          "mechanismGroups": [
+            [
+              "multi-stage",
+              "layer",
+              "copy requirements",
+              "buildkit",
+              "cache mount"
+            ],
+            [
+              "non-root",
+              "user",
+              "digest",
+              "secret",
+              "slim"
+            ],
+            [
+              "testcontainers",
+              "ryuk",
+              "tcp",
+              "heartbeat",
+              "reap"
+            ]
+          ],
+          "mathSignals": [
+            "2.9",
+            "9",
+            "30s",
+            "65%",
+            "uid"
+          ],
+          "tradeoffSignals": [
+            "alpine",
+            "musl",
+            "glibc",
+            "playwright browsers",
+            "dind"
+          ],
+          "operabilitySignals": [
+            "docker.sock",
+            "oci",
+            "sbom",
+            "trivy"
+          ],
+          "antiPatterns": [
+            "COPY . . before pip install",
+            "ENV API_SECRET in Dockerfile",
+            "run as root"
+          ],
+          "benchmarkAnswer": "Copy lockfiles (`pyproject.toml`/`pom.xml`) and install dependencies with `--mount=type=cache` *before* `COPY . .`, copy artifacts into a minimal runtime stage running as non-root `USER 10001` (using Debian-slim/glibc for Playwright browser compatibility), and keep Testcontainers' `Ryuk` TCP heartbeat sidecar enabled to garbage-collect labeled containers/networks on socket disconnect."
+        },
+        {
+          "id": "q4",
+          "title": "Q4: Kubernetes Ephemeral PR Environments, Probes & `OOMKilled (Exit 137)` Forensics",
+          "scenario": "Ephemeral PR namespaces suffer sporadic `502 Bad Gateway` during rollout and test pods die with `Exit Code 137` despite JVM `-Xmx6g` on an `8Gi` pod.",
+          "tasks": [
+            "Explain why `-Xmx6g` inside an `8Gi` cgroup v2 pod still triggers Linux OOMKiller (`Exit 137`).",
+            "Differentiate Kubernetes `startupProbe`, `readinessProbe`, and `livenessProbe` to eliminate rollout `502`s and restart loops.",
+            "Design graceful `SIGTERM` connection draining (`preStop` + `terminationGracePeriodSeconds`)."
+          ],
+          "mechanismGroups": [
+            [
+              "137",
+              "oomkilled",
+              "cgroup",
+              "rss",
+              "metaspace",
+              "off-heap",
+              "direct memory"
+            ],
+            [
+              "startupprobe",
+              "readinessprobe",
+              "livenessprobe",
+              "502"
+            ],
+            [
+              "sigterm",
+              "prestop",
+              "drain",
+              "graceperiod"
+            ]
+          ],
+          "mathSignals": [
+            "6g",
+            "8gi",
+            "70%",
+            "75%",
+            "137",
+            "143"
+          ],
+          "tradeoffSignals": [
+            "heap vs rss",
+            "liveness checking db",
+            "cascading restart"
+          ],
+          "operabilitySignals": [
+            "kubectl",
+            "events",
+            "maxrampercentage",
+            "endpoints"
+          ],
+          "antiPatterns": [
+            "put downstream db check inside livenessProbe",
+            "set Xmx == pod memory limit"
+          ],
+          "benchmarkAnswer": "Total pod RSS = Heap (`6Gi`) + Metaspace + Thread stacks + Direct NIO buffers + glibc arenas + Chromium/native sidecars (>8Gi -> cgroup OOMKill 137); cap JVM at `-XX:MaxRAMPercentage=70.0`. Never check downstream DBs in `livenessProbe` (causes cascading restarts); gate traffic with `readinessProbe` + `preStop` sleep so kube-proxy updates Endpoints before `SIGTERM`."
+        },
+        {
+          "id": "q5",
+          "title": "Q5: Longest-Processing-Time (LPT) CI Shard Bin-Packing & AST Test Impact Analysis",
+          "scenario": "Alphabetical sharding puts all slow Checkout E2E specs onto Shard #3 (`28 min`) while Shards #1, #2, and #4 finish in `5 min`.",
+          "tasks": [
+            "Write/explain the `O(N log K)` Longest-Processing-Time (LPT) Min-Heap bin-packing algorithm using historical p90 test durations.",
+            "Calculate wall-clock speedup and machine-minute savings across `K = 8` shards.",
+            "Combine static AST import-graph + coverage Test Impact Analysis (TIA) on PRs with full nightly safety nets."
+          ],
+          "mechanismGroups": [
+            [
+              "lpt",
+              "longest",
+              "min-heap",
+              "heapq",
+              "bin-pack"
+            ],
+            [
+              "p90",
+              "duration",
+              "historical",
+              "makespan",
+              "imbalance"
+            ],
+            [
+              "tia",
+              "ast",
+              "import graph",
+              "coverage",
+              "nightly"
+            ]
+          ],
+          "mathSignals": [
+            "o(n log k)",
+            "4/3",
+            "28",
+            "10",
+            "8"
+          ],
+          "tradeoffSignals": [
+            "alphabetical",
+            "round-robin",
+            "dynamic reflection",
+            "config change",
+            "fallback"
+          ],
+          "operabilitySignals": [
+            "junit xml",
+            "github actions",
+            "matrix",
+            "full run"
+          ],
+          "antiPatterns": [
+            "split files alphabetically",
+            "never run full suite on main/nightly"
+          ],
+          "benchmarkAnswer": "Sort test files descending by rolling p90 duration and greedily assign each file to the lightest shard via a `K`-element Min-Heap (`O(N log K)`, proven `<= 4/3 - 1/(3K)` optimal makespan), collapsing 28m skew down to balanced ~10m shards. Pair AST/coverage TIA on PRs with mandatory full runs when shared config/Dockerfile/fixtures change."
+        }
+      ]
+    },
+    {
+      "sessionId": "interview-5",
+      "title": "Session #5: Performance, Chaos SRE & App/AI Security \u2014 Little's Law, SLOs & Zero-Trust (Phase 4 Exit Gate)",
+      "shortTitle": "Session #5: Perf, Chaos SRE & AppSec",
+      "targetRole": "Staff Performance, Chaos & Security QE Architect",
+      "phaseGate": "Phase 4 Exit Gate",
+      "preserveDiskFiles": false,
+      "relatedChapters": [
+        "perf-01-day0-littles-law-percentiles-and-load-taxonomy",
+        "perf-02-coordinated-omission-and-open-vs-closed-loops",
+        "perf-07-chaos-engineering-scientific-method-and-toxiproxy",
+        "perf-09-sli-slo-error-budgets-and-burn-rate-alerts",
+        "sec-02-owasp-api-top10-bola-bfla-and-mass-assignment",
+        "sec-06-ssrf-cloud-metadata-imdsv2-and-webhook-hmac"
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "title": "Q1: Little's Law (`L = \u03bbW`), Connection Pool Sizing & Coordinated Omission",
+          "scenario": "A closed-loop 50-VU load test reports `p99 = 45ms`, yet production users hit `4.2s` freezes during 1.5-second JVM/DB pauses at `500 RPS`.",
+          "tasks": [
+            "Explain **Coordinated Omission** in closed-loop VUs vs open-loop constant-arrival-rate schedules (`k6` / `HdrHistogram`).",
+            "Apply Little's Law (`L = \u03bb * W`) at `\u03bb = 500 RPS` during a `W = 400ms` downstream slowdown to size thread & HikariCP DB pools without thrashing.",
+            "Design load-shedding / queue-timeout bounds before pool starvation cascades."
+          ],
+          "mechanismGroups": [
+            [
+              "coordinated omission",
+              "closed-loop",
+              "open-loop",
+              "arrival",
+              "hdrhistogram"
+            ],
+            [
+              "little's law",
+              "lambda",
+              "500",
+              "hikaricp",
+              "pool"
+            ],
+            [
+              "load shedding",
+              "bulkhead",
+              "queue",
+              "503"
+            ]
+          ],
+          "mathSignals": [
+            "200",
+            "500",
+            "0.4",
+            "45ms",
+            "4.2s",
+            "p99"
+          ],
+          "tradeoffSignals": [
+            "oversized db pool",
+            "context switch",
+            "lock contention",
+            "fail-fast"
+          ],
+          "operabilitySignals": [
+            "k6",
+            "constant-arrival-rate",
+            "connectiontimeout"
+          ],
+          "antiPatterns": [
+            "report average latency only",
+            "set db pool size to 2000 per pod"
+          ],
+          "benchmarkAnswer": "Closed-loop VUs wait for a stalled request before firing the next, measuring only 1 slow sample instead of the 750 requests queued behind a 1.5s stall (Coordinated Omission)\u2014use open-loop constant-arrival executors. By Little's Law, `500 RPS * 0.4s = 200` concurrent in-flight requests, while DB connections per Postgres core stay bounded (`~2 * cores + spindle`) via async I/O + fast `503` load shedding."
+        },
+        {
+          "id": "q2",
+          "title": "Q2: Scientific Chaos Engineering (`Toxiproxy`), Circuit Breakers & Soak Leak Detection",
+          "scenario": "Injecting a Redis timeout in staging brings down Flight Search completely instead of falling back cleanly.",
+          "tasks": [
+            "Structure a scientific Chaos Experiment (Steady-State Hypothesis, Blast-Radius Abort Condition, Toxiproxy toxic injection).",
+            "Verify 3-state Circuit Breaker transitions (`CLOSED -> OPEN -> HALF_OPEN -> CLOSED`) and Bulkhead isolation.",
+            "Detect slow off-heap memory / file-descriptor (`FD`) leaks in a 6-hour soak test using linear regression slope gates."
+          ],
+          "mechanismGroups": [
+            [
+              "steady-state",
+              "hypothesis",
+              "blast radius",
+              "toxiproxy",
+              "abort"
+            ],
+            [
+              "circuit breaker",
+              "closed",
+              "open",
+              "half-open",
+              "bulkhead"
+            ],
+            [
+              "soak",
+              "rss",
+              "file descriptor",
+              "fd",
+              "slope",
+              "regression"
+            ]
+          ],
+          "mathSignals": [
+            "50%",
+            "503",
+            "fd",
+            "mb/hr",
+            "r^2",
+            "p99"
+          ],
+          "tradeoffSignals": [
+            "fallback",
+            "stale cache",
+            "fail-open",
+            "fail-closed"
+          ],
+          "operabilitySignals": [
+            "canary",
+            "abort",
+            "prometheus",
+            "flamegraph"
+          ],
+          "antiPatterns": [
+            "kill random prod nodes without steady-state metrics"
+          ],
+          "benchmarkAnswer": "Define quantitative steady-state SLIs first, inject deterministic TCP latency/reset via Toxiproxy on the Redis upstream, and assert the Circuit Breaker trips `OPEN` within threshold\u2014serving degraded uncached search (`200 OK`) inside an isolated thread/semaphore Bulkhead. Gate soak runs on post-GC RSS and open-FD slope (`~0 MB/hr` after warmup)."
+        },
+        {
+          "id": "q3",
+          "title": "Q3: Multi-Window Multi-Burn-Rate SLO Gates (`14.4x` / `6x`) & Canary Rollbacks",
+          "scenario": "Static `> 1% error rate for 5m` alerts page engineers on harmless blips yet miss slow 3-day error-budget exhaustion.",
+          "tasks": [
+            "Calculate the monthly 30-day Error Budget for a `99.9%` availability SLO (`43.2 minutes` / `0.1%` bad requests).",
+            "Explain Google SRE Multi-Window Multi-Burn-Rate alerts (`1h/5m` at `14.4x` fast burn vs `6h/30m` at `6x` burn).",
+            "Automate Canary deployment rollback gates comparing canary vs baseline pods statistically (Mann-Whitney / error ratio)."
+          ],
+          "mechanismGroups": [
+            [
+              "error budget",
+              "99.9%",
+              "43.2",
+              "0.001",
+              "sli",
+              "slo"
+            ],
+            [
+              "burn rate",
+              "14.4",
+              "6x",
+              "multi-window",
+              "5m",
+              "1h"
+            ],
+            [
+              "canary",
+              "baseline",
+              "rollback",
+              "argo",
+              "flagger"
+            ]
+          ],
+          "mathSignals": [
+            "99.9%",
+            "43.2",
+            "14.4",
+            "2%",
+            "5%",
+            "30"
+          ],
+          "tradeoffSignals": [
+            "reset precision",
+            "alert fatigue",
+            "detection latency",
+            "low traffic"
+          ],
+          "operabilitySignals": [
+            "page",
+            "ticket",
+            "auto-rollback",
+            "prometheus"
+          ],
+          "antiPatterns": [
+            "page on every single 500 error",
+            "compare canary against last week instead of live baseline"
+          ],
+          "benchmarkAnswer": "A `99.9%` 30-day SLO grants `0.1%` error budget (`43.2 min`). A `14.4x` burn consumes `2%` of the monthly budget in `1 hour` (paired with a `5m` short window so alerts clear immediately once mitigated), while `6x` catches `5%` burn over `6h/30m`. Compare canary pods side-by-side against simultaneous baseline pods to avoid diurnal traffic bias."
+        },
+        {
+          "id": "q4",
+          "title": "Q4: Automated OWASP API Security \u2014 BOLA (`IDOR`), Mass Assignment & RFC 8725 JWT",
+          "scenario": "A user swaps `/api/v1/orders/ORD-99` with Tenant A's valid JWT and reads Tenant B's passport details (`200 OK`).",
+          "tasks": [
+            "Build an automated Cross-Tenant BOLA/BFLA matrix test harness running on every OpenAPI endpoint.",
+            "Test RFC 8725 JWT attacks (`alg: none`, RS256->HS256 public-key confusion, unverified `kid` injection, missing `aud`/`exp`).",
+            "Catch Mass Assignment (`role: 'admin'`, `price_cents: 0`) via strict DTO allowlisting tests."
+          ],
+          "mechanismGroups": [
+            [
+              "bola",
+              "idor",
+              "bfla",
+              "cross-tenant",
+              "403",
+              "404"
+            ],
+            [
+              "jwt",
+              "rfc 8725",
+              "alg: none",
+              "hs256",
+              "rs256",
+              "aud",
+              "exp"
+            ],
+            [
+              "mass assignment",
+              "dto",
+              "allowlist",
+              "extra='forbid'",
+              "pydantic"
+            ]
+          ],
+          "mathSignals": [
+            "401",
+            "403",
+            "404",
+            "200",
+            "2"
+          ],
+          "tradeoffSignals": [
+            "403 vs 404",
+            "enumeration",
+            "stateless revocation",
+            "short ttl"
+          ],
+          "operabilitySignals": [
+            "openapi",
+            "ci",
+            "sast",
+            "dast"
+          ],
+          "antiPatterns": [
+            "check authn middleware without object-level owner check",
+            "jwt.decode verify=False"
+          ],
+          "benchmarkAnswer": "Provision Alice (`Tenant A`) and Bob (`Tenant B`) fixtures and replay Alice's resource IDs across `GET/PUT/DELETE` using Bob's valid JWT asserting `403/404` (never `200`). Fuzz JWT headers for `alg:none`, RS256->HS256 key confusion, and expired/wrong-`aud` claims while enforcing server-side algorithm pinning, and assert `extra='forbid'` DTOs reject injected privilege/price fields."
+        },
+        {
+          "id": "q5",
+          "title": "Q5: Cloud Metadata SSRF (`169.254.169.254` / IMDSv2), Webhook HMAC Replay & Race-Condition Double-Spend",
+          "scenario": "An invoice-logo URL previewer fetches user-supplied URLs, and a Stripe refund webhook lacks timestamp replay protection.",
+          "tasks": [
+            "Prevent SSRF against cloud metadata (`169.254.169.254`, IPv6/octal bypasses, DNS rebinding) + enforce AWS IMDSv2 hop-limit.",
+            "Verify Webhook authenticity (`HMAC-SHA256` constant-time `hmac.compare_digest` + `5-minute` timestamp replay window).",
+            "Write a parallel Race-Condition Double-Spend security test (`20` simultaneous coupon/wallet redemptions)."
+          ],
+          "mechanismGroups": [
+            [
+              "ssrf",
+              "169.254.169.254",
+              "imdsv2",
+              "dns rebinding",
+              "private ip"
+            ],
+            [
+              "hmac",
+              "sha256",
+              "compare_digest",
+              "timestamp",
+              "replay"
+            ],
+            [
+              "double-spend",
+              "race",
+              "atomic",
+              "for update",
+              "coupon"
+            ]
+          ],
+          "mathSignals": [
+            "169.254.169.254",
+            "300s",
+            "5m",
+            "1",
+            "20",
+            "hop"
+          ],
+          "tradeoffSignals": [
+            "url regex vs resolved ip",
+            "redirect",
+            "clock skew"
+          ],
+          "operabilitySignals": [
+            "egress proxy",
+            "nonce",
+            "redis",
+            "waf"
+          ],
+          "antiPatterns": [
+            "blacklist string '169.254' only before dns resolution",
+            "use == for hmac comparison"
+          ],
+          "benchmarkAnswer": "Resolve DNS once in a custom socket dialer and block RFC1918/link-local/loopback IPs (`169.254.0.0/16`, `127.0.0.0/8`, `10.0.0.0/8`) with redirects disabled + AWS IMDSv2 `HttpPutResponseHopLimit=1`. Verify webhooks over raw body bytes using `hmac.compare_digest` + `<=300s` timestamp skew + nonce cache, and fire 20 barrier-synced redemptions asserting balance never goes negative."
+        }
+      ]
+    },
+    {
+      "sessionId": "interview-6",
+      "title": "Session #6: Production AI Engineering & Agentic QE \u2014 Hybrid RRF, Judge Calibration & MCP Agents (Phase 5 Exit Gate)",
+      "shortTitle": "Session #6: Production AI, RAG & Agentic QE",
+      "targetRole": "Staff AI Quality & LLM Evaluation Systems Architect",
+      "phaseGate": "Phase 5 Exit Gate",
+      "preserveDiskFiles": false,
+      "relatedChapters": [
+        "aie-06-inference-mechanics-kv-cache-pagedattention-quantization",
+        "aie-09-hybrid-rag-chunking-hnsw-bm25-and-rrf",
+        "ai-01-rag-triad-and-claim-verification",
+        "aiqa-06-statistical-judge-calibration-kappa-and-rogan-gladen",
+        "ai-02-self-healing-ast-and-dom-confidence",
+        "aiqa-08-agent-trajectory-qa-and-mock-mcp-sandboxes"
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "title": "Q1: Hybrid BM25 + HNSW Vector Retrieval, RRF Math & Cross-Encoder Reranking",
+          "scenario": "Dense embeddings alone miss exact flight numbers (`AC-409`, `EU-261`) and chunking mid-table splits fee amounts from cabin headers.",
+          "tasks": [
+            "Architect structure-aware chunking + Contextual Retrieval + Hybrid BM25 + HNSW fused via Reciprocal Rank Fusion (`k=60`).",
+            "Explain why two-stage Bi-Encoder top-50 -> Cross-Encoder top-5 reranking improves precision while keeping p95 latency < 150ms.",
+            "Measure offline retrieval quality (`Recall@K`, `MRR`, `NDCG@K`) before touching LLM prompts."
+          ],
+          "mechanismGroups": [
+            [
+              "bm25",
+              "hnsw",
+              "rrf",
+              "1/(k+rank)",
+              "contextual"
+            ],
+            [
+              "bi-encoder",
+              "cross-encoder",
+              "rerank",
+              "top-k"
+            ],
+            [
+              "recall@k",
+              "mrr",
+              "ndcg",
+              "table",
+              "chunk"
+            ]
+          ],
+          "mathSignals": [
+            "60",
+            "50",
+            "5",
+            "150ms",
+            "recall@5",
+            "ndcg"
+          ],
+          "tradeoffSignals": [
+            "lexical vs semantic",
+            "chunk size",
+            "latency vs accuracy",
+            "ef_search"
+          ],
+          "operabilitySignals": [
+            "golden set",
+            "index",
+            "ci",
+            "ablation"
+          ],
+          "antiPatterns": [
+            "naive fixed 500-char split cutting markdown tables",
+            "cross-encode all 1M docs"
+          ],
+          "benchmarkAnswer": "Keep Markdown/HTML tables intact with prepended document/section headers (Contextual Retrieval), fuse Okapi BM25 + HNSW dense hits via scale-invariant RRF `sum(1 / (60 + rank))`, rerank top-50 candidates to top-5 with a Cross-Encoder (`<80ms`), and gate index changes on `Recall@5` and `NDCG@5`."
+        },
+        {
+          "id": "q2",
+          "title": "Q2: LLM-as-a-Judge Bias Modes & Rogan-Gladen Prevalence Calibration",
+          "scenario": "Your GPT/Gemini judge reports `84%` pass-rate, exhibits verbosity & position bias in A/B comparisons, and drifts across judge versions.",
+          "tasks": [
+            "Derive and apply **Rogan-Gladen** prevalence calibration (`p_hat = (p_obs + q0 - 1) / (q1 + q0 - 1)`) using a human-labeled gold audit set.",
+            "Mitigate pairwise position bias, verbosity bias, and self-preference bias in automated evals.",
+            "Compute bootstrap 95% confidence intervals so noisy 2% swings don't trigger false CI blocks."
+          ],
+          "mechanismGroups": [
+            [
+              "rogan-gladen",
+              "sensitivity",
+              "specificity",
+              "tpr",
+              "tnr",
+              "q1",
+              "q0"
+            ],
+            [
+              "position swap",
+              "pairwise",
+              "verbosity",
+              "cohen",
+              "kappa"
+            ],
+            [
+              "bootstrap",
+              "confidence interval",
+              "95%",
+              "gold"
+            ]
+          ],
+          "mathSignals": [
+            "q1 + q0 - 1",
+            "0.84",
+            "95%",
+            "kappa",
+            "0.7"
+          ],
+          "tradeoffSignals": [
+            "1-5 likert vs binary",
+            "cost",
+            "human audit",
+            "variance"
+          ],
+          "operabilitySignals": [
+            "pinned judge",
+            "temperature=0",
+            "ci gate",
+            "calibration set"
+          ],
+          "antiPatterns": [
+            "uncalibrated 1-10 vague rubric",
+            "single-order pairwise comparison"
+          ],
+          "benchmarkAnswer": "Calibrate binary atomic rubrics (`temperature=0`) against a 200-sample human gold set (`Cohen's kappa >= 0.75`) to measure judge `TPR (q1)` and `TNR (q0)`, debiasing raw `p_obs` via `p_hat = clip((p_obs + q0 - 1)/(q1 + q0 - 1), 0, 1)` with bootstrap 95% CIs, and run A/B pairwise evals in both `(A,B)` and `(B,A)` orders."
+        },
+        {
+          "id": "q3",
+          "title": "Q3: Negation Flips, Numeric Hallucinations & Abstention (`IDK`) Metamorphic QA",
+          "scenario": "An airline bot passes cosine-similarity checks even when it says `'Economy tickets ARE refundable after 24h'` (policy says `'NOT refundable'`).",
+          "tasks": [
+            "Explain why embedding cosine similarity fails catastrophically on negation flips, numeric swaps (`$75` vs `$750`), and entity swaps.",
+            "Design claim-decomposition NLI entailment + deterministic numeric/policy-rule extractors.",
+            "Build Metamorphic & Unanswerable-Query (`Abstention`) tests verifying the bot refuses out-of-scope legal/competitor questions."
+          ],
+          "mechanismGroups": [
+            [
+              "negation",
+              "cosine",
+              "nli",
+              "entailment",
+              "contradiction"
+            ],
+            [
+              "numeric",
+              "entity",
+              "claim",
+              "atomic"
+            ],
+            [
+              "abstention",
+              "unanswerable",
+              "metamorphic",
+              "citation"
+            ]
+          ],
+          "mathSignals": [
+            "0.95",
+            "75",
+            "750",
+            "100%",
+            "false positive"
+          ],
+          "tradeoffSignals": [
+            "helpful vs hallucinate",
+            "false refusal",
+            "precision vs recall"
+          ],
+          "operabilitySignals": [
+            "adversarial suite",
+            "red-team",
+            "ci"
+          ],
+          "antiPatterns": [
+            "grade rag answers using only embedding cosine similarity"
+          ],
+          "benchmarkAnswer": "`'Tickets are refundable'` and `'Tickets are NOT refundable'` share >0.96 cosine similarity! Decompose answers into atomic claims verified by 3-way NLI (`ENTAILMENT / NEUTRAL / CONTRADICTION`) + exact regex number/currency subset checks against cited chunks, and maintain an unanswerable/perturbed metamorphic suite asserting clean abstention."
+        },
+        {
+          "id": "q4",
+          "title": "Q4: Multi-Turn MCP Tool-Calling Agent QA, Replay Cassettes & Indirect Prompt Injection",
+          "scenario": "A customer-support MCP agent can read emails/policies and call `issue_refund(order_id, cents)`; an attacker embeds hidden instructions inside a support ticket.",
+          "tasks": [
+            "Test multi-turn tool trajectories deterministically in CI without spending `$50` or hitting flaky live LLMs (`SHA-256` replay cassettes + mock MCP servers).",
+            "Architect defense-in-depth against **Indirect Prompt Injection** & confused-deputy tool escalation (untrusted data -> destructive tool).",
+            "Enforce JSON-Schema bounds, maximum dollar caps, human-in-the-loop (HITL) step-up auth, and `max_steps` loop breakers."
+          ],
+          "mechanismGroups": [
+            [
+              "mcp",
+              "cassette",
+              "sha256",
+              "replay",
+              "trajectory"
+            ],
+            [
+              "indirect prompt injection",
+              "untrusted",
+              "taint",
+              "privilege",
+              "hitl"
+            ],
+            [
+              "json schema",
+              "max_steps",
+              "cap",
+              "allowlist"
+            ]
+          ],
+          "mathSignals": [
+            "max_steps",
+            "0ms",
+            "$50",
+            "cents",
+            "100%"
+          ],
+          "tradeoffSignals": [
+            "autonomy vs safety",
+            "live eval vs cassette",
+            "false block"
+          ],
+          "operabilitySignals": [
+            "sandbox",
+            "audit log",
+            "nightly live canary",
+            "ci"
+          ],
+          "antiPatterns": [
+            "let llm pass raw sql",
+            "auto-execute unbounded refunds from untrusted text"
+          ],
+          "benchmarkAnswer": "Run PR trajectory tests against deterministic `SHA-256(messages + tool_schemas)` cassettes + stateful mock MCP sandboxes (paired with a small nightly live-model canary). Enforce strict JSON-Schema validation, hard policy caps in code (never prompt-only!), taint-tracking/HITL confirmation whenever untrusted ticket/email text precedes write tools, and `max_steps` loop breakers."
+        },
+        {
+          "id": "q5",
+          "title": "Q5: LLM Inference Economics \u2014 KV-Cache Prefix Caching, PagedAttention & Quantization QA",
+          "scenario": "Self-hosted vLLM latency spikes (`TTFT > 3.5s`, `ITL > 90ms`) under concurrent agent traffic, and `INT4 AWQ` quantization subtly degrades JSON tool-call validity.",
+          "tasks": [
+            "Calculate KV-Cache memory growth with context length and explain how **PagedAttention** + **Prefix Caching** cut `TTFT`.",
+            "Design a rigorous Quantization Regression Benchmark (`BF16` vs `FP8` vs `INT4`) measuring perplexity, RAG faithfulness, and constrained JSON/grammar accuracy.",
+            "Define streaming SSE load-test SLIs (`TTFT`, `ITL/TPOT`, `E2E latency`, token throughput) under realistic prompt-length distributions."
+          ],
+          "mechanismGroups": [
+            [
+              "kv-cache",
+              "pagedattention",
+              "prefix caching",
+              "vllm",
+              "fragmentation"
+            ],
+            [
+              "quantization",
+              "bf16",
+              "fp8",
+              "int4",
+              "awq",
+              "constrained decoding"
+            ],
+            [
+              "ttft",
+              "itl",
+              "tpot",
+              "sse",
+              "streaming"
+            ]
+          ],
+          "mathSignals": [
+            "ttft",
+            "90ms",
+            "3.5s",
+            "p95",
+            "bf16",
+            "fp8",
+            "int4"
+          ],
+          "tradeoffSignals": [
+            "memory bandwidth",
+            "compute-bound vs memory-bound",
+            "accuracy drop"
+          ],
+          "operabilitySignals": [
+            "fsm",
+            "json schema",
+            "shadow traffic",
+            "canary"
+          ],
+          "antiPatterns": [
+            "put dynamic timestamp at the very start of system prompt breaking prefix cache"
+          ],
+          "benchmarkAnswer": "Keep static system prompts + tool schemas byte-identical at prefix index 0 (moving timestamps/user IDs to the tail) so vLLM PagedAttention shares KV-cache blocks (`-60% TTFT`, `<4%` fragmentation). Benchmark `FP8`/`INT4` against `BF16` on hard tool-call + math/negation evals with FSM constrained decoding, and load-test SSE streams measuring `p95 TTFT` (prefill) separately from `p95 ITL/TPOT` (decode)."
+        }
+      ]
+    }
+  ]
+}
