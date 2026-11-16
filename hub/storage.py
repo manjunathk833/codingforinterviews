@@ -424,6 +424,50 @@ WORKBENCH_CATALOG: List[Dict[str, Any]] = [
         "invariant": "Enforce composite (resource_id, tenant_id) BOLA guards, block JWT alg:none/HS256 confusion, reject RFC1918/IMDSv2 SSRF IPs pre-connect, verify HMAC replay windows, and block indirect prompt injection.",
         "relatedChapter": "sec-02-owasp-api-top10-bola-bfla-and-mass-assignment",
     },
+    {
+        "id": "wb-ai-hybrid-rrf-rag",
+        "title": "14. Hybrid Okapi BM25 + Cosine Vector + Reciprocal Rank Fusion (RRF) RAG Engine",
+        "category": "AI Architecture & Eval",
+        "stack": "Python 3 Stdlib · Zero LangChain",
+        "folderPath": "frameworks/ai-architecture/rag",
+        "verifyCmd": [sys.executable, "frameworks/ai-architecture/rag/reference_hybrid_rrf_retriever.py"],
+        "cliDisplay": "python3 frameworks/ai-architecture/rag/reference_hybrid_rrf_retriever.py",
+        "invariant": "Fuse Okapi BM25 lexical precision with L2-normalized dense cosine recall via scale-invariant Reciprocal Rank Fusion 1/(k + rank).",
+        "relatedChapter": "aie-09-hybrid-rag-chunking-hnsw-bm25-and-rrf",
+    },
+    {
+        "id": "wb-ai-rag-triad-calibration",
+        "title": "15. RAG Triad Claim-Entailment, Rogan-Gladen Judge Calibration & Concierge Gate",
+        "category": "AI Architecture & Eval",
+        "stack": "Python 3 + AeroCart Concierge AUT",
+        "folderPath": "frameworks/ai-architecture/evals",
+        "verifyCmd": [sys.executable, "frameworks/ai-architecture/evals/reference_rag_triad_and_calibration.py"],
+        "cliDisplay": "python3 frameworks/ai-architecture/evals/reference_rag_triad_and_calibration.py",
+        "invariant": "Detect negation/numeric claim hallucinations and debias imperfect LLM judges via Rogan-Gladen prevalence math (p_obs + q0 - 1)/(q1 + q0 - 1).",
+        "relatedChapter": "ai-01-rag-triad-and-claim-verification",
+    },
+    {
+        "id": "wb-ai-self-healing-agent",
+        "title": "16. Playwright Accessibility-Tree Self-Healing Locator & Python AST Selector Patcher",
+        "category": "AI Architecture & Eval",
+        "stack": "Python 3 `ast` + Accessibility Snapshot",
+        "folderPath": "frameworks/ai-architecture/healing",
+        "verifyCmd": [sys.executable, "frameworks/ai-architecture/healing/reference_self_healing_agent.py"],
+        "cliDisplay": "python3 frameworks/ai-architecture/healing/reference_self_healing_agent.py",
+        "invariant": "Heal broken selectors only when role matches and confidence >= threshold with clear top1-top2 margin, rewriting Page Object AST literals surgically.",
+        "relatedChapter": "ai-02-self-healing-ast-and-dom-confidence",
+    },
+    {
+        "id": "wb-ai-guardrailed-tool-agent",
+        "title": "17. Guardrailed Tool-Calling Agent, Indirect Prompt-Injection Shield & SHA-256 Cassettes",
+        "category": "AI Architecture & Eval",
+        "stack": "Python 3 · JSON Schema + Replay Cassettes",
+        "folderPath": "frameworks/ai-architecture/agents",
+        "verifyCmd": [sys.executable, "frameworks/ai-architecture/agents/reference_tool_agent_and_cassettes.py"],
+        "cliDisplay": "python3 frameworks/ai-architecture/agents/reference_tool_agent_and_cassettes.py",
+        "invariant": "Validate strict JSON-Schema tool arguments pre-execution, scan untrusted tool outputs for indirect prompt injection, and replay deterministic SHA-256 cassettes.",
+        "relatedChapter": "aiqa-08-agent-trajectory-qa-and-mock-mcp-sandboxes",
+    },
 ]
 
 
@@ -848,6 +892,18 @@ def ensure_initialized(db_path: pathlib.Path = DEFAULT_DB_PATH) -> None:
                     updated_at REAL NOT NULL
                 );
 
+                CREATE TABLE IF NOT EXISTS dsa_triage_attempts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    slug TEXT NOT NULL,
+                    score INTEGER NOT NULL,
+                    pattern_ok INTEGER NOT NULL,
+                    time_ok INTEGER NOT NULL,
+                    state_ok INTEGER NOT NULL,
+                    code_pts INTEGER NOT NULL,
+                    elapsed_sec REAL NOT NULL,
+                    created_at REAL NOT NULL
+                );
+
                 CREATE TABLE IF NOT EXISTS user_preferences (
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL,
@@ -1097,25 +1153,46 @@ def _sync_filesystem_locked(conn: sqlite3.Connection) -> None:
             ),
         )
 
-    # 4. Sync Mock Interview Sessions from mock-interviews/interview-*/
+    # 4. Sync Mock Interview Sessions from mock-interviews/interview-*/ + hub/data/mock_rubrics.json
+    from hub import mock_evaluator
+
+    rubrics_by_id = mock_evaluator.load_rubrics()
     mi_root = REPO_ROOT / "mock-interviews"
     if mi_root.exists():
         for mi_dir in sorted(mi_root.glob("interview-*")):
             if not mi_dir.is_dir():
                 continue
             sid = mi_dir.name
+            rub = rubrics_by_id.get(sid, {})
             q_file = mi_dir / "interviewquestions.md"
             e_file = mi_dir / "evaluation-and-feedback.md"
             m_file = mi_dir / "conceptual-mastery-guide.md"
             q_md = q_file.read_text(encoding="utf-8") if q_file.exists() else ""
-            e_md = e_file.read_text(encoding="utf-8") if e_file.exists() else ""
+            e_md_disk = e_file.read_text(encoding="utf-8") if e_file.exists() else ""
             m_md = m_file.read_text(encoding="utf-8") if m_file.exists() else ""
             existing_mi = conn.execute(
-                "SELECT candidate_responses_json FROM mock_interview_sessions WHERE session_id = ?",
+                "SELECT status, overall_score, evaluation_md, candidate_responses_json FROM mock_interview_sessions WHERE session_id = ?",
                 (sid,),
             ).fetchone()
             responses_json = existing_mi["candidate_responses_json"] if existing_mi else "{}"
-            related_chapters = [
+            has_user_eval = bool(
+                existing_mi
+                and existing_mi["evaluation_md"]
+                and not e_md_disk
+                and responses_json not in ("", "{}")
+            )
+            e_md = existing_mi["evaluation_md"] if has_user_eval else e_md_disk
+            if has_user_eval:
+                status_val = existing_mi["status"]
+                score_val = existing_mi["overall_score"]
+            elif e_md_disk:
+                status_val = "Evaluated"
+                score_val = rub.get("baselineScore") or "19 / 100 (Diagnostic Baseline)"
+            else:
+                status_val = "Ready · Unattempted"
+                score_val = "Pending (0 / 100)"
+
+            related_chapters = rub.get("relatedChapters") or [
                 "sdet-01-determinism-and-flakiness-math",
                 "sd-01-continuous-sync-and-backpressure",
                 "sd-02-consistent-hashing-and-sharding",
@@ -1123,6 +1200,9 @@ def _sync_filesystem_locked(conn: sqlite3.Connection) -> None:
                 "cs-01-os-virtual-memory-gc-and-fd-leaks",
                 "cs-02-tcp-tls-http2-and-websocket-framing",
             ]
+            title_val = rub.get("title") or f"Mock Interview #{sid.split('-')[-1]}"
+            role_val = rub.get("targetRole") or "Staff / Senior SDET & Systems Architect"
+
             conn.execute(
                 """
                 INSERT OR REPLACE INTO mock_interview_sessions (
@@ -1133,10 +1213,10 @@ def _sync_filesystem_locked(conn: sqlite3.Connection) -> None:
                 """,
                 (
                     sid,
-                    f"Mock Interview #{sid.split('-')[-1]}: Staff Distributed Systems, AI RAG & Concurrency",
-                    "Staff / Senior SDET & Systems Architect",
-                    "Evaluated" if e_md else "In Progress",
-                    "82 / 100 (Strong Senior / Staff)" if e_md else "Pending",
+                    title_val,
+                    role_val,
+                    status_val,
+                    score_val,
                     str(mi_dir.relative_to(REPO_ROOT)),
                     q_md,
                     e_md,
@@ -2038,7 +2118,10 @@ def run_workbench_verification(item_id: str, db_path: pathlib.Path = DEFAULT_DB_
 
 
 def get_interviews_catalog(db_path: pathlib.Path = DEFAULT_DB_PATH) -> Dict[str, Any]:
+    from hub import mock_evaluator
+
     ensure_initialized(db_path)
+    rubrics = mock_evaluator.load_rubrics()
     conn = _get_connection(db_path)
     try:
         rows = conn.execute(
@@ -2048,29 +2131,36 @@ def get_interviews_catalog(db_path: pathlib.Path = DEFAULT_DB_PATH) -> Dict[str,
                    COALESCE(rc.completed, 0) AS completed
             FROM mock_interview_sessions m
             LEFT JOIN roadmap_completions rc ON rc.item_id = m.session_id
-            ORDER BY m.session_id ASC
+            ORDER BY CAST(REPLACE(m.session_id, 'interview-', '') AS INTEGER) ASC
             """
         ).fetchall()
-        sessions = [
-            {
-                "sessionId": r["session_id"],
+        sessions = []
+        for r in rows:
+            sid = r["session_id"]
+            rub = rubrics.get(sid, {})
+            sessions.append({
+                "sessionId": sid,
                 "title": r["title"],
+                "shortTitle": rub.get("shortTitle") or r["title"],
+                "phaseGate": rub.get("phaseGate") or "Staff Mock Gate",
                 "targetRole": r["target_role"],
                 "status": r["status"],
                 "overallScore": r["overall_score"],
                 "folderPath": r["folder_path"],
                 "relatedChapters": json.loads(r["related_chapters_json"]),
+                "questionCount": len(rub.get("questions", [])) or 5,
                 "completed": bool(r["completed"]),
-            }
-            for r in rows
-        ]
+            })
         return {"sessions": sessions}
     finally:
         conn.close()
 
 
 def get_interview_session(session_id: str, db_path: pathlib.Path = DEFAULT_DB_PATH) -> Tuple[int, Dict[str, Any]]:
+    from hub import mock_evaluator
+
     ensure_initialized(db_path)
+    rub = mock_evaluator.get_session_rubric(session_id) or {}
     conn = _get_connection(db_path)
     try:
         row = conn.execute(
@@ -2084,13 +2174,20 @@ def get_interview_session(session_id: str, db_path: pathlib.Path = DEFAULT_DB_PA
         ).fetchone()
         if row is None:
             return 404, {"error": f"Mock interview session '{session_id}' not found"}
+        q_list = [
+            {"id": q["id"], "title": q["title"]}
+            for q in (rub.get("questions") or [])
+        ] or [{"id": f"q{i}", "title": f"Question {i}"} for i in range(1, 6)]
         return 200, {
             "sessionId": row["session_id"],
             "title": row["title"],
+            "shortTitle": rub.get("shortTitle") or row["title"],
+            "phaseGate": rub.get("phaseGate") or "Staff Mock Gate",
             "targetRole": row["target_role"],
             "status": row["status"],
             "overallScore": row["overall_score"],
             "folderPath": row["folder_path"],
+            "questions": q_list,
             "questionsMarkdown": row["questions_md"],
             "evaluationMarkdown": row["evaluation_md"],
             "masteryGuideMarkdown": row["mastery_guide_md"],
@@ -2131,6 +2228,111 @@ def save_interview_response(
         conn.close()
 
 
+def evaluate_and_save_interview_session(
+    session_id: str,
+    responses_override: Optional[Dict[str, str]] = None,
+    persist: bool = True,
+    db_path: pathlib.Path = DEFAULT_DB_PATH,
+) -> Tuple[int, Dict[str, Any]]:
+    from hub import mock_evaluator
+
+    ensure_initialized(db_path)
+    conn = _get_connection(db_path)
+    try:
+        row = conn.execute(
+            "SELECT candidate_responses_json FROM mock_interview_sessions WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
+        if row is None:
+            return 404, {"error": f"Mock interview session '{session_id}' not found"}
+        merged = json.loads(row["candidate_responses_json"] or "{}")
+        if responses_override and isinstance(responses_override, dict):
+            for k, v in responses_override.items():
+                merged[str(k)] = str(v or "")
+
+        eval_res = mock_evaluator.evaluate_interview_session(session_id, merged)
+        if eval_res is None:
+            return 404, {"error": f"No rubric configured for '{session_id}'"}
+
+        if persist:
+            status_val = "Evaluated" if eval_res["numericScore"] > 0 else "In Progress"
+            conn.execute(
+                """
+                UPDATE mock_interview_sessions
+                SET status = ?, overall_score = ?, evaluation_md = ?, candidate_responses_json = ?, updated_at = ?
+                WHERE session_id = ?
+                """,
+                (
+                    status_val,
+                    eval_res["overallScore"],
+                    eval_res["evaluationMarkdown"],
+                    json.dumps(merged),
+                    time.time(),
+                    session_id,
+                ),
+            )
+            conn.commit()
+        return 200, eval_res
+    finally:
+        conn.close()
+
+
+def record_triage_attempt(
+    slug: str,
+    score: int,
+    pattern_ok: bool,
+    time_ok: bool,
+    state_ok: bool,
+    code_pts: int,
+    elapsed_sec: float,
+    db_path: pathlib.Path = DEFAULT_DB_PATH,
+) -> Dict[str, Any]:
+    ensure_initialized(db_path)
+    conn = _get_connection(db_path)
+    try:
+        conn.execute(
+            """
+            INSERT INTO dsa_triage_attempts (slug, score, pattern_ok, time_ok, state_ok, code_pts, elapsed_sec, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(slug),
+                int(score),
+                1 if pattern_ok else 0,
+                1 if time_ok else 0,
+                1 if state_ok else 0,
+                int(code_pts),
+                float(elapsed_sec or 0.0),
+                time.time(),
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return get_triage_stats(db_path)
+
+
+def get_triage_stats(db_path: pathlib.Path = DEFAULT_DB_PATH) -> Dict[str, Any]:
+    ensure_initialized(db_path)
+    conn = _get_connection(db_path)
+    try:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS cnt,
+                   COALESCE(ROUND(AVG(score), 1), 0.0) AS avg_score,
+                   COALESCE(ROUND(AVG(elapsed_sec), 1), 0.0) AS avg_sec
+            FROM dsa_triage_attempts
+            """
+        ).fetchone()
+        return {
+            "attemptsCount": int(row["cnt"] or 0),
+            "avgScore": float(row["avg_score"] or 0.0),
+            "avgSeconds": float(row["avg_sec"] or 0.0),
+        }
+    finally:
+        conn.close()
+
+
 # ==============================================================================
 # STAFF SDET ROADMAP, 5-PHASE CURRICULUM ORDER & GAMIFIED HABIT ENGINE
 # ==============================================================================
@@ -2150,7 +2352,7 @@ ROADMAP_PHASES_SPEC: List[Dict[str, Any]] = [
             "wb-microservice-mocking",
         ],
         "dsaChapterNumbers": ["01", "02"],
-        "mockIds": [],
+        "mockIds": ["interview-2"],
         "soundbiteTitle": "🎙️ Phase 1 Bar-Raiser Soundbite — Flakiness & Framework Economics",
         "soundbiteQuote": (
             "At scale, suite reliability is P(pass) = p^N: a 99% reliable test across 100 tests yields only 36.6% green builds. "
@@ -2171,7 +2373,7 @@ ROADMAP_PHASES_SPEC: List[Dict[str, Any]] = [
             "wb-ci-shard-bin-packer-tia",
         ],
         "dsaChapterNumbers": ["03", "04", "05"],
-        "mockIds": [],
+        "mockIds": ["interview-3"],
         "soundbiteTitle": "🎙️ Phase 2 Bar-Raiser Soundbite — 32-Worker Tenant Isolation",
         "soundbiteQuote": (
             "Shared staging environments fail under parallel CI because workers collide on mutable rows. "
@@ -2183,16 +2385,21 @@ ROADMAP_PHASES_SPEC: List[Dict[str, Any]] = [
         "title": "Phase 3: SQL Ledger, Cloud CI/CD & AI Engineering",
         "shortTitle": "SQL, Cloud CI/CD & AI QA",
         "objective": "Build double-entry SQL reconciliation harnesses, multi-stage Docker/K8s ephemeral test environments, LPT bin-packed CI shards, and calibrated LLM/RAG evaluation pipelines.",
-        "exitGate": "Complete Courses 09, 10, 05, 06 + AeroLedger & AeroPipe Labs + Trees/Heaps",
+        "exitGate": "Complete Courses 09, 10, 05, 06 + AeroLedger, AeroPipe & Hybrid RAG Labs + Trees/Heaps",
         "courses": [
             "09-sql-and-data-engineering",
             "10-docker-cicd-and-cloud-infra",
             "05-ai-engineering",
             "06-ai-engineering-qa-focused",
         ],
-        "workbenchIds": ["wb-sql-data-reconciliation", "wb-cicd-container-sharding"],
+        "workbenchIds": [
+            "wb-sql-data-reconciliation",
+            "wb-cicd-container-sharding",
+            "wb-ai-hybrid-rrf-rag",
+            "wb-ai-rag-triad-calibration",
+        ],
         "dsaChapterNumbers": ["06", "07", "08", "09"],
-        "mockIds": [],
+        "mockIds": ["interview-4"],
         "soundbiteTitle": "🎙️ Phase 3 Bar-Raiser Soundbite — SQL Ledgers, LPT Sharding & RAG Calibration",
         "soundbiteQuote": (
             "To prevent 1:N join fan-out from corrupting financial totals, I pre-aggregate child grains via CTEs before joining, "
@@ -2204,11 +2411,16 @@ ROADMAP_PHASES_SPEC: List[Dict[str, Any]] = [
         "title": "Phase 4: Performance, Chaos SRE & App/AI Security",
         "shortTitle": "Perf, Chaos SRE & App/AI Security",
         "objective": "Eliminate Coordinated Omission in open-loop load tests, size HikariCP pools via Little's Law, inject deterministic Toxiproxy faults, and enforce BOLA/JWT/SSRF/Prompt-Injection gates.",
-        "exitGate": "Complete Courses 11–12 + AeroPulse & AeroShield Labs + Graphs & DP",
+        "exitGate": "Complete Courses 11–12 + AeroPulse, AeroShield & Agentic Labs + Graphs & DP",
         "courses": ["11-performance-chaos-and-sre", "12-app-api-and-ai-security"],
-        "workbenchIds": ["wb-perf-chaos-sre-harness", "wb-security-bola-jwt-llm"],
+        "workbenchIds": [
+            "wb-perf-chaos-sre-harness",
+            "wb-security-bola-jwt-llm",
+            "wb-ai-self-healing-agent",
+            "wb-ai-guardrailed-tool-agent",
+        ],
         "dsaChapterNumbers": ["10", "11", "12", "13"],
-        "mockIds": [],
+        "mockIds": ["interview-5"],
         "soundbiteTitle": "🎙️ Phase 4 Bar-Raiser Soundbite — Coordinated Omission & Zero-Trust AppSec",
         "soundbiteQuote": (
             "Closed-loop load generators hide tail-latency stalls by waiting for slow responses before sending the next request. "
@@ -2224,7 +2436,7 @@ ROADMAP_PHASES_SPEC: List[Dict[str, Any]] = [
         "courses": ["07-distributed-system-design", "08-core-cs-internals"],
         "workbenchIds": [],
         "dsaChapterNumbers": ["14", "15"],
-        "mockIds": ["interview-1"],
+        "mockIds": ["interview-6", "interview-1"],
         "soundbiteTitle": "🎙️ Phase 5 Bar-Raiser Soundbite — Principal Quality Architect Pitch",
         "soundbiteQuote": (
             "As a Staff SDET, my product is engineering velocity with mathematical confidence: bounding tail latency via Little's Law and Full Jitter backpressure, "

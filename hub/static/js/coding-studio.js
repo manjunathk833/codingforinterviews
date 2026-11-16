@@ -208,6 +208,7 @@
     }
 
     async function openProblemWorkspace(slug, switchScreen = true) {
+      if (state.triageActive) toggleBlindTriageMode(false);
       state.activeSlug = slug;
       state.activeWarmupId = null;
       state.helpStartClicks = 0;
@@ -800,6 +801,217 @@
         }
       } catch (_) {
         renderRoadmapSpineAndChapter(0);
+      }
+    }
+
+    /* ========================================================================
+       WAVE 3A: 90-SECOND BLIND PATTERN-TRIAGE & FIRST-LINES ARENA
+       ======================================================================== */
+    function stopBlindTriageClock() {
+      if (state.triageTimerId) {
+        clearInterval(state.triageTimerId);
+        state.triageTimerId = null;
+      }
+    }
+
+    function updateBlindTriageClockDisplay() {
+      const el = document.getElementById('ws-triage-timer');
+      if (!el) return;
+      const rem = Math.max(0, Number(state.triageRemainingSec ?? 90));
+      const mm = String(Math.floor(rem / 60)).padStart(2, '0');
+      const ss = String(rem % 60).padStart(2, '0');
+      el.textContent = `⏱ ${mm}:${ss}`;
+      el.style.color = rem <= 15 ? 'var(--accent-crimson)' : 'var(--accent-terra)';
+    }
+
+    function toggleBlindTriageMode(forceOn) {
+      const nextState = typeof forceOn === 'boolean' ? forceOn : !state.triageActive;
+      state.triageActive = nextState;
+      stopBlindTriageClock();
+
+      const panel = document.getElementById('ws-triage-panel');
+      const btn = document.getElementById('ws-triage-mode-btn');
+      const bc = document.getElementById('ws-breadcrumb-chapter');
+      const invBar = document.getElementById('ws-invariant-bar');
+      const vizCard = document.getElementById('ws-viz-trace-card');
+      const tabHints = document.getElementById('left-tab-hints');
+      const tabWalk = document.getElementById('left-tab-walkthrough');
+
+      if (panel) panel.classList.toggle('hidden', !nextState);
+      if (btn) btn.classList.toggle('active', nextState);
+      if (bc) bc.classList.toggle('hidden', nextState);
+      if (invBar) invBar.classList.toggle('hidden', nextState);
+      if (vizCard) vizCard.classList.toggle('hidden', nextState);
+      if (tabHints) tabHints.classList.toggle('hidden', nextState);
+      if (tabWalk) tabWalk.classList.toggle('hidden', nextState);
+
+      if (nextState) {
+        switchLeftTab('problem');
+        loadNextBlindTriageRound();
+      } else if (state.activeSlug) {
+        const curSlug = state.activeSlug;
+        state.triageRound = null;
+        openProblemWorkspace(curSlug, false);
+      }
+    }
+
+    function selectBlindTriageOption(group, val) {
+      if (!state.triageSelections) state.triageSelections = {};
+      state.triageSelections[group] = val;
+      renderBlindTriageOptionChips();
+    }
+
+    function renderBlindTriageOptionChips() {
+      const r = state.triageRound;
+      if (!r) return;
+      const sel = state.triageSelections || {};
+      const renderGroup = (containerId, key, opts) => {
+        const box = document.getElementById(containerId);
+        if (!box) return;
+        box.innerHTML = (opts || []).map(opt => {
+          const active = sel[key] === opt;
+          const bg = active ? 'var(--accent-terra)' : 'var(--bg-subtle)';
+          const fg = active ? '#FFFDF9' : 'var(--ink-primary)';
+          return `<button type="button" data-triage-opt="${escapeHtml(opt)}" onclick="selectBlindTriageOption('${key}', this.getAttribute('data-triage-opt'))" class="px-2.5 py-1 rounded-lg mono text-[11px] font-semibold transition cursor-pointer" style="background: ${bg}; color: ${fg}; border: 1px solid var(--border-warm);">${escapeHtml(opt)}</button>`;
+        }).join('');
+      };
+      renderGroup('ws-triage-pattern-opts', 'pattern', r.patternOptions);
+      renderGroup('ws-triage-time-opts', 'time', r.timeOptions);
+      renderGroup('ws-triage-state-opts', 'state', r.stateOptions);
+    }
+
+    async function loadNextBlindTriageRound(targetSlug = '') {
+      stopBlindTriageClock();
+      const diffSel = document.getElementById('ws-triage-diff-select');
+      const diff = diffSel ? diffSel.value : 'all';
+      const seen = (state.triageSeenSlugs || []).slice(-15).join(',');
+      const qs = new URLSearchParams({ difficulty: diff, exclude: seen });
+      if (targetSlug) qs.set('slug', targetSlug);
+
+      try {
+        const res = await fetch(`/api/dsa/triage/next?${qs.toString()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        state.triageRound = data;
+        state.triageSelections = { pattern: '', time: '', state: '' };
+        if (!state.triageSeenSlugs) state.triageSeenSlugs = [];
+        state.triageSeenSlugs.push(data.slug);
+
+        document.getElementById('ws-breadcrumb-title').textContent = `🕵️ Blind Triage · ${data.title}`;
+        document.getElementById('ws-problem-title').textContent = data.title;
+        document.getElementById('ws-problem-prompt').textContent = data.blindPrompt;
+        document.getElementById('ws-difficulty-badge').textContent = data.difficulty;
+
+        const statsEl = document.getElementById('ws-triage-stats-pill');
+        if (statsEl && data.stats) {
+          statsEl.textContent = `${data.stats.attemptsCount} reps · avg ${data.stats.avgScore}/100`;
+        }
+
+        state.files.python = { path: '', content: data.pythonStarter, sha256: 'local' };
+        state.files.java = { path: '', content: data.javaStarter, sha256: 'local' };
+        state.isDirty = false;
+        const activeStarter = state.activeLang === 'java' ? data.javaStarter : data.pythonStarter;
+        document.getElementById('ws-code-editor').value = activeStarter;
+        updateEditorLineNumbers();
+        document.getElementById('editor-disk-status').textContent = '⚡ Blind Triage Sandbox · Type your first 2–5 setup lines';
+
+        document.getElementById('ws-triage-result-box').classList.add('hidden');
+        document.getElementById('ws-triage-continue-btn').classList.add('hidden');
+        renderBlindTriageOptionChips();
+
+        state.triageStartedAtMs = Date.now();
+        state.triageRemainingSec = data.durationSeconds || 90;
+        updateBlindTriageClockDisplay();
+        state.triageTimerId = setInterval(() => {
+          state.triageRemainingSec = Math.max(0, (state.triageRemainingSec || 0) - 1);
+          updateBlindTriageClockDisplay();
+          if (state.triageRemainingSec <= 0) {
+            stopBlindTriageClock();
+          }
+        }, 1000);
+      } catch (_) {}
+    }
+
+    async function submitBlindTriage() {
+      const r = state.triageRound;
+      if (!r) return;
+      stopBlindTriageClock();
+      const sel = state.triageSelections || {};
+      const code = document.getElementById('ws-code-editor').value;
+      const elapsed = state.triageStartedAtMs ? (Date.now() - state.triageStartedAtMs) / 1000.0 : 0.0;
+      const btn = document.getElementById('ws-triage-submit-btn');
+      if (btn) btn.textContent = '⏳ Grading...';
+
+      try {
+        const res = await fetch('/api/dsa/triage/grade', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slug: r.slug,
+            lang: state.activeLang || 'python',
+            pattern: sel.pattern || '',
+            time: sel.time || '',
+            state: sel.state || '',
+            code,
+            elapsedSeconds: elapsed,
+            persist: true
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const box = document.getElementById('ws-triage-result-box');
+          const scoreEl = document.getElementById('ws-triage-score-label');
+          const canonEl = document.getElementById('ws-triage-canonical-pill');
+          const listEl = document.getElementById('ws-triage-feedback-list');
+          const contBtn = document.getElementById('ws-triage-continue-btn');
+          const statsEl = document.getElementById('ws-triage-stats-pill');
+
+          if (box) box.classList.remove('hidden');
+          if (contBtn) contBtn.classList.remove('hidden');
+          if (scoreEl) {
+            scoreEl.textContent = `🏆 Triage Score: ${data.score} / 100 (${data.elapsedSeconds}s)`;
+            scoreEl.style.color = data.score >= 75 ? 'var(--accent-sage)' : 'var(--accent-terra)';
+          }
+          if (canonEl && data.canonical) {
+            canonEl.textContent = `${data.canonical.chapter} · ${data.canonical.time}`;
+          }
+          if (listEl) {
+            listEl.innerHTML = (data.feedback || []).map(f => `<li>${escapeHtml(f)}</li>`).join('');
+          }
+          if (statsEl && data.stats) {
+            statsEl.textContent = `${data.stats.attemptsCount} reps · avg ${data.stats.avgScore}/100`;
+          }
+        }
+      } catch (_) {}
+      if (btn) btn.textContent = '▶ Grade 90s Triage & Setup Lines';
+    }
+
+    async function continueFromTriageToFullProblem() {
+      const r = state.triageRound;
+      if (!r) return;
+      const typedSetup = document.getElementById('ws-code-editor').value;
+      const typedLang = state.activeLang || 'python';
+      state.triageActive = false;
+      stopBlindTriageClock();
+
+      document.getElementById('ws-triage-panel').classList.add('hidden');
+      document.getElementById('ws-triage-mode-btn').classList.remove('active');
+      document.getElementById('ws-breadcrumb-chapter').classList.remove('hidden');
+      document.getElementById('ws-invariant-bar').classList.remove('hidden');
+      document.getElementById('ws-viz-trace-card').classList.remove('hidden');
+      document.getElementById('left-tab-hints').classList.remove('hidden');
+      document.getElementById('left-tab-walkthrough').classList.remove('hidden');
+
+      await openOrScaffoldProblem(r.problemId, r.folderSlug, r.hasLocalFiles);
+      if (typedLang !== state.activeLang) {
+        switchEditorLang(typedLang);
+      }
+      if (typedSetup && typedSetup.trim()) {
+        document.getElementById('ws-code-editor').value = typedSetup;
+        if (state.files[typedLang]) state.files[typedLang].content = typedSetup;
+        state.isDirty = true;
+        updateEditorLineNumbers();
+        document.getElementById('editor-disk-status').textContent = '● Preserved setup lines from Blind Triage — press ⌘S or ▶ Run & Coach';
       }
     }
 

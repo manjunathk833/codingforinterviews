@@ -15,7 +15,7 @@
 
     function filterWorkbenchChallenges(group) {
       state.activeWorkbenchGroup = group || 'all';
-      ['all', 'capstone', 'ui-api', 'design', 'infra-sdet'].forEach(g => {
+      ['all', 'capstone', 'ai-arch', 'ui-api', 'design', 'infra-sdet'].forEach(g => {
         const btn = document.getElementById('wb-filter-' + g);
         if (btn) btn.classList.toggle('active', g === state.activeWorkbenchGroup);
       });
@@ -312,17 +312,60 @@
       } catch (_) {}
 
       try {
-        const miRes = await fetch('/api/interviews/session?id=interview-1');
+        const catRes = await fetch('/api/interviews');
+        if (catRes.ok) {
+          const catData = await catRes.json();
+          state.interviewCatalog = catData.sessions || [];
+          const sel = document.getElementById('mi-session-select');
+          if (sel && state.interviewCatalog.length) {
+            const targetId = state.activeInterviewId || state.interviewCatalog[0].sessionId;
+            sel.innerHTML = state.interviewCatalog.map(s =>
+              `<option value="${escapeHtml(s.sessionId)}">${escapeHtml(s.shortTitle || s.title)} · [${escapeHtml(s.overallScore)}]${s.completed ? ' ✓' : ''}</option>`
+            ).join('');
+            sel.value = targetId;
+            await selectInterviewSession(targetId, false);
+          }
+        }
+      } catch (_) {}
+      renderRoadmapEverywhere();
+    }
+
+    async function selectInterviewSession(sessionId, refreshRoadmap = true) {
+      const sid = sessionId || 'interview-1';
+      state.activeInterviewId = sid;
+      const sel = document.getElementById('mi-session-select');
+      if (sel && sel.value !== sid) sel.value = sid;
+      const sumBox = document.getElementById('mi-rubric-summary');
+      if (sumBox) sumBox.classList.add('hidden');
+
+      try {
+        const miRes = await fetch(`/api/interviews/session?id=${encodeURIComponent(sid)}`);
         if (miRes.ok) {
           state.interviewSession = await miRes.json();
           document.getElementById('mi-session-title').textContent = state.interviewSession.title;
           document.getElementById('mi-status-pill').textContent = `${state.interviewSession.status} · ${state.interviewSession.overallScore}`;
-          const miDoneBtn = document.getElementById('mi-mark-done-btn');
-          if (miDoneBtn) {
-            miDoneBtn.classList.toggle('completed', Boolean(state.interviewSession.completed));
-            miDoneBtn.textContent = state.interviewSession.completed ? '✓ Completed' : '○ Mark Done';
+          const gatePill = document.getElementById('mi-phase-gate-pill');
+          if (gatePill) gatePill.textContent = state.interviewSession.phaseGate || 'Staff Mock Gate';
+
+          const qSel = document.getElementById('mi-question-select');
+          if (qSel) {
+            const qs = state.interviewSession.questions || [];
+            qSel.innerHTML = qs.map(q =>
+              `<option value="${escapeHtml(q.id)}">${escapeHtml(q.title)}</option>`
+            ).join('');
           }
-          switchInterviewDocTab('questions');
+
+          ['mi-mark-done-btn', 'mi-studio-mark-done-btn'].forEach(bId => {
+            const b = document.getElementById(bId);
+            if (b) {
+              b.classList.toggle('completed', Boolean(state.interviewSession.completed));
+              b.textContent = state.interviewSession.completed
+                ? (bId.includes('studio') ? '✓ Interview Completed' : '✓ Completed')
+                : (bId.includes('studio') ? '○ Mark Interview Done' : '○ Mark Done');
+            }
+          });
+
+          switchInterviewDocTab(state.interviewActiveDoc || 'questions');
           loadSelectedInterviewQuestionResponse();
 
           document.getElementById('mi-related-chapters').innerHTML = (state.interviewSession.relatedChapters || []).map(slug => `
@@ -332,7 +375,39 @@
           `).join('');
         }
       } catch (_) {}
-      renderRoadmapEverywhere();
+      if (refreshRoadmap) renderRoadmapEverywhere();
+    }
+
+    async function toggleActiveInterviewDone() {
+      const sid = (state.interviewSession && state.interviewSession.sessionId) || state.activeInterviewId || 'interview-1';
+      await toggleRoadmapItemDone(sid);
+    }
+
+    function toggleMockInterviewTimer() {
+      const btn = document.getElementById('mi-timer-btn');
+      if (state.miTimerId) {
+        clearInterval(state.miTimerId);
+        state.miTimerId = null;
+        if (btn) btn.textContent = '⏱ Start 45:00 Clock';
+        return;
+      }
+      state.miRemainingSec = 45 * 60;
+      const renderTick = () => {
+        if (!btn) return;
+        const rem = Math.max(0, state.miRemainingSec || 0);
+        const mm = String(Math.floor(rem / 60)).padStart(2, '0');
+        const ss = String(rem % 60).padStart(2, '0');
+        btn.textContent = `⏹ ${mm}:${ss}`;
+      };
+      renderTick();
+      state.miTimerId = setInterval(() => {
+        state.miRemainingSec = Math.max(0, (state.miRemainingSec || 0) - 1);
+        renderTick();
+        if (state.miRemainingSec <= 0) {
+          clearInterval(state.miTimerId);
+          state.miTimerId = null;
+        }
+      }, 1000);
     }
 
     async function verifyWorkbenchItem(itemId) {
@@ -361,12 +436,17 @@
 
     function switchInterviewDocTab(tab) {
       state.interviewActiveDoc = tab;
-      document.getElementById('mi-tab-questions').classList.toggle('active', tab === 'questions');
-      document.getElementById('mi-tab-evaluation').classList.toggle('active', tab === 'evaluation');
+      ['questions', 'evaluation', 'mastery'].forEach(t => {
+        const el = document.getElementById('mi-tab-' + t);
+        if (el) el.classList.toggle('active', t === tab);
+      });
       if (!state.interviewSession) return;
-      const md = tab === 'questions'
-        ? state.interviewSession.questionsMarkdown
-        : state.interviewSession.evaluationMarkdown;
+      let md = state.interviewSession.questionsMarkdown;
+      if (tab === 'evaluation') {
+        md = state.interviewSession.evaluationMarkdown || '> No 100-Point evaluation recorded for this scenario yet. Draft your responses in the right pane (`Q1`–`Q5`) and click **`▶ Evaluate Session (100-Pt Rubric)`**.';
+      } else if (tab === 'mastery') {
+        md = state.interviewSession.masteryGuideMarkdown || '> Mastery guide ready after first attempt.';
+      }
       document.getElementById('mi-doc-viewer').innerHTML = renderEditorialMarkdown(md);
     }
 
@@ -378,6 +458,7 @@
     }
 
     async function saveInterviewDraft() {
+      const sid = (state.interviewSession && state.interviewSession.sessionId) || state.activeInterviewId || 'interview-1';
       const qid = document.getElementById('mi-question-select').value;
       const text = document.getElementById('mi-response-textarea').value;
       const statusEl = document.getElementById('mi-save-status');
@@ -386,12 +467,53 @@
         const res = await fetch('/api/interviews/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId: 'interview-1', questionId: qid, response: text })
+          body: JSON.stringify({ sessionId: sid, questionId: qid, response: text })
         });
         if (res.ok) {
           const data = await res.json();
           if (state.interviewSession) state.interviewSession.candidateResponses = data.candidateResponses;
-          statusEl.textContent = `✓ Saved ${qid.toUpperCase()} to SQLite`;
+          statusEl.textContent = `✓ Saved ${qid.toUpperCase()} (${sid}) to SQLite`;
+          renderRoadmapEverywhere();
         }
       } catch (_) {}
+    }
+
+    async function evaluateActiveInterviewSession() {
+      const sid = (state.interviewSession && state.interviewSession.sessionId) || state.activeInterviewId || 'interview-1';
+      await saveInterviewDraft();
+      const btn = document.getElementById('mi-evaluate-btn');
+      if (btn) btn.textContent = '⏳ Scoring 100-Pt Rubric...';
+      try {
+        const res = await fetch('/api/interviews/evaluate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: sid, persist: true })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (state.interviewSession) {
+            state.interviewSession.overallScore = data.overallScore;
+            state.interviewSession.status = data.numericScore > 0 ? 'Evaluated' : 'In Progress';
+            state.interviewSession.evaluationMarkdown = data.evaluationMarkdown;
+          }
+          document.getElementById('mi-status-pill').textContent = `${data.numericScore > 0 ? 'Evaluated' : 'In Progress'} · ${data.overallScore}`;
+          const sumBox = document.getElementById('mi-rubric-summary');
+          if (sumBox && data.dimensions) {
+            const d = data.dimensions;
+            sumBox.classList.remove('hidden');
+            sumBox.innerHTML = `
+              <div class="flex items-center justify-between">
+                <strong style="color: ${data.numericScore >= 85 ? 'var(--accent-sage)' : 'var(--accent-terra)'};">🏆 ${escapeHtml(data.overallScore)}</strong>
+                <span class="mono text-[11px]" style="color: var(--ink-secondary);">${escapeHtml(data.verdict)}</span>
+              </div>
+              <div class="mono text-[11px]" style="color: var(--ink-secondary);">
+                Mechanisms ${d.mechanismsPts}/30 · Math/SLAs ${d.mathSlaPts}/20 · Trade-offs ${d.tradeoffsPts}/25 · Operability ${d.operabilityPts}/15 · Clarity ${d.clarityPts}/10
+              </div>
+            `;
+          }
+          switchInterviewDocTab('evaluation');
+          await loadWorkbenchAndInterviews();
+        }
+      } catch (_) {}
+      if (btn) btn.textContent = '▶ Evaluate Session (100-Pt Rubric)';
     }

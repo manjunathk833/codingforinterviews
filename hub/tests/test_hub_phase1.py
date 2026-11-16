@@ -953,21 +953,21 @@ class TestHubAndArchitectureCI(unittest.TestCase):
         self.assertEqual(status_res["status_code"], 200)
         st = status_res["data"]
         self.assertIn("roadmapEnabled", st)
-        self.assertEqual(st["macro"]["totalItems"], 256)
+        self.assertEqual(st["macro"]["totalItems"], 265)
         self.assertEqual(st["pages"]["courses"]["total"], 114)
         self.assertEqual(st["pages"]["dsa"]["total"], 128)
-        self.assertEqual(st["pages"]["workbench"]["total"], 13)
-        self.assertEqual(st["pages"]["interviews"]["total"], 1)
+        self.assertEqual(st["pages"]["workbench"]["total"], 17)
+        self.assertEqual(st["pages"]["interviews"]["total"], 6)
         self.assertEqual(len(st["phases"]), 5)
 
         journey_res = hub_server.dispatch_request("GET", "/api/roadmap/journey")
         self.assertEqual(journey_res["status_code"], 200)
-        self.assertEqual(journey_res["data"]["macro"]["totalItems"], 256)
+        self.assertEqual(journey_res["data"]["macro"]["totalItems"], 265)
 
-        # Verify global ordering is strictly 1..256 across the 5 phases AND interleaved daily across 60 sessions
+        # Verify global ordering is strictly 1..265 across the 5 phases AND interleaved daily across 60 sessions
         all_items = [it for p in st["phases"] for it in p["items"]]
-        self.assertEqual(len(all_items), 256)
-        self.assertEqual([it["globalOrder"] for it in all_items], list(range(1, 257)))
+        self.assertEqual(len(all_items), 265)
+        self.assertEqual([it["globalOrder"] for it in all_items], list(range(1, 266)))
         self.assertEqual(all_items[0]["itemId"], "sdet-01-determinism-and-flakiness-math")
         self.assertEqual(all_items[1]["itemId"], "dsa-001")
         self.assertEqual(all_items[-1]["itemId"], "interview-1")
@@ -1305,11 +1305,11 @@ class TestHubAndArchitectureCI(unittest.TestCase):
         self.assertEqual(len(ga_java_api["data"]["cases"]), 3)
         self.assertGreaterEqual(ga_java_api["data"]["codeCoach"]["score"], 95)
 
-        # 4. Wave 2 Multi-File & Blank-Canvas Workbench (17 builds: 4 Capstone + 13 Labs)
+        # 4. Wave 2 + Wave 4 Multi-File & Blank-Canvas Workbench (21 builds: 4 Capstone + 4 AI Arch + 13 Labs)
         wb_list = hub_server.dispatch_request("GET", "/api/workbench/challenges")
         self.assertEqual(wb_list["status_code"], 200)
         challenges = wb_list["data"]["challenges"]
-        self.assertEqual(len(challenges), 17)
+        self.assertEqual(len(challenges), 21)
 
         for ch_spec in workbench_grader._load_challenges():
             cid = ch_spec["id"]
@@ -1340,6 +1340,126 @@ class TestHubAndArchitectureCI(unittest.TestCase):
             flags=_re.IGNORECASE,
         )
         self.assertEqual(wb_glare, [], f"Found hardcoded light-mode colors in #view-workbench: {wb_glare}")
+
+    def test_25_waves3_and_4_blind_triage_mock_sim_and_ai_architecture(self):
+        """Verify Wave 3 (90s Blind Pattern-Triage + 6-Scenario Staff Mock Sim) and Wave 4 (4-Layer AI Architecture Workbench)."""
+        from hub import mock_evaluator
+
+        # 1. Wave 3A: 90s Blind Pattern-Triage (spoiler-free round + 0-pt blank guard + 100-pt Python & Java grading)
+        for diff in ("Easy", "Medium", "Hard"):
+            tr_res = hub_server.dispatch_request("GET", f"/api/dsa/triage/next?difficulty={diff}")
+            self.assertEqual(tr_res["status_code"], 200)
+            tr = tr_res["data"]
+            self.assertEqual(tr["difficulty"], diff)
+            self.assertEqual(len(set(tr["patternOptions"])), 4)
+            self.assertEqual(len(set(tr["timeOptions"])), 4)
+            self.assertEqual(len(set(tr["stateOptions"])), 4)
+            self.assertNotIn("invariant", tr)
+
+        ga_tr = hub_server.dispatch_request("GET", "/api/dsa/triage/next?slug=group-anagrams")["data"]
+        self.assertNotIn("O(N", ga_tr["blindPrompt"])
+
+        blank_tr = hub_server.dispatch_request(
+            "POST",
+            "/api/dsa/triage/grade",
+            body={
+                "slug": "two-sum",
+                "lang": "python",
+                "pattern": "Arrays & Hashing",
+                "time": "O(N)",
+                "state": "HashMap / Frequency Counter",
+                "code": ga_tr["pythonStarter"],
+                "persist": False,
+            },
+        )
+        self.assertEqual(blank_tr["status_code"], 200)
+        self.assertEqual(blank_tr["data"]["breakdown"]["codePts"], 0)
+
+        py_tr = hub_server.dispatch_request(
+            "POST",
+            "/api/dsa/triage/grade",
+            body={
+                "slug": "two-sum",
+                "lang": "python",
+                "pattern": "Arrays & Hashing",
+                "time": "O(N)",
+                "state": "HashMap / Frequency Counter",
+                "code": "class Solution:\n    def twoSum(self, nums, target):\n        if not nums:\n            return []\n        seen = {}\n",
+                "elapsedSeconds": 38.5,
+                "persist": False,
+            },
+        )
+        self.assertEqual(py_tr["status_code"], 200)
+        self.assertEqual(py_tr["data"]["score"], 100)
+
+        java_tr = hub_server.dispatch_request(
+            "POST",
+            "/api/dsa/triage/grade",
+            body={
+                "slug": "two-sum",
+                "lang": "java",
+                "pattern": "Arrays & Hashing",
+                "time": "O(N)",
+                "state": "HashMap / Frequency Counter",
+                "code": "import java.util.*;\npublic class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> seen = new HashMap<>();\n        return new int[0];\n    }\n}\n",
+                "elapsedSeconds": 41.0,
+                "persist": False,
+            },
+        )
+        self.assertEqual(java_tr["status_code"], 200)
+        self.assertEqual(java_tr["data"]["score"], 100)
+
+        # 2. Wave 3B: 6-Scenario Staff Mock Interview Simulator (30 questions + 0/100 stub gate + >=85/100 Staff benchmark)
+        mi_cat = hub_server.dispatch_request("GET", "/api/interviews")
+        self.assertEqual(mi_cat["status_code"], 200)
+        sessions = mi_cat["data"]["sessions"]
+        self.assertEqual([s["sessionId"] for s in sessions], [f"interview-{i}" for i in range(1, 7)])
+
+        rubrics = mock_evaluator.load_rubrics()
+        for sid in [f"interview-{i}" for i in range(1, 7)]:
+            sess_res = hub_server.dispatch_request("GET", f"/api/interviews/session?id={sid}")
+            self.assertEqual(sess_res["status_code"], 200)
+            self.assertEqual(len(sess_res["data"]["questions"]), 5)
+            self.assertTrue(sess_res["data"]["masteryGuideMarkdown"])
+
+            stub_eval = hub_server.dispatch_request(
+                "POST",
+                "/api/interviews/evaluate",
+                body={"sessionId": sid, "responses": {"q1": "not sure", "q2": ""}, "persist": False},
+            )
+            self.assertEqual(stub_eval["status_code"], 200)
+            self.assertEqual(stub_eval["data"]["numericScore"], 0, f"Stub should score 0 on {sid}")
+
+            bench_answers = {q["id"]: q["benchmarkAnswer"] for q in rubrics[sid]["questions"]}
+            bench_eval = hub_server.dispatch_request(
+                "POST",
+                "/api/interviews/evaluate",
+                body={"sessionId": sid, "responses": bench_answers, "persist": False},
+            )
+            self.assertEqual(bench_eval["status_code"], 200)
+            self.assertGreaterEqual(bench_eval["data"]["numericScore"], 85, f"Low benchmark score on {sid}: {bench_eval['data']}")
+
+        # 3. Wave 4: Verify all 4 AI Architecture Workbench Catalog Suites pass `/api/workbench/verify`
+        from hub import storage
+
+        ai_ids = (
+            "wb-ai-hybrid-rrf-rag",
+            "wb-ai-rag-triad-calibration",
+            "wb-ai-self-healing-agent",
+            "wb-ai-guardrailed-tool-agent",
+        )
+        try:
+            for ai_item_id in ai_ids:
+                v_res = hub_server.dispatch_request("POST", "/api/workbench/verify", body={"itemId": ai_item_id})
+                self.assertEqual(v_res["status_code"], 200)
+                self.assertEqual(v_res["data"]["status"], "PASS", f"AI Workbench suite failed: {ai_item_id}: {v_res['data']}")
+        finally:
+            conn = storage._get_connection()
+            try:
+                conn.executemany("DELETE FROM workbench_runs WHERE item_id = ?", [(i,) for i in ai_ids])
+                conn.commit()
+            finally:
+                conn.close()
 
 
 if __name__ == "__main__":

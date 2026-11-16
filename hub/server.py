@@ -667,6 +667,20 @@ class LearningHubHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"warmups": dsa_catalog.get_warmup_drills()})
             return
 
+        if path == "/api/dsa/triage/next":
+            difficulty = (query.get("difficulty") or ["all"])[0]
+            target_slug = (query.get("slug") or [None])[0]
+            exclude_raw = (query.get("exclude") or [""])[0]
+            excluded = [x for x in exclude_raw.split(",") if x.strip()]
+            round_data = dsa_catalog.build_blind_triage_round(
+                difficulty=difficulty,
+                exclude_slugs=excluded,
+                target_slug=target_slug,
+            )
+            round_data["stats"] = storage.get_triage_stats()
+            self._send_json(200, round_data)
+            return
+
         if path == "/api/dsa/problem":
             slug = (query.get("slug") or ["003-group-anagrams"])[0]
             code, data = get_dsa_problem_bundle(slug)
@@ -862,6 +876,38 @@ class LearningHubHandler(BaseHTTPRequestHandler):
             self._send_json(200, res)
             return
 
+        if path == "/api/dsa/triage/grade":
+            slug = str(payload.get("slug") or payload.get("problemId") or "")
+            lang = str(payload.get("lang") or "python")
+            sel_pattern = str(payload.get("pattern") or "")
+            sel_time = str(payload.get("time") or "")
+            sel_state = str(payload.get("state") or "")
+            setup_code = str(payload.get("code") or "")
+            elapsed_sec = float(payload.get("elapsedSeconds") or 0.0)
+            persist = bool(payload.get("persist", True))
+
+            graded = dsa_catalog.grade_blind_triage_submission(
+                slug, lang, sel_pattern, sel_time, sel_state, setup_code, elapsed_sec
+            )
+            if graded is None:
+                self._send_json(404, {"error": f"Unknown DSA problem for triage: {slug}"})
+                return
+            if persist:
+                bd = graded["breakdown"]
+                graded["stats"] = storage.record_triage_attempt(
+                    graded["slug"],
+                    graded["score"],
+                    bd["patternOk"],
+                    bd["timeOk"],
+                    bd["stateOk"],
+                    bd["codePts"],
+                    elapsed_sec,
+                )
+            else:
+                graded["stats"] = storage.get_triage_stats()
+            self._send_json(200, graded)
+            return
+
         if path == "/api/dsa/mastery":
             prob_id = int(payload.get("problemId", 0))
             java_done = payload.get("javaDone")
@@ -936,6 +982,16 @@ class LearningHubHandler(BaseHTTPRequestHandler):
             question_id = payload.get("questionId") or "q1"
             response_text = payload.get("response") or ""
             code, data = storage.save_interview_response(session_id, question_id, response_text)
+            self._send_json(code, data)
+            return
+
+        if path == "/api/interviews/evaluate":
+            session_id = str(payload.get("sessionId") or payload.get("id") or "interview-1")
+            responses_override = payload.get("responses")
+            persist = bool(payload.get("persist", True))
+            code, data = storage.evaluate_and_save_interview_session(
+                session_id, responses_override=responses_override, persist=persist
+            )
             self._send_json(code, data)
             return
 

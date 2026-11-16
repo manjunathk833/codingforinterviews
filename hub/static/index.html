@@ -784,6 +784,15 @@
         >
           <option value="">🥋 5-Min Warmup Drills (12 Templates)</option>
         </select>
+        <button
+          onclick="toggleBlindTriageMode()"
+          id="ws-triage-mode-btn"
+          class="nav-tab font-semibold"
+          style="padding: 4px 10px; font-size: 0.74rem; background: var(--accent-terra-soft); color: var(--accent-terra);"
+          title="90-Second Blind Pattern-Triage &amp; First-Lines Speed Arena (Hides Chapter &amp; Pattern Spoilers)"
+        >
+          ⚡ 90s Blind Triage
+        </button>
         <button onclick="toggleActiveDsaProblemDone()" id="ws-roadmap-done-btn" class="mark-done-btn mr-1" title="Mark this DSA Problem as Done in your Staff SDET Roadmap">
           ○ Mark Done
         </button>
@@ -830,14 +839,67 @@
               <p id="ws-problem-prompt" class="text-sm mt-1" style="color: var(--ink-secondary);">
                 Given an array of strings <code class="mono px-1 rounded" style="background: var(--bg-subtle); color: var(--ink-primary);">strs</code>, group the anagrams together in <code class="mono font-semibold" style="color: var(--accent-sage);">O(N · K)</code> time using a 26-letter canonical frequency signature.
               </p>
-              <div class="mt-2 inline-flex flex-wrap items-center gap-2 px-3 py-1 rounded-lg text-xs mono" style="background: var(--bg-subtle); border: 1px solid var(--border-warm);">
+              <div id="ws-invariant-bar" class="mt-2 inline-flex flex-wrap items-center gap-2 px-3 py-1 rounded-lg text-xs mono" style="background: var(--bg-subtle); border: 1px solid var(--border-warm);">
                 <span style="color: var(--ink-muted);">Invariant:</span>
                 <button onclick="toggleProblemInvariant()" id="ws-invariant-toggle-btn" class="font-semibold hover:underline cursor-pointer" style="color: var(--accent-terra);">🔒 Reveal Invariant</button>
                 <strong id="ws-problem-invariant" class="hidden" style="color: var(--accent-sage);">key = tuple(count[26]) → buckets[key].append(word)</strong>
               </div>
             </div>
 
-            <div class="news-card space-y-3.5" style="padding: 16px;">
+            <!-- WAVE 3A: 90-SECOND BLIND PATTERN-TRIAGE & FIRST-LINES ARENA -->
+            <div id="ws-triage-panel" class="hidden news-card space-y-3" style="padding: 14px; border: 1.5px solid var(--accent-terra);">
+              <div class="flex flex-wrap items-center justify-between gap-2 pb-2" style="border-bottom: 1px solid var(--border-warm);">
+                <div class="flex items-center gap-2">
+                  <span class="archetype-pill" style="background: var(--accent-terra-soft); color: var(--accent-terra);">🕵️ Chapter &amp; Pattern Hidden</span>
+                  <span id="ws-triage-timer" class="mono text-xs font-bold px-2 py-0.5 rounded" style="background: var(--bg-subtle); color: var(--accent-terra);">⏱ 01:30</span>
+                  <span id="ws-triage-stats-pill" class="mono text-[11px]" style="color: var(--ink-muted);">0 reps</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <select id="ws-triage-diff-select" onchange="loadNextBlindTriageRound()" class="rounded px-2 py-1 text-[11px] mono" style="background: var(--bg-subtle); color: var(--ink-primary); border: 1px solid var(--border-warm);">
+                    <option value="all">All Levels</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                  <button onclick="loadNextBlindTriageRound()" id="ws-triage-next-btn" class="nav-tab" style="padding: 4px 8px; font-size: 0.72rem;">↻ Next Blind</button>
+                  <button onclick="toggleBlindTriageMode(false)" class="nav-tab" style="padding: 4px 8px; font-size: 0.72rem;">✕ Exit</button>
+                </div>
+              </div>
+
+              <div class="space-y-2 text-xs">
+                <div>
+                  <div class="mono text-[11px] font-semibold mb-1" style="color: var(--ink-secondary);">1. Identify Core Algorithmic Pattern (35 pts):</div>
+                  <div id="ws-triage-pattern-opts" class="flex flex-wrap gap-1.5"></div>
+                </div>
+                <div>
+                  <div class="mono text-[11px] font-semibold mb-1" style="color: var(--ink-secondary);">2. Target Optimal Time Complexity (25 pts):</div>
+                  <div id="ws-triage-time-opts" class="flex flex-wrap gap-1.5"></div>
+                </div>
+                <div>
+                  <div class="mono text-[11px] font-semibold mb-1" style="color: var(--ink-secondary);">3. Primary State Structure (15 pts) + Type First 2–5 Setup Lines on Right (25 pts):</div>
+                  <div id="ws-triage-state-opts" class="flex flex-wrap gap-1.5"></div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-2" style="border-top: 1px solid var(--border-warm);">
+                <button onclick="submitBlindTriage()" id="ws-triage-submit-btn" class="btn-primary" style="padding: 6px 13px; font-size: 0.75rem;">
+                  ▶ Grade 90s Triage &amp; Setup Lines
+                </button>
+                <button onclick="continueFromTriageToFullProblem()" id="ws-triage-continue-btn" class="hidden nav-tab font-semibold" style="padding: 5px 11px; font-size: 0.74rem; background: var(--accent-sage-soft); color: var(--accent-sage);">
+                  ▶ Continue &amp; Solve Full Problem →
+                </button>
+              </div>
+
+              <div id="ws-triage-result-box" class="hidden rounded-lg p-3 text-xs space-y-1.5" style="background: var(--bg-subtle); border: 1px solid var(--border-warm);">
+                <div class="flex items-center justify-between">
+                  <strong id="ws-triage-score-label" style="color: var(--ink-primary);">Triage Score: 0 / 100</strong>
+                  <span id="ws-triage-canonical-pill" class="mono text-[11px]" style="color: var(--accent-sage);"></span>
+                </div>
+                <ul id="ws-triage-feedback-list" class="list-disc pl-4 space-y-0.5 text-[11px]" style="color: var(--ink-secondary);"></ul>
+              </div>
+            </div>
+
+            <div id="ws-viz-trace-card" class="news-card space-y-3.5" style="padding: 16px;">
               <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
                 <span id="viz-step-header" class="mono font-semibold uppercase" style="color: var(--ink-secondary);">
                   Interactive 3D Trace · Step 1 of 6
@@ -1064,8 +1126,9 @@
           <span class="mono font-semibold" style="color: var(--accent-sage);">Target AUT: apps/aerocart/</span>
         </div>
         <div class="flex flex-wrap items-center gap-1.5 pt-1">
-          <button onclick="filterWorkbenchChallenges('all')" id="wb-filter-all" class="nav-tab active" style="padding: 4px 10px; font-size: 0.74rem;">All Builds (17)</button>
+          <button onclick="filterWorkbenchChallenges('all')" id="wb-filter-all" class="nav-tab active" style="padding: 4px 10px; font-size: 0.74rem;">All Builds (21)</button>
           <button onclick="filterWorkbenchChallenges('capstone')" id="wb-filter-capstone" class="nav-tab" style="padding: 4px 10px; font-size: 0.74rem;">🏗️ 4-Layer AeroCart Capstone (4)</button>
+          <button onclick="filterWorkbenchChallenges('ai-arch')" id="wb-filter-ai-arch" class="nav-tab" style="padding: 4px 10px; font-size: 0.74rem;">🤖 AI Architecture &amp; Eval (4)</button>
           <button onclick="filterWorkbenchChallenges('ui-api')" id="wb-filter-ui-api" class="nav-tab" style="padding: 4px 10px; font-size: 0.74rem;">🌐 UI &amp; API Suites (2)</button>
           <button onclick="filterWorkbenchChallenges('design')" id="wb-filter-design" class="nav-tab" style="padding: 4px 10px; font-size: 0.74rem;">🧩 Design Patterns (5)</button>
           <button onclick="filterWorkbenchChallenges('infra-sdet')" id="wb-filter-infra-sdet" class="nav-tab" style="padding: 4px 10px; font-size: 0.74rem;">⚙️ Concurrency, SQL, CI &amp; SRE (6)</button>
@@ -1075,16 +1138,16 @@
       <!-- ACTIVE BLANK-CANVAS / MULTI-FILE ARCHITECTURE BUILD STUDIO -->
       <div id="wb-active-studio" class="panel space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3 pb-3" style="border-bottom: 1px solid var(--border-warm);">
-          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
-            <span class="mono text-xs font-bold uppercase" style="color: var(--accent-terra);">Active Build:</span>
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <span class="mono text-xs font-bold uppercase shrink-0" style="color: var(--accent-terra);">Active Build:</span>
             <select
               id="wb-challenge-select"
               onchange="selectWorkbenchChallenge(this.value)"
-              class="flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold mono focus:outline-none"
-              style="background: var(--bg-subtle); color: var(--ink-primary); border: 1px solid var(--border-warm);"
+              class="flex-1 min-w-0 truncate rounded-lg px-3 py-1.5 text-xs font-semibold mono focus:outline-none"
+              style="max-width: 100%; background: var(--bg-subtle); color: var(--ink-primary); border: 1px solid var(--border-warm);"
             ></select>
           </div>
-          <div class="flex flex-wrap items-center gap-1.5">
+          <div class="flex flex-wrap items-center gap-1.5 shrink-0">
             <a
               id="wb-open-vscode-link"
               href="vscode://file/"
@@ -1168,7 +1231,7 @@
 
       <details class="panel" style="padding: 14px 18px;">
         <summary class="cursor-pointer font-bold text-sm flex items-center justify-between">
-          <span>📦 All 13 Repository Reference Suites &amp; Full CLI Verification Runners</span>
+          <span>📦 All 17 Repository Reference Suites &amp; Full CLI Verification Runners</span>
           <span class="mono text-xs" style="color: var(--ink-muted);">Click to expand/collapse</span>
         </summary>
         <div id="workbench-items-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"></div>
@@ -1183,25 +1246,45 @@
       </div>
     </section>
 
-    <!-- SUB-PANE B: STAFF & SENIOR MOCK INTERVIEW SIMULATOR -->
+    <!-- SUB-PANE B: 6-SCENARIO STAFF & SENIOR MOCK INTERVIEW SIMULATOR -->
     <section id="wb-pane-interviews" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
       <div id="mi-page-tracker-bar" class="lg:col-span-12 page-tracker-banner flex flex-wrap items-center justify-between gap-3 text-xs"></div>
+
+      <div class="lg:col-span-12 panel flex flex-wrap items-center justify-between gap-3" style="padding: 12px 16px; background: var(--bg-subtle);">
+        <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
+          <span class="mono text-xs font-bold uppercase" style="color: var(--accent-terra);">🎙️ Scenario:</span>
+          <select
+            id="mi-session-select"
+            onchange="selectInterviewSession(this.value)"
+            class="flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold mono focus:outline-none"
+            style="background: var(--bg-card); color: var(--ink-primary); border: 1px solid var(--border-warm);"
+          ></select>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleMockInterviewTimer()" id="mi-timer-btn" class="nav-tab mono font-semibold" style="padding: 5px 10px; font-size: 0.74rem; color: var(--accent-terra);">
+            ⏱ Start 45:00 Clock
+          </button>
+          <span id="mi-phase-gate-pill" class="archetype-pill" style="background: var(--bg-card); color: var(--ink-secondary);">Phase Exit Gate</span>
+        </div>
+      </div>
+
       <div id="mi-left-pane" class="lg:col-span-7 panel space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 pb-3" style="border-bottom: 1px solid var(--border-warm);">
           <div>
             <span id="mi-status-pill" class="archetype-pill" style="background: var(--accent-sage-soft); color: var(--accent-sage);">
-              Evaluated · 82 / 100
+              Evaluated · 19 / 100
             </span>
-            <h3 id="mi-session-title" style="font-size: 1.25rem; font-weight: 700; margin-top: 6px;">
+            <h3 id="mi-session-title" style="font-size: 1.2rem; font-weight: 700; margin-top: 6px;">
               Mock Interview #1
             </h3>
           </div>
           <div class="flex flex-wrap items-center gap-1.5">
-            <button onclick="toggleRoadmapItemDone('interview-1')" id="mi-mark-done-btn" class="mark-done-btn" title="Mark this Staff Mock Interview Scenario as Done">
+            <button onclick="toggleActiveInterviewDone()" id="mi-mark-done-btn" class="mark-done-btn" title="Mark this Staff Mock Interview Scenario as Done">
               ○ Mark Done
             </button>
             <button onclick="switchInterviewDocTab('questions')" id="mi-tab-questions" class="nav-tab active">Prompts</button>
             <button onclick="switchInterviewDocTab('evaluation')" id="mi-tab-evaluation" class="nav-tab">100-Pt Feedback</button>
+            <button onclick="switchInterviewDocTab('mastery')" id="mi-tab-mastery" class="nav-tab">Mastery Guide</button>
             <button onclick="toggleSplitPaneMaximize('mi-left')" id="mi-left-expand-btn" class="expand-cta-btn" title="Expand Interview Prompt &amp; Rubric Reader">⤢ Expand Reader</button>
           </div>
         </div>
@@ -1217,11 +1300,7 @@
             <button onclick="toggleSplitPaneMaximize('mi-right')" id="mi-right-expand-btn" class="expand-cta-btn" title="Expand Response Studio">⤢ Expand Studio</button>
           </div>
           <select id="mi-question-select" onchange="loadSelectedInterviewQuestionResponse()" class="w-full rounded-lg px-3 py-2 text-xs font-semibold" style="background: var(--bg-subtle); color: var(--ink-primary); border: 1px solid var(--border-warm);">
-            <option value="q1">Q1: 32-Worker Concurrency &amp; Tenant Isolation</option>
-            <option value="q2">Q2: Endpoint-to-Cloud Continuous Sync &amp; Jitter</option>
-            <option value="q3">Q3: OS Post-GC RSS Leak vs Heap Sawtooth</option>
-            <option value="q4">Q4: TLS 1.3, HTTP/2 &amp; CDP WebSocket Framing</option>
-            <option value="q5">Q5: RAG Triad Claim Entailment &amp; Negation Traps</option>
+            <option value="q1">Question 1</option>
           </select>
           <textarea
             id="mi-response-textarea"
@@ -1232,15 +1311,19 @@
           ></textarea>
           <div class="flex flex-wrap items-center justify-between gap-2">
             <span id="mi-save-status" class="text-[11px] mono" style="color: var(--ink-muted);">Synced with SQLite mock_interview_sessions</span>
-            <div class="flex items-center gap-2">
-              <button onclick="toggleRoadmapItemDone('interview-1')" id="mi-studio-mark-done-btn" class="mark-done-btn" title="Mark this Staff Mock Interview Scenario as Done">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button onclick="toggleActiveInterviewDone()" id="mi-studio-mark-done-btn" class="mark-done-btn" title="Mark this Staff Mock Interview Scenario as Done">
                 ○ Mark Interview Done
               </button>
-              <button onclick="saveInterviewDraft()" class="btn-primary" style="background: var(--accent-crimson);">
-                Save Response
+              <button onclick="saveInterviewDraft()" class="nav-tab font-semibold" style="padding: 6px 11px; font-size: 0.74rem;">
+                Save Draft
+              </button>
+              <button onclick="evaluateActiveInterviewSession()" id="mi-evaluate-btn" class="btn-primary" style="padding: 6px 12px; font-size: 0.75rem;">
+                ▶ Evaluate Session (100-Pt Rubric)
               </button>
             </div>
           </div>
+          <div id="mi-rubric-summary" class="hidden rounded-lg p-3 text-xs space-y-1.5" style="background: var(--bg-subtle); border: 1px solid var(--border-warm);"></div>
         </div>
 
         <div class="panel space-y-2.5">

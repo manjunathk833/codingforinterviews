@@ -173,10 +173,16 @@
       }
       if (itemId.startsWith('wb-')) {
         openWorkbenchSubmode('frameworks');
+        const matched = (state.workbenchChallenges || []).find(c => c.roadmapItemId === itemId);
+        if (matched) {
+          filterWorkbenchChallenges('all');
+          selectWorkbenchChallenge(matched.id);
+        }
         return;
       }
       if (itemId.startsWith('interview-')) {
         openWorkbenchSubmode('interviews');
+        if (typeof selectInterviewSession === 'function') selectInterviewSession(itemId);
         return;
       }
       openTextbookChapter(itemId, true);
@@ -520,7 +526,8 @@
       const isChDone = Boolean(state.activeKbChapter && rm.completedMap && (rm.completedMap[state.activeKbChapter.slug] || state.activeKbChapter.mastered));
       const activeDsaId = resolveDsaRoadmapItemId(state.activeSlug);
       const isDsaDone = Boolean(rm.completedMap && rm.completedMap[activeDsaId]);
-      const isMiDone = Boolean(rm.completedMap && rm.completedMap['interview-1']);
+      const activeMiId = (state.interviewSession && state.interviewSession.sessionId) || state.activeInterviewId || 'interview-1';
+      const isMiDone = Boolean(rm.completedMap && rm.completedMap[activeMiId]);
       const savedDraftCount = state.interviewSession && state.interviewSession.candidateResponses
         ? Object.values(state.interviewSession.candidateResponses).filter(v => String(v || '').trim().length > 0).length
         : 0;
@@ -531,7 +538,7 @@
       const wsBannerAction = `<button onclick="toggleActiveDsaProblemDone()" class="mark-done-btn ${isDsaDone ? 'completed' : ''}" style="padding: 4px 10px; font-size: 0.7rem;">${isDsaDone ? '✓ Active Problem Done' : '○ Mark Active Problem Done'}</button>`;
       const miBannerAction = `
         <span class="mono text-[11px]" style="color: var(--ink-secondary);">Drafts Saved: <strong>${savedDraftCount} / 5</strong> Questions</span>
-        <button onclick="toggleRoadmapItemDone('interview-1')" class="mark-done-btn ${isMiDone ? 'completed' : ''}" style="padding: 4px 10px; font-size: 0.7rem;">${isMiDone ? '✓ Mock Sim Completed' : '○ Mark Mock Sim Done'}</button>
+        <button onclick="toggleActiveInterviewDone()" class="mark-done-btn ${isMiDone ? 'completed' : ''}" style="padding: 4px 10px; font-size: 0.7rem;">${isMiDone ? '✓ Mock Sim Completed' : '○ Mark Mock Sim Done'}</button>
       `;
 
       const bannerConfigs = [
